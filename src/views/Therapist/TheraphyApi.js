@@ -1,21 +1,12 @@
 /* eslint-disable prettier/prettier */
 
 import axios from "axios"
-
 import { BASE_URL, wifiUrl } from "../../API/BaseUrl"
 
-
-
-
-
 /* ================= CREATE ================= */
-
 export const createTherapyExercise = async (data) => {
   try {
-    const res = await axios.post(
-      `${BASE_URL}/createTherapyExercises`,
-      data
-    )
+    const res = await axios.post(`${BASE_URL}/createTherapyExercises`, data)
     return res.data
   } catch (error) {
     console.log("createTherapyExercise error", error)
@@ -24,12 +15,7 @@ export const createTherapyExercise = async (data) => {
 }
 
 /* ================= GET ================= */
-
-export const getTherapyExercise = async (
-  clinicId,
-  branchId,
-
-) => {
+export const getTherapyExercise = async (clinicId, branchId) => {
   try {
     const res = await axios.get(
       `${BASE_URL}/getBytherapyExercisesClinicIdAndBranchId/${clinicId}/${branchId}`
@@ -41,13 +27,8 @@ export const getTherapyExercise = async (
   }
 }
 
-/* ================= GET ================= */
-
-export const getTherapyExerciseById = async (
-  clinicId,
-  branchId,
-  therapyExercisesId
-) => {
+/* ================= GET BY ID ================= */
+export const getTherapyExerciseById = async (clinicId, branchId, therapyExercisesId) => {
   try {
     const res = await axios.get(
       `${BASE_URL}/getBytherapyExercisesClinicIdAndBranchIdAndtherapyExercisesId/${clinicId}/${branchId}/${therapyExercisesId}`
@@ -59,14 +40,8 @@ export const getTherapyExerciseById = async (
   }
 }
 
-
-
 /* ================= UPDATE ================= */
-
-export const updateTherapyExercise = async (
-  therapyExercisesId,
-  data
-) => {
+export const updateTherapyExercise = async (therapyExercisesId, data) => {
   try {
     const res = await axios.put(
       `${BASE_URL}/updateTherapyExercisesById/${therapyExercisesId}`,
@@ -79,13 +54,8 @@ export const updateTherapyExercise = async (
   }
 }
 
-
-
 /* ================= DELETE ================= */
-
-export const deleteTherapyExercise = async (
-  therapyExercisesId
-) => {
+export const deleteTherapyExercise = async (therapyExercisesId) => {
   try {
     const res = await axios.delete(
       `${BASE_URL}/deleteTherapyExercisesById/${therapyExercisesId}`
@@ -97,27 +67,24 @@ export const deleteTherapyExercise = async (
   }
 }
 
+/* ================= CLINIC DATA ================= */
 export const getClinicData = async (clinicId, branchId, therapistId) => {
   try {
     const response = await axios.get(
       `${BASE_URL}/getByClinicIdBranchIdAndTherapistId/${clinicId}/${branchId}/${therapistId}`
-    );
-
-    return response.data;
+    )
+    return response.data
   } catch (error) {
-    console.error("Error fetching clinic data:", error);
-    throw error;
+    console.error("Error fetching clinic data:", error)
+    throw error
   }
-};
+}
 
-
+/* ================= THERAPY NOTES ================= */
 export const createTherapyNotes = async (data) => {
   console.log(data)
   try {
-    const res = await axios.post(
-      `${BASE_URL}/saveRecord`,
-      data
-    )
+    const res = await axios.post(`${BASE_URL}/saveRecord`, data)
     return res.data
   } catch (error) {
     console.log("saveRecord error", error)
@@ -125,23 +92,21 @@ export const createTherapyNotes = async (data) => {
   }
 }
 
-
-
-// ✅ DASHBOARD API
-export const getDashboard = async (clinicId, branchId, therapistId) => {
+/* ================= DASHBOARD ================= */
+/* ================= ASSIGNED PATIENTS (DASHBOARD) ================= */
+export const getDashboard = async (clinicId, branchId, therapistId, statusId = 1) => {
   try {
     const res = await axios.get(
-      `${wifiUrl}/api/physiotherapy-doctor/physiotherapy-record/dashboard/${clinicId}/${branchId}/${therapistId}`
+      `${wifiUrl}/api/physiotherapy-doctor/assigned-patients/${clinicId}/${branchId}/${therapistId}/${statusId}`
     )
-    return res.data?.data
+    return res.data  // ✅ return full response: { data: [...], message, status, success }
   } catch (err) {
-    console.error("Dashboard API Error:", err)
+    console.error("Assigned Patients API Error:", err)
     return null
   }
 }
 
-
-
+/* ================= SESSION DETAILS ================= */
 export const getSessionDetails = async (clinicId, branchId, therapistId, sessionId) => {
   try {
     const res = await axios.get(
