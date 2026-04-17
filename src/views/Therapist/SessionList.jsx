@@ -1,249 +1,763 @@
-import React, { useState } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
   CCard,
   CCardBody,
   CTable,
   CButton,
   CBadge,
+  CAccordion,
+  CAccordionItem,
+  CAccordionHeader,
+  CAccordionBody,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
 } from "@coreui/react"
 
 import { useLocation } from "react-router-dom"
-import SessionModal from "./SessionModal"
- 
 import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 
- const SessionList = () => {
-
-  const location = useLocation()
-
-  const patient = location.state || {}
-const [loadingId, setLoadingId] = useState(null)
-  const [sessions, setSessions] = useState(
-    patient.sessions || []
-  )
-
-  const [selected, setSelected] = useState(null)
-
-console.log(patient)
-  // update after modal save
-const handleUpdate = (updated) => {
-  const newList = sessions.map((s) =>
-    s.sessionId === updated.sessionId
-      ? { ...s, ...updated } // ✅ merge
-      : s
-  )
-
-  setSessions(newList)
-}
-
-const [selectedSession, setSelectedSession] = useState(null)
- 
-
-// const handleView = async (item,therapistRecordId) => {
-//   const storedData = localStorage.getItem('therapistData')
-//   const raw = JSON.parse(storedData) || {}
-
-//   console.log("RAW DATA:", raw)
-
-//   const clinicId = raw?.clinicId || raw?.data?.clinicId
-//   const branchId = raw?.branchId || raw?.data?.branchId
-  
-//   console.log("IDs:", clinicId, branchId, therapistRecordId)
-
-//   if (!clinicId || !branchId || !therapistRecordId) {
-//     console.error("Missing required IDs")
-//     return
-//   }
-
-//   const res = await getSessionDetails(
-//     clinicId,
-//     branchId,
-//     therapistRecordId,
-//     item.sessionId
-//   )
-
-//   if (res) {
-//     setSelectedSession(res.data || res)
-  
-//   }
-// }
-const handleView = async (item, therapistRecordId) => {
-  setLoadingId(item.sessionId) // ✅ start loading
-
-  try {
-    const storedData = localStorage.getItem('therapistData')
-    const raw = JSON.parse(storedData) || {}
-
-    const clinicId = raw?.clinicId || raw?.data?.clinicId
-    const branchId = raw?.branchId || raw?.data?.branchId
-
-    if (!clinicId || !branchId || !therapistRecordId) {
-      console.error("Missing required IDs")
-      return
+const DUMMY_DATA = {
+  "bookingId": "BOOK123",
+  "patientId": "PAT123",
+  "doctorId": "DOC123",
+  "doctorName": "Dr. John (Physio)",
+  "therapistId": "THER123",
+  "therapistName": "Therapy_1",
+  "therapistRecordId": "REC123",
+  "serviceType": "PACKAGE",
+  "totalAmount": 1250,
+  "discountAmount": 100,
+  "finalAmount": 1150,
+  "totalPaid": 800,
+  "balanceAmount": 350,
+  "paymentStatus": "Partial",
+  "sessionStartDate": "14/04/2026",
+  "totalSessionCount": 25,
+  "noOfSessionCompletedCount": 3,
+  "noOfSessionCompletedStatus": false,
+  "sessionTableCreatedStatus": true,
+  "paymentHistory": [
+    {
+      "amount": 500,
+      "paymentMode": "CASH",
+      "paymentType": "Partial",
+      "paymentLevel": "PACKAGE",
+      "paymentDate": "14/04/2026"
+    },
+    {
+      "amount": 300,
+      "paymentMode": "UPI",
+      "paymentType": "Partial",
+      "paymentLevel": "SESSION",
+      "paymentDate": "16/04/2026"
     }
-
-    const res = await getSessionDetails(
-      clinicId,
-      branchId,
-      therapistRecordId,
-      item.sessionId
-    )
-
-    if (res) {
-      setSelectedSession(res.data || res)
+  ],
+  "therapyWithSessions": [
+    {
+      "packageId": "PACK001",
+      "packageName": "PACKAGE_1",
+      "totalPackagePrice": 1250,
+      "paymentStatus": "Partial",
+      "programs": [
+        {
+          "programId": "PROG001",
+          "programName": "PROGRAM_1",
+          "totalProgramPrice": 625,
+          "paymentStatus": "Partial",
+          "therapyData": [
+            {
+              "therapyId": "THER001",
+              "therapyName": "THERAPY_1",
+              "totalTherapyPrice": 425,
+              "paymentStatus": "Partial",
+              "exercises": [
+                {
+                  "exerciseId": "E1",
+                  "exerciseName": "Knee Flexion",
+                  "pricePerSession": 10,
+                  "noOfSessions": 10,
+                  "totalExercisePrice": 100,
+                  "paymentStatus": "Partial",
+                  "repetitions": 10,
+                  "frequency": "2/day",
+                  "sets": 2,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E1_1",
+                      "sessionNo": 1,
+                      "date": "14/04/2026",
+                      "status": "Completed",
+                      "paymentStatus": "Paid"
+                    },
+                    {
+                      "sessionId": "E1_2",
+                      "sessionNo": 2,
+                      "date": "15/04/2026",
+                      "status": "Completed",
+                      "paymentStatus": "Paid"
+                    },
+                    {
+                      "sessionId": "E1_3",
+                      "sessionNo": 3,
+                      "date": "16/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                },
+                {
+                  "exerciseId": "E2",
+                  "exerciseName": "Quad Strengthening",
+                  "pricePerSession": 20,
+                  "noOfSessions": 5,
+                  "totalExercisePrice": 100,
+                  "paymentStatus": "Partial",
+                  "repetitions": 12,
+                  "frequency": "3/day",
+                  "sets": 4,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E2_1",
+                      "sessionNo": 1,
+                      "date": "14/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "therapyId": "THER002",
+              "therapyName": "THERAPY_2",
+              "totalTherapyPrice": 200,
+              "paymentStatus": "Paid",
+              "exercises": [
+                {
+                  "exerciseId": "E3",
+                  "exerciseName": "Hamstring Stretch",
+                  "pricePerSession": 20,
+                  "noOfSessions": 10,
+                  "totalExercisePrice": 200,
+                  "paymentStatus": "Paid",
+                  "repetitions": 10,
+                  "frequency": "2/day",
+                  "sets": 2,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E3_1",
+                      "sessionNo": 1,
+                      "date": "14/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
-  } catch (err) {
-    console.error(err)
-  } finally {
-    setLoadingId(null) // ✅ stop loading
+  ]
+};
+
+const cleanHierarchy = (node) => {
+  if (!node || node.paymentStatus?.toLowerCase() === 'unpaid') return null;
+
+  let result = { ...node };
+
+  if (Array.isArray(node.sessions)) {
+    result.sessions = node.sessions.filter(s => s.paymentStatus?.toLowerCase() !== 'unpaid');
   }
+
+  if (Array.isArray(node.exercises)) {
+    result.exercises = node.exercises.map(cleanHierarchy).filter(Boolean);
+  }
+
+  if (Array.isArray(node.therapyData)) {
+    result.therapyData = node.therapyData.map(cleanHierarchy).filter(Boolean);
+  }
+
+  if (Array.isArray(node.programs)) {
+    result.programs = node.programs.map(cleanHierarchy).filter(Boolean);
+  }
+
+  if (Array.isArray(node.therapyWithSessions)) {
+    result.therapyWithSessions = node.therapyWithSessions.map(cleanHierarchy).filter(Boolean);
+  }
+
+  return result;
 }
+
+
+const deepUpdateSession = (node, updatedSession) => {
+  if (!node) return node;
+  let newNode = { ...node };
+
+  if (newNode.sessions) {
+    newNode.sessions = newNode.sessions.map(s =>
+      s.sessionId === updatedSession.sessionId ? { ...s, ...updatedSession } : s
+    );
+  }
+
+  ['therapyWithSessions', 'programs', 'therapyData', 'exercises'].forEach(key => {
+    if (newNode[key]) {
+      newNode[key] = newNode[key].map(child => deepUpdateSession(child, updatedSession));
+    }
+  });
+
+  return newNode;
+}
+
+
+
+const extractDirectTherapies = (node) => {
+  let list = [];
+  if (!node) return list;
+  if (node.therapyId) {
+    list.push(node);
+  }
+  ['therapyWithSessions', 'programs', 'therapyData'].forEach(key => {
+    if (node[key] && Array.isArray(node[key])) {
+      node[key].forEach(child => list = list.concat(extractDirectTherapies(child)));
+    }
+  });
+  return list;
+}
+
+// Inline Voice Record Modal powered by Real MediaRecorder API
+const VoiceRecordModal = ({ visible, onClose, onSave }) => {
+  const [status, setStatus] = useState('IDLE'); // IDLE, RECORDING, PAUSED, PREVIEW, STOPPED
+  const [timer, setTimer] = useState(0);
+  const [audioUrl, setAudioUrl] = useState(null);
+
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  useEffect(() => {
+    let interval;
+    if (status === 'RECORDING') {
+      interval = setInterval(() => setTimer(t => t + 1), 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [status]);
+
+  useEffect(() => {
+    if (visible) {
+      setStatus('IDLE');
+      setTimer(0);
+      setAudioUrl(null);
+      chunksRef.current = [];
+    }
+  }, [visible]);
+
+  const startActualRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = e => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      }
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url); // Store the playable URL
+      }
+      recorder.start();
+      setStatus('RECORDING');
+    } catch (err) {
+      console.error(err);
+      alert("Microphone access denied or encountered an error.");
+    }
+  }
+
+  const handlePause = () => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setStatus('PAUSED');
+    }
+  }
+
+  const handleResume = () => {
+    if (mediaRecorderRef.current?.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setStatus('RECORDING');
+    }
+  }
+
+  const handleStop = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+    }
+    setStatus('PREVIEW');
+  };
+
+  const handleSend = () => {
+    setStatus('STOPPED');
+    // Simulate storage & send delay to the mock backend
+    setTimeout(() => {
+      onSave(audioUrl);
+      onClose();
+    }, 1500);
+  }
 
   return (
+    <CModal visible={visible} onClose={() => status !== 'STOPPED' && onClose()} alignment="center" size="sm" backdrop="static">
+      <CModalHeader>
+        <CModalTitle>Voice Record</CModalTitle>
+      </CModalHeader>
+      <CModalBody className="text-center py-4">
+        {status !== 'PREVIEW' && status !== 'STOPPED' && (
+          <h2 className="mb-4 text-primary" style={{ fontFamily: 'monospace' }}>
+            {new Date(timer * 1000).toISOString().substr(14, 5)}
+          </h2>
+        )}
 
-    <CCard>
+        {status === 'IDLE' && (
+          <CButton color="danger" onClick={startActualRecording}>▶ Start Recording</CButton>
+        )}
 
-      <CCardBody>
-
-        <h4 className="fw-bold">{patient.name}</h4>
-        <div> <strong>Therapy Name:</strong> {patient.therapy}</div>
-        <div> <strong>Assigned By: </strong> {patient.doctorName}</div>
-        {/* {sessions.map((s)=>(
-          <div>
-            <p>modalitiesUsed: {s.modalities}</p>
-            <p>exercisesDone: {s.exercises}</p>
-            
+        {(status === 'RECORDING' || status === 'PAUSED') && (
+          <div className="d-flex justify-content-center gap-2">
+            {status === 'RECORDING' ? (
+              <CButton color="warning" className="text-white" onClick={handlePause}>⏸ Pause</CButton>
+            ) : (
+              <CButton color="danger" onClick={handleResume}>▶ Resume</CButton>
+            )}
+            <CButton color="dark" onClick={handleStop}>⏹ Stop Tracking</CButton>
           </div>
-        )
+        )}
 
-        )} */}
+        {status === 'PREVIEW' && (
+          <div className="d-flex flex-column align-items-center">
+            <div className="fw-bold mb-2">Recording Preview</div>
+            <audio controls src={audioUrl} style={{ width: '100%', height: '40px', marginBottom: '15px' }}>
+              Your browser does not support the audio element.
+            </audio>
+            <div className="d-flex w-100 justify-content-center gap-2">
+              <CButton color="secondary" variant="outline" onClick={() => { setStatus('IDLE'); setTimer(0); }}>Redo</CButton>
+              <CButton color="success" onClick={handleSend}>Send Recording</CButton>
+            </div>
+          </div>
+        )}
 
-        <CTable bordered className="pink-table mt-3">
+        {status === 'STOPPED' && (
+          <div className="text-success fw-bold">
+            <div className="spinner-border spinner-border-sm me-2 text-success" />
+            Storing and sending...
+          </div>
+        )}
+      </CModalBody>
+    </CModal>
+  );
+};
 
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Duration</th>
-              <th>Modalities Used</th>
-              <th>Exercises</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+// UI component for displaying live elapsed time
+const ElapsedTime = ({ startTimeObj }) => {
+  const [elapsed, setElapsed] = useState(0);
 
-          <tbody>
+  useEffect(() => {
+    if (!startTimeObj) return;
+    setElapsed(Math.floor((new Date() - startTimeObj) / 1000)); // Reset initial state quickly
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((new Date() - startTimeObj) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTimeObj]);
 
-            {sessions.map((s) => (
+  const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const secs = (elapsed % 60).toString().padStart(2, '0');
 
-              <tr key={s.sessionId}>
+  return <span className="fw-bold" style={{ color: '#dc3545', fontFamily: 'monospace', fontSize: '1.1rem' }}>{mins}:{secs}</span>;
+}
 
-                <td>{s.sessionDate}</td> 
+const SessionList = () => {
+  const location = useLocation()
 
-                <td>{s.duration}</td>
-                <td>{s.modalitiesUsed}</td>
-                <td>{s.exercisesDone}</td>
- 
+  // Use dummy data if location.state doesn't have therapyWithSessions payload
+  const patientDataSource = location.state?.therapyWithSessions ? location.state : DUMMY_DATA;
+  const patient = location.state || { name: "John Doe", therapy: "Physiotherapy", doctorName: DUMMY_DATA.doctorName };
 
-                <td>
+  const [loadingId, setLoadingId] = useState(null)
 
-                  <CBadge color="info">
-                    {s.status}
-                  </CBadge>
+  // Create tree data dynamically
+  const [treeData, setTreeData] = useState(() => cleanHierarchy(patientDataSource))
 
-                </td>
+  const [selected, setSelected] = useState(null)
+  const [selectedSession, setSelectedSession] = useState(null)
 
-                <td>
+  // Voice Modal State
+  const [voiceRecordSession, setVoiceRecordSession] = useState(null)
 
-                 
+  // Audio Playback Modal State
+  const [audioPlaybackSession, setAudioPlaybackSession] = useState(null)
 
-{s.status?.toLowerCase() !== "completed" ? (
-  <CButton
-    size="sm"
-    color="success"
-    onClick={() => {
-      setSelected({
-        ...s,
-        mode: "complete",
-        patientName: patient.name,
-        bookingId: patient.bookingId,
-        patientId: patient.patientId,
-        therapy: patient.therapy,
-        disease: patient.disease,
-        therapistRecordId:patient.therapistRecordId
-      })
-    }}
-  >
-    Complete
-  </CButton>
-) : (
-<CButton
-  size="sm"
-  color="primary"
-  disabled={loadingId === s.sessionId} // ✅ disable
-  onClick={async () => {
-    await handleView(s, patient.therapistRecordId)
+  // Mapping of sessionId -> startTime (Date object) for the live stopwatches
+  const [activeSessions, setActiveSessions] = useState({})
+
+  const formatDisplayTime = (dateObj) => {
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  const formatSystemTime = (dateObj) => {
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  const handleUpdate = (updated) => {
+    const newTree = deepUpdateSession(treeData, updated);
+    setTreeData(newTree);
+  }
+
+  console.log("activeSessions", treeData);
+  const handleStartSession = (sessionId) => {
+    setActiveSessions(p => ({ ...p, [sessionId]: new Date() }));
+  }
+
+  const handleStopAndComplete = (sessionItem) => {
+    const startObj = activeSessions[sessionItem.sessionId];
+    const endObj = new Date();
+
+    if (!startObj) return;
+
+    // Convert to whatever time format the form modal uses (usually 24h format for <input type="time" />)
+    const startStr = formatSystemTime(startObj);
+    const endStr = formatSystemTime(endObj);
+
+    // Clear it from active state
+    setActiveSessions(p => {
+      const next = { ...p };
+      delete next[sessionItem.sessionId];
+      return next;
+    });
+
+    // Directly update state to mark times without altering the session's main status
+    const quickCompleteData = {
+      ...sessionItem,
+      startTime: startStr,
+      endTime: endStr
+    };
+
+    // Auto-save logic triggers here
+    handleUpdate(quickCompleteData);
+  }
+
+  // Still maintaining fallback manually Complete form button if they need edge cases
+  const handleManualCompleteFallback = (sessionItem) => {
+    let calculatedDuration = "";
+    if (sessionItem.startTime && sessionItem.endTime) {
+      const [startH, startM] = sessionItem.startTime.split(':').map(Number);
+      const [endH, endM] = sessionItem.endTime.split(':').map(Number);
+      let diffMins = (endH * 60 + endM) - (startH * 60 + startM);
+      if (diffMins < 0) diffMins += 24 * 60; // handle overnight
+
+      const hrs = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      calculatedDuration = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
+    }
 
     setSelected({
-      ...s,
-      mode: "view",
+      ...sessionItem,
+      mode: "complete",
+      sessionTime: calculatedDuration,
+      startTime: sessionItem.startTime || "",
+      endTime: sessionItem.endTime || "",
       patientName: patient.name,
-      bookingId: patient.bookingId,
-      patientId: patient.patientId,
-      therapy: patient.therapy,
+      bookingId: patientDataSource.bookingId,
+      patientId: patientDataSource.patientId,
+      serviceType: patientDataSource.serviceType,
       disease: patient.disease,
-      therapistRecordId: patient.therapistRecordId
+      therapistRecordId: patient.therapistRecordId,
+      voiceRecordUrl: sessionItem.voiceRecordUrl || ""
     })
-  }}
->
-  {loadingId === s.sessionId ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-1" />
-      Opening...
-    </>
-  ) : (
-    "View"
-  )}
-</CButton>
-)}
+  }
 
+  const handleVoiceRecordSaved = (audioUrl) => {
+    if (voiceRecordSession && audioUrl) {
+      handleUpdate({
+        ...voiceRecordSession,
+        voiceRecordUrl: audioUrl
+      });
+    }
+    setVoiceRecordSession(null);
+  }
+
+  const handleView = async (item, therapistRecordId) => {
+    setLoadingId(item.sessionId) // start loading
+    try {
+      const storedData = localStorage.getItem('therapistData')
+      const raw = storedData ? JSON.parse(storedData) : {}
+
+      const clinicId = raw?.clinicId || raw?.data?.clinicId
+      const branchId = raw?.branchId || raw?.data?.branchId
+
+      if (!clinicId || !branchId || !therapistRecordId) {
+        console.error("Missing required IDs")
+        setSelectedSession(item)
+        return
+      }
+
+      const res = await getSessionDetails(
+        clinicId,
+        branchId,
+        therapistRecordId,
+        item.sessionId
+      )
+
+      if (res && res.data) {
+        setSelectedSession(res.data)
+      } else if (res) {
+        setSelectedSession(res)
+      } else {
+        setSelectedSession(item) // Fallback
+      }
+    } catch (err) {
+      console.error(err)
+      setSelectedSession(item) // Fallback
+    } finally {
+      setLoadingId(null) // stop loading
+    }
+  }
+
+  /* --- RENDERING HELPERS --- */
+
+  const renderSessionsTable = (sessions, exerciseContext) => {
+    if (!sessions || sessions.length === 0) {
+      return <div className="text-muted p-2 ms-2 fst-italic">No session available</div>;
+    }
+
+    return (
+      <CTable bordered className="mt-2 mb-2 bg-white align-middle" responsive size="sm" style={{ fontSize: '0.9rem' }}>
+        <thead className="bg-light">
+          <tr>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Session Timing</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sessions.map((s, idx) => {
+            const activeStartObj = activeSessions[s.sessionId];
+            const isRunning = !!activeStartObj;
+
+            return (
+              <tr key={s.sessionId || idx}>
+                <td>{s.date || s.sessionDate}</td>
+                <td className="text-nowrap">{s.duration || 'N/A'}</td>
+                <td className="text-nowrap" style={{ minWidth: "160px" }}>
+                  {s.startTime && s.endTime ? (
+                    <span className="text-muted"><small>
+                      <i>Tracked: <strong>{s.startTime}</strong> to <strong>{s.endTime}</strong></i>
+                    </small></span>
+                  ) : s.status?.toLowerCase() === "completed" ? (
+                    <span className="text-muted"><small><i>Completed natively</i></small></span>
+                  ) : (
+                    !isRunning ? (
+                      <CButton size="sm" color="success" variant="outline" className="w-100 fw-bold" onClick={() => handleStartSession(s.sessionId)}>
+                        ▶ Start Tracker
+                      </CButton>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center bg-light border border-danger rounded px-2 py-1 shadow-sm">
+                        <div className="d-flex w-100 justify-content-between align-items-center mb-1">
+                          <span className="spinner-grow spinner-grow-sm text-danger" role="status" aria-hidden="true" style={{ width: '0.6rem', height: '0.6rem' }}></span>
+                          <ElapsedTime startTimeObj={activeStartObj} />
+                        </div>
+                        <div style={{ fontSize: "0.75rem", color: "#6c757d" }} className="mb-2">Started {formatDisplayTime(activeStartObj)}</div>
+                        <CButton size="sm" color="danger" className="w-100 fw-bold text-white shadow" onClick={() => handleStopAndComplete(s)}>
+                          ⏹ Stop & Save Time
+                        </CButton>
+                      </div>
+                    )
+                  )}
                 </td>
+                <td className="text-nowrap">
+                  <div>
+                    <CBadge color={s.status?.toLowerCase() === 'completed' ? 'success' : 'warning'}>
+                      {s.status || 'Pending'}
+                    </CBadge>
+                  </div>
+                </td>
+                <td className="text-nowrap">
+                  <div className="d-flex gap-1 border-0">
+                    {/* Swap to Play button if audio is attached, else show Mic button if not completed */}
+                    {s.voiceRecordUrl ? (
+                      <CButton
+                        size="sm"
+                        color="info"
+                        variant="outline"
+                        onClick={() => setAudioPlaybackSession(s)}
+                        title="Play Recording"
+                      >
+                        ▶️ Play
+                      </CButton>
+                    ) : (s.status?.toLowerCase() !== "completed" && (
+                      <CButton
+                        size="sm"
+                        color="secondary"
+                        variant="outline"
+                        onClick={() => setVoiceRecordSession(s)}
+                        title="Voice Record"
+                      >
+                        🎤 Record
+                      </CButton>
+                    ))}
 
+                    {s.status?.toLowerCase() !== "completed" ? (
+                      <CButton
+                        size="sm"
+                        color="secondary"
+                        title="Manual Complete (Fallback)"
+                        onClick={() => handleManualCompleteFallback(s)}
+                      >
+                        Complete Form
+                      </CButton>
+                    ) : (
+                      <CButton
+                        size="sm"
+                        color="primary"
+                        disabled={loadingId === s.sessionId}
+                        onClick={() => handleView(s, patient.therapistRecordId)}
+                      >
+                        {loadingId === s.sessionId ? (
+                          <span className="spinner-border spinner-border-sm" />
+                        ) : (
+                          "View"
+                        )}
+                      </CButton>
+                    )}
+                  </div>
+                </td>
               </tr>
+            )
+          })}
+        </tbody>
+      </CTable>
+    )
+  }
 
-            ))}
-
-          </tbody>
-
-        </CTable>
-
-
-{selected && selected.mode === "complete" && (
-  <SessionFormModal
-    visible={true}
-    data={selected}
-    onClose={() => setSelected(null)}
-    onSave={handleUpdate}
-  />
-)}
-
-{selected && selected.mode === "view" && (
-  <SessionViewModal
-    visible={true}
-    data={selectedSession}
-    onClose={() => {
-      setSelected(null)
- 
-    }}
-  />
-)}
-
-      </CCardBody>
-
-    </CCard>
-
+  const renderExercise = (ex) => (
+    <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
+      <CAccordionHeader>
+        <span className="fw-semibold text-success">Exercise: {ex.exerciseName}</span>
+      </CAccordionHeader>
+      <CAccordionBody>
+        <div className="mb-2" style={{ fontSize: '0.85rem' }}>
+          <strong>Freq:</strong> {ex.frequency} &bull; <strong>Sets:</strong> {ex.sets} &bull; <strong>Reps:</strong> {ex.repetitions}
+        </div>
+        {renderSessionsTable(ex.sessions, ex)}
+      </CAccordionBody>
+    </CAccordionItem>
   )
 
+  const renderTherapy = (th) => (
+    <CAccordionItem itemKey={`th-${th.therapyId}`} key={th.therapyId}>
+      <CAccordionHeader>
+        <span className="fw-semibold text-info" style={{ fontSize: '1.25rem' }}>Therapy: {th.therapyName}</span>
+      </CAccordionHeader>
+      <CAccordionBody>
+        {th.exercises && th.exercises.length > 0 ? (
+          <CAccordion alwaysOpen activeItemKey={[`ex-${th.exercises[0]?.exerciseId}`]}>
+            {th.exercises.map(renderExercise)}
+          </CAccordion>
+        ) : (
+          <div className="text-muted fst-italic">No exercises.</div>
+        )}
+      </CAccordionBody>
+    </CAccordionItem>
+  )
+
+  const renderHierarchy = (node) => {
+    let therapies = extractDirectTherapies(node);
+
+    if (!therapies || therapies.length === 0) {
+      return <div className="text-muted p-4 shadow-sm bg-light rounded text-center">No structural data available for this service type.</div>;
+    }
+
+    const initialKeys = therapies.length > 0 ? [`th-${therapies[0].therapyId}`] : [];
+
+    return (
+      <CAccordion alwaysOpen activeItemKey={initialKeys}>
+        {therapies.map(renderTherapy)}
+      </CAccordion>
+    );
+  }
+
+  return (
+    <CCard>
+      <CCardBody>
+        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+          <div>
+            <h4 className="fw-bold text-dark mb-1">{patient.name || 'Patient Sessions'}</h4>
+            <div className="text-muted"><strong>Doctor:</strong> {patient.doctorName || patientDataSource.doctorName || 'N/A'}</div>
+          </div>
+          <div className="text-end">
+            <CBadge color="primary" shape="rounded-pill" style={{ fontSize: '1rem', padding: '8px 16px' }}>
+              {patientDataSource.serviceType || 'CUSTOM'}
+            </CBadge>
+          </div>
+        </div>
+
+        <div className="hierarchy-container">
+          {renderHierarchy(treeData)}
+        </div>
+
+        {/* Dynamic Modals */}
+        <VoiceRecordModal
+          visible={!!voiceRecordSession}
+          onClose={() => setVoiceRecordSession(null)}
+          onSave={handleVoiceRecordSaved}
+        />
+
+        {audioPlaybackSession && (
+          <CModal visible={true} onClose={() => setAudioPlaybackSession(null)} alignment="center" size="sm">
+            <CModalHeader>
+              <CModalTitle>Playback Recording</CModalTitle>
+            </CModalHeader>
+            <CModalBody className="text-center py-4">
+              <audio controls autoPlay src={audioPlaybackSession.voiceRecordUrl} style={{ width: '100%' }}>
+                Your browser does not support the audio element.
+              </audio>
+            </CModalBody>
+          </CModal>
+        )}
+
+        {selected && selected.mode === "complete" && (
+          <SessionFormModal
+            visible={true}
+            data={selected}
+            onClose={() => setSelected(null)}
+            onSave={handleUpdate}
+          />
+        )}
+
+        {selected && selected.mode === "view" && (
+          <SessionViewModal
+            visible={true}
+            data={selectedSession}
+            onClose={() => {
+              setSelected(null)
+              setSelectedSession(null)
+            }}
+          />
+        )}
+      </CCardBody>
+    </CCard>
+  )
 }
+
 export default SessionList

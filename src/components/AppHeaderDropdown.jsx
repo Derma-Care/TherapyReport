@@ -21,7 +21,11 @@ const AppHeaderDropdown = () => {
         navigate('/login')
     }
 
-    const hospitalLogo = selectedHospital?.data?.hospitalLogo
+     const hospitalData = JSON.parse(localStorage.getItem("selectedClinic") || "{}");
+
+  const hospitalLogo = hospitalData?.hospitalLogo
+    ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
+    : "";
     const hospitalName = selectedHospital?.data?.name || 'Hospital'
 
     const isValidLogo =

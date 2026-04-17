@@ -174,145 +174,141 @@ localStorage.setItem('hospitalId', JSON.stringify(HospitalId));
     }
 
     return (
-        // Outer container uses flex column and full viewport height to allow sticky footer without overflow
         <>
             <ToastContainer />
-            <div className="d-flex flex-column min-vh-100 derma-bg">
-                {/* Main content - will grow and keep footer at bottom */}
-                <div className="flex-grow-1 d-flex justify-content-center align-content-center align-items-center ">
-                    <CContainer fluid className="p-0 h-100   align-content-center align-items-center">
-                        {/* Use h-100 on the row so it occupies the available height (minus footer) */}
-                        <CRow className="g-0 h-100">
-                        
+            <div className="d-flex flex-column min-vh-100 position-relative align-items-center justify-content-center" style={{ background: `linear-gradient(135deg, #09203f 0%, #537895 100%)`, fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
+                
+                {/* Decorative background elements */}
+                <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40vw', height: '40vw', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>
+                <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40vw', height: '40vw', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>
 
-                            {/* RIGHT: Card + Tabs + Form */}
-                            <CCol md={6} className="d-flex align-items-center justify-content-center  md-5">
-                                <CCard className="shadow-lg border-0 glass-card w-100" style={{ maxWidth: 460 }}>
-                                    <CCardBody className="p-4 p-md-5">
-                                        <h3 className="text-center fw-bold mb-3" style={{ color: COLORS.primary }}>
-                                            Kinetix  Therapy Login
-                                        </h3>
-                                        
+                {/* Main content - flex center */}
+                <div className="w-100 d-flex flex-column align-items-center justify-content-center px-3" style={{ zIndex: 1, flex: 1 }}>
+                    <div className="text-center mb-4">
+                         <img src={DermaLogo} alt="Logo" style={{ maxHeight: '70px', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.2))' }} />
+                    </div>
+                    <CCard className="shadow-lg border-0" style={{ width: '100%', maxWidth: '420px', borderRadius: '24px', backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', padding: '10px' }}>
+                        <CCardBody className="p-4 p-md-5">
+                            <h4 className="text-center fw-bold mb-1" style={{ color: '#2c3e50', letterSpacing: '-0.5px' }}>Therapist Login</h4>
+                            <p className="text-center mb-4" style={{ color: '#6c757d', fontSize: '0.875rem' }}>Sign in to your account</p>
 
-                                   
-                                      
+                            {/* Error message */}
+                            {errorMessage && (
+                                <div className="alert alert-danger text-center py-2 mb-4" style={{ borderRadius: '12px', fontSize: '0.9rem' }}>{errorMessage}</div>
+                            )}
 
-                                        {/* Error message */}
-                                        {errorMessage && (
-                                            <div className="alert alert-danger text-center py-2 mb-3">{errorMessage}</div>
-                                        )}
+                            <CForm onSubmit={handleClinicLogin} noValidate>
+                                {/* Username */}
+                                <CInputGroup className="mb-3" style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                                    <CInputGroupText style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRight: 'none' }}>
+                                        <CIcon icon={cilUser} style={{ color: '#94a3b8' }} />
+                                    </CInputGroupText>
+                                    <CFormInput
+                                        placeholder="Username"
+                                        value={userName}
+                                        onChange={(e) => {
+                                            setUserName(e.target.value)
+                                            if (fieldErrors.userName)
+                                                setFieldErrors((p) => ({ ...p, userName: '' }))
+                                        }}
+                                        aria-invalid={!!fieldErrors.userName}
+                                        autoComplete="username"
+                                        style={{ border: '1px solid #e2e8f0', borderLeft: 'none', padding: '12px' }}
+                                    />
+                                </CInputGroup>
+                                {fieldErrors.userName && (
+                                    <small className="text-danger d-block mb-3 mt-n2">{fieldErrors.userName}</small>
+                                )}
 
-                                        {/* CLINIC TAB */}
-                                        
-                                            <CForm onSubmit={handleClinicLogin} noValidate>
-                                              
-                                                {/* Username */}
-                                                <CInputGroup className="mb-2">
-                                                    <CInputGroupText>
-                                                        <CIcon icon={cilUser} />
-                                                    </CInputGroupText>
-                                                    <CFormInput
-                                                        placeholder="Username"
-                                                        value={userName}
-                                                        onChange={(e) => {
-                                                            setUserName(e.target.value)
-                                                            if (fieldErrors.userName)
-                                                                setFieldErrors((p) => ({ ...p, userName: '' }))
-                                                        }}
-                                                        aria-invalid={!!fieldErrors.userName}
-                                                        autoComplete="username"
-                                                    />
-                                                </CInputGroup>
-                                                {fieldErrors.userName && (
-                                                    <small className="text-danger">{fieldErrors.userName}</small>
-                                                )}
+                                {/* Password */}
+                                <CInputGroup className="mb-3 mt-2" style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                                    <CInputGroupText
+                                        onClick={() => setShowPassword((s) => !s)}
+                                        style={{ cursor: 'pointer', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRight: 'none' }}
+                                        title={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} style={{ color: '#94a3b8' }} />
+                                    </CInputGroupText>
+                                    <CFormInput
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="Password"
+                                        value={password}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value)
+                                            if (fieldErrors.password)
+                                                setFieldErrors((p) => ({ ...p, password: '' }))
+                                        }}
+                                        aria-invalid={!!fieldErrors.password}
+                                        autoComplete="current-password"
+                                        style={{ border: '1px solid #e2e8f0', borderLeft: 'none', padding: '12px' }}
+                                    />
+                                </CInputGroup>
+                                {fieldErrors.password && (
+                                    <small className="text-danger d-block mb-3 mt-n2">{fieldErrors.password}</small>
+                                )}
 
-                                                {/* Password */}
-                                                <CInputGroup className="mt-3 mb-2">
-                                                    <CInputGroupText
-                                                        onClick={() => setShowPassword((s) => !s)}
-                                                        style={{ cursor: 'pointer' }}
-                                                        title={showPassword ? 'Hide password' : 'Show password'}
-                                                    >
-                                                        <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
-                                                    </CInputGroupText>
-                                                    <CFormInput
-                                                        type={showPassword ? 'text' : 'password'}
-                                                        placeholder="Password"
-                                                        value={password}
-                                                        onChange={(e) => {
-                                                            setPassword(e.target.value)
-                                                            if (fieldErrors.password)
-                                                                setFieldErrors((p) => ({ ...p, password: '' }))
-                                                        }}
-                                                        aria-invalid={!!fieldErrors.password}
-                                                        autoComplete="current-password"
-                                                    />
-                                                </CInputGroup>
-                                                {fieldErrors.password && (
-                                                    <small className="text-danger">{fieldErrors.password}</small>
-                                                )}
+                                <div className="d-flex justify-content-between align-items-center mt-2 mb-4">
+                                    <a
+                                        href="#"
+                                        className="text-decoration-none"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            setShowResetModal(true)
+                                        }}
+                                        style={{ color: COLORS.primary, fontSize: '0.85rem', fontWeight: '500' }}
+                                    >
+                                        Forgot password?
+                                    </a>
+                                </div>
 
-                                                <div
-                                                    className="d-flex justify-content-between mt-2"
-                                                    style={{ color: COLORS.primary }}
-                                                >
-                                                    <a
-                                                        style={{ color: COLORS.primary }}
-                                                        href="#"
-                                                        className="text-decoration-none derma-link"
-                                                        onClick={(e) => {
-                                                            e.preventDefault()
-                                                            setShowResetModal(true)
-                                                        }}
-                                                    >
-                                                        Forgot password?
-                                                    </a>
-                                                </div>
-
-                                                <CButton
-                                                    type="submit"
-                                                    disabled={isLoading}
-                                                    className="w-100 mt-4 derma-btn"
-                                                    style={{ backgroundColor: COLORS.primary, color: 'white' }}
-                                                >
-                                                    {isLoading ? <CSpinner size="sm" /> : 'Login'}
-                                                </CButton>
-                                            </CForm>
-                                 
-                                    </CCardBody>
-                                </CCard>
-                            </CCol>
-                        </CRow>
-                    </CContainer>
+                                <CButton
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-100"
+                                    style={{ 
+                                        backgroundColor: COLORS.primary, 
+                                        color: 'white', 
+                                        border: 'none', 
+                                        borderRadius: '12px', 
+                                        padding: '12px', 
+                                        fontWeight: '600',
+                                        boxShadow: '0 4px 10px rgba(0, 97, 194, 0.3)',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    {isLoading ? <CSpinner size="sm" /> : 'Sign In'}
+                                </CButton>
+                            </CForm>
+                        </CCardBody>
+                    </CCard>
                 </div>
 
                 {/* Sticky Footer */}
                 <footer
-                    className="d-flex justify-content-around small py-2 opacity-75 mt-auto"
-                    style={{ color: COLORS.primary, backgroundColor: '#f8f9fa' }}
+                    className="d-flex justify-content-around small py-3 mt-auto w-100"
+                    style={{ color: 'rgba(255, 255, 255, 0.7)', zIndex: 1, backgroundColor: 'transparent' }}
                 >
-                    <span
-                        className="d-inline-flex align-items-center gap-2"
-                        style={{ color: COLORS.primary }}
-                    >
+                    <span className="d-inline-flex align-items-center gap-2">
                         <CIcon icon={cilShieldAlt} /> Secure by design
                     </span>
-                    <span style={{ color: COLORS.primary }}>
+                    <span>
                         © {new Date().getFullYear()} Chiselon Technologies
                     </span>
                     <a
                         href="https://chiselontechnologies.com"
                         target="_blank"
-                        style={{ color: COLORS.primary }}
                         rel="noreferrer"
+                        style={{ color: 'rgba(255, 255, 255, 0.7)', textDecoration: 'none' }}
+                        onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                        onMouseOut={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'}
                     >
                         About Chiselon Technologies
                     </a>
                 </footer>
 
-                {/* Reset Modal */}
-           
+                {/* Reset Modal Placeholder */}
             </div>
         </>
     )

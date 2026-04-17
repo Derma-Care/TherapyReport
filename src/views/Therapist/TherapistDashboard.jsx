@@ -24,216 +24,11 @@ import { getClinicData, getDashboard, getSessionDetails } from './TheraphyApi'
 import PatientViewModal from './PatientViewModal'
 import capitalizeWords from '../../Utils/capitalizeWords'
 
-// ─── Dummy exercise/session data (fallback when API has no therapyWithSessions) ─
-const DUMMY_THERAPY_DATA = [
-  {
-    exerciseId: 'E1',
-    exerciseName: 'Shoulder Rotation',
-    frequency: '2/day',
-    noOfSessions: 10,
-    pricePerSession: 200,
-    repetitions: 15,
-    sets: 3,
-    totalSessionCost: 2000,
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    sessions: [
-      { date: '4/8/2026',  status: 'Pending', sessionsId: 'E1_1' },
-      { date: '4/9/2026',  status: 'Paid',    sessionsId: 'E1_2' },
-      { date: '4/10/2026', status: 'Pending', sessionsId: 'E1_3' },
-      { date: '4/11/2026', status: 'Pending', sessionsId: 'E1_4' },
-      { date: '4/12/2026', status: 'Pending', sessionsId: 'E1_5' },
-    ],
-  },
-  {
-    exerciseId: 'E2',
-    exerciseName: 'Arm Circles',
-    frequency: '3/day',
-    noOfSessions: 5,
-    pricePerSession: 150,
-    repetitions: 10,
-    sets: 2,
-    totalSessionCost: 750,
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    sessions: [
-      { date: '4/8/2026',  status: 'Pending', sessionsId: 'E2_1' },
-      { date: '4/9/2026',  status: 'Paid',    sessionsId: 'E2_2' },
-      { date: '4/10/2026', status: 'Pending', sessionsId: 'E2_3' },
-    ],
-  },
-]
 
-// ─── Session dot ──────────────────────────────────────────────────────────────
-const SessionDot = ({ session, index }) => {
-  const { status, date } = session
-  let bg = '#f3f4f6', color = '#9ca3af', border = '#d1d5db'
-  if (status === 'Done') { bg = '#d1fae5'; color = '#065f46'; border = '#6ee7b7' }
-  if (status === 'Paid') { bg = '#d1fae5'; color = '#065f46'; border = '#10b981' }
-  return (
-    <div
-      title={`${date} — ${status}`}
-      style={{
-        width: 30, height: 30, borderRadius: '50%',
-        background: bg, color, border: `1.5px solid ${border}`,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 600, margin: 2, cursor: 'pointer',
-      }}
-    >
-      {index + 1}
-    </div>
-  )
-}
 
-// ─── Exercise accordion ───────────────────────────────────────────────────────
-const ExerciseAccordion = ({ exercises }) => {
-  const [openIdx, setOpenIdx]     = useState(null)
-  const [startTime, setStartTime] = useState({})
-  const [endTime, setEndTime]     = useState({})
-  const [setsDone, setSetsDone]   = useState({})
-  const [repsDone, setRepsDone]   = useState({})
-  const [recording, setRecording] = useState({})
 
-  const handleSubmit = (ex) => {
-    alert(
-      `Session submitted for "${ex.exerciseName}":\n` +
-      `Start: ${startTime[ex.exerciseId] || '—'}\n` +
-      `End:   ${endTime[ex.exerciseId]   || '—'}\n` +
-      `Sets done: ${setsDone[ex.exerciseId] || 0}\n` +
-      `Reps done: ${repsDone[ex.exerciseId] || 0}`
-    )
-  }
 
-  return (
-    <div className="mt-3">
-      <small className="text-muted fw-semibold">THERAPY EXERCISES</small>
-      {exercises.map((ex, idx) => (
-        <CCard key={ex.exerciseId || idx} className="mt-2" style={{ border: '1px solid #dee2e6' }}>
-          <CCardBody className="p-2">
 
-            {/* Header */}
-            <div
-              className="d-flex justify-content-between align-items-center"
-              style={{ cursor: 'pointer' }}
-              onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-            >
-              <div className="d-flex align-items-center gap-2">
-                <strong style={{ fontSize: 13 }}>{ex.exerciseName}</strong>
-                <CBadge color="success" style={{ fontSize: 10 }}>{ex.frequency}</CBadge>
-              </div>
-              <div className="d-flex align-items-center gap-3">
-                <small className="text-muted">
-                  {ex.sets}s · {ex.repetitions}r · {ex.noOfSessions} sessions · ₹{(ex.totalSessionCost || 0).toLocaleString()}
-                </small>
-                <small>{openIdx === idx ? '▲' : '▼'}</small>
-              </div>
-            </div>
-
-            {/* Expanded */}
-            <CCollapse visible={openIdx === idx}>
-              <hr className="my-2" />
-
-              {/* Stat pills */}
-              <div className="d-flex flex-wrap gap-1 mb-3">
-                {[
-                  ['Sets', ex.sets],
-                  ['Reps', ex.repetitions],
-                  ['Sessions', ex.noOfSessions],
-                  ['₹/session', ex.pricePerSession],
-                  ['Total', `₹${(ex.totalSessionCost || 0).toLocaleString()}`],
-                ].map(([k, v]) => (
-                  <span key={k} style={{ fontSize: 11, padding: '2px 10px', background: '#f3f4f6', border: '0.5px solid #e5e7eb', borderRadius: 20, color: '#374151' }}>
-                    {k}: <strong>{v}</strong>
-                  </span>
-                ))}
-              </div>
-
-              {/* Session dots */}
-              <div className="mb-1">
-                <small className="text-muted">
-                  Sessions —&nbsp;
-                  <span style={{ color: '#065f46' }}>● Done / Paid</span>&nbsp;&nbsp;
-                  <span style={{ color: '#9ca3af' }}>● Pending</span>
-                </small>
-              </div>
-              <div className="d-flex flex-wrap mb-3">
-                {(ex.sessions || []).map((s, si) => (
-                  <SessionDot key={s.sessionsId || si} session={s} index={si} />
-                ))}
-              </div>
-
-              {/* Time inputs */}
-              <CRow className="g-2 mb-2">
-                <CCol xs={12} sm={4}>
-                  <CFormLabel style={{ fontSize: 12, marginBottom: 2 }}>Start Time</CFormLabel>
-                  <CFormInput
-                    type="time"
-                    size="sm"
-                    value={startTime[ex.exerciseId] || ''}
-                    onChange={(e) => setStartTime((p) => ({ ...p, [ex.exerciseId]: e.target.value }))}
-                  />
-                </CCol>
-                <CCol xs={12} sm={4}>
-                  <CFormLabel style={{ fontSize: 12, marginBottom: 2 }}>End Time</CFormLabel>
-                  <CFormInput
-                    type="time"
-                    size="sm"
-                    value={endTime[ex.exerciseId] || ''}
-                    onChange={(e) => setEndTime((p) => ({ ...p, [ex.exerciseId]: e.target.value }))}
-                  />
-                </CCol>
-              </CRow>
-
-              {/* Sets / Reps done */}
-              <CRow className="g-2 mb-3">
-                <CCol xs={6} sm={3}>
-                  <CFormLabel style={{ fontSize: 12, marginBottom: 2 }}>Sets Done</CFormLabel>
-                  <CFormSelect
-                    size="sm"
-                    value={setsDone[ex.exerciseId] || 0}
-                    onChange={(e) => setSetsDone((p) => ({ ...p, [ex.exerciseId]: e.target.value }))}
-                  >
-                    {Array.from({ length: ex.sets + 1 }, (_, i) => (
-                      <option key={i} value={i}>{i}</option>
-                    ))}
-                  </CFormSelect>
-                </CCol>
-                <CCol xs={6} sm={3}>
-                  <CFormLabel style={{ fontSize: 12, marginBottom: 2 }}>Reps Done</CFormLabel>
-                  <CFormSelect
-                    size="sm"
-                    value={repsDone[ex.exerciseId] || 0}
-                    onChange={(e) => setRepsDone((p) => ({ ...p, [ex.exerciseId]: e.target.value }))}
-                  >
-                    {Array.from({ length: ex.repetitions + 1 }, (_, i) => (
-                      <option key={i} value={i}>{i}</option>
-                    ))}
-                  </CFormSelect>
-                </CCol>
-              </CRow>
-
-              {/* Action buttons */}
-              <div className="d-flex flex-wrap gap-2">
-                <CButton color="success" size="sm" onClick={() => handleSubmit(ex)}>✓ Mark Complete</CButton>
-                <CButton
-                  color={recording[ex.exerciseId] ? 'danger' : 'secondary'}
-                  size="sm"
-                  onClick={() => setRecording((p) => ({ ...p, [ex.exerciseId]: !p[ex.exerciseId] }))}
-                >
-                  {recording[ex.exerciseId] ? '⏹ Stop Recording' : '🎙 Audio Record'}
-                </CButton>
-                {ex.youtubeUrl && (
-                  <CButton color="danger" variant="outline" size="sm" onClick={() => window.open(ex.youtubeUrl, '_blank')}>
-                    ▶ Watch Exercise
-                  </CButton>
-                )}
-                <CButton color="primary" size="sm" onClick={() => handleSubmit(ex)}>Submit Session</CButton>
-              </div>
-            </CCollapse>
-          </CCardBody>
-        </CCard>
-      ))}
-    </div>
-  )
-}
 
 // ─── Patient Row ──────────────────────────────────────────────────────────────
 // ✅ KEY FIX: handleViewDetails calls getSessionDetails API first,
@@ -245,10 +40,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
   const [showExercises, setShowExercises] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
 
-  const exercises =
-    p?.therapyWithSessions?.therophyData?.length
-      ? p.therapyWithSessions.therophyData
-      : DUMMY_THERAPY_DATA
+
 
   // ✅ Fetch full patient record before opening modal
   const handleViewDetails = async () => {
@@ -293,7 +85,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             <br />
             Doctor: {p.doctorName || 'N/A'}
             <br />
-            Program: {p.programName || 'N/A'}
+            serivceType: {p.serivceType || 'N/A'}
             <br />
             Mobile: {p.mobileNumber || 'N/A'}
             <br />
@@ -302,8 +94,8 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
                 p.overallStatus?.toLowerCase() === 'completed'
                   ? 'success'
                   : p.overallStatus?.toLowerCase() === 'active'
-                  ? 'warning'
-                  : 'secondary'
+                    ? 'warning'
+                    : 'secondary'
               }
             >
               {p.overallStatus || 'Pending'}
@@ -343,21 +135,10 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
               Sessions
             </CButton>
 
-            <CButton
-              size="sm"
-              color="dark"
-              variant="outline"
-              onClick={() => setShowExercises((v) => !v)}
-            >
-              {showExercises ? '▲ Exercises' : '▼ Exercises'}
-            </CButton>
+
           </div>
         </div>
 
-        {/* ✅ Exercise accordion */}
-        <CCollapse visible={showExercises}>
-          <ExerciseAccordion exercises={exercises} />
-        </CCollapse>
       </CCardBody>
     </CCard>
   )
@@ -448,108 +229,206 @@ const TherapyDashboard = () => {
         ) : (
           <>
             {/* ✅ Therapist Cards + Stats Row */}
-            <CRow className="g-3">
-
-              {/* ✅ Therapist/Doctor Cards */}
-              {list.length === 0 ? (
-                <CCol md={3}>
-                  <CCard className="p-3 text-center h-100">
-                    <h5>No Therapist Data Found</h5>
-                  </CCard>
+      <CRow
+  className="g-3 flex-nowrap overflow-auto pb-2"
+  style={{
+    whiteSpace: "nowrap",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+  }}
+>
+  {/* Therapist / Doctor Cards */}
+  {list.length === 0 ? (
+    <CCol
+      xs="10"
+      sm="6"
+      md="3"
+      style={{ flex: "0 0 auto", minWidth: "220px" }}
+    >
+      <CCard className="p-3 text-center h-100">
+        <h6>No Therapist Data Found</h6>
+      </CCard>
+    </CCol>
+  ) : (
+    list.map((item, index) => (
+      <CCol
+        key={index}
+        xs="10"
+        sm="6"
+        md="3"
+        className="d-flex"
+        style={{ flex: "0 0 auto", minWidth: "220px" }}
+      >
+        <CCard
+          className="w-100 h-100 shadow-sm"
+          style={{ borderRadius: "12px" }}
+        >
+          <CCardBody className="p-2">
+            <div>
+              <CRow className="align-items-center g-2">
+                <CCol xs={4} className="text-center">
+                  <img
+                    src={
+                      item?.documents?.profilePhoto
+                        ? `data:image/jpeg;base64,${item.documents.profilePhoto}`
+                        : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    }
+                    alt="profile"
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                  />
                 </CCol>
-              ) : (
-                list.map((item, index) => (
-                  <CCol md={3} key={index} className="d-flex">
-                    <CCard className="w-100 h-100 shadow-sm" style={{ borderRadius: '12px' }}>
-                      <CCardBody className="d-flex flex-column justify-content-between">
-                        <div>
-                          <CRow className="align-items-center">
-                            <CCol xs={4} className="text-center">
-                              <img
-                                src={
-                                  item?.documents?.profilePhoto
-                                    ? `data:image/jpeg;base64,${item.documents.profilePhoto}`
-                                    : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
-                                }
-                                alt="profile"
-                                style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }}
-                              />
-                            </CCol>
-                            <CCol xs={8}>
-                              <h6 style={{ margin: 0 }}>{capitalizeWords(item?.fullName)}</h6>
-                              <small>{item?.qualification}</small>
-                              <p style={{ fontSize: '12px' }}>{item?.specializations?.join(', ')}</p>
-                            </CCol>
-                          </CRow>
-                        </div>
-                        <div className="text-end">
-                          <CButton size="sm" color="primary" onClick={() => navigate('/therapist-details', { state: item })}>
-                            View
-                          </CButton>
-                        </div>
-                      </CCardBody>
-                    </CCard>
-                  </CCol>
-                ))
-              )}
 
-              {/* ✅ Today's Appointments */}
-              <CCol md={3} className="d-flex">
-                <CCard color="primary" textColor="white" className="w-100 h-100">
-                  <CCardBody className="d-flex flex-column justify-content-center text-center">
-                    <h6>Today's Appointments</h6>
-                    <h2>{stats?.todayCount || 0}</h2>
-                    <small>{stats?.todayTime || 0} min</small>
-                  </CCardBody>
-                </CCard>
-              </CCol>
+                <CCol xs={8}>
+                  <h6
+                    className="mb-0"
+                    style={{
+                      fontSize: "13px",
+                      whiteSpace: "normal",
+                    }}
+                  >
+                    {capitalizeWords(item?.fullName)}
+                  </h6>
 
-              {/* ✅ Weekly Appointments */}
-              <CCol md={3} className="d-flex">
-                <CCard color="success" textColor="white" className="w-100 h-100">
-                  <CCardBody className="d-flex flex-column justify-content-center text-center">
-                    <h6>Weekly Appointment</h6>
-                    <h2>{stats?.weekCount || 0}</h2>
-                    <small>{stats?.weekTime || 0} min</small>
-                  </CCardBody>
-                </CCard>
-              </CCol>
+                  <small style={{ fontSize: "11px" }}>
+                    {item?.qualification}
+                  </small>
 
-              {/* ✅ Monthly Appointments */}
-              <CCol md={3} className="d-flex">
-                <CCard color="warning" textColor="white" className="w-100 h-100">
-                  <CCardBody className="d-flex flex-column justify-content-center text-center">
-                    <h6>Monthly Appointments</h6>
-                    <h2>{stats?.monthCount || 0}</h2>
-                    <small>{stats?.monthTime || 0} min</small>
-                  </CCardBody>
-                </CCard>
-              </CCol>
+                  <p
+                    className="mb-1"
+                    style={{
+                      fontSize: "10px",
+                      whiteSpace: "normal",
+                    }}
+                  >
+                    {item?.specializations?.join(", ")}
+                  </p>
+                </CCol>
+              </CRow>
+            </div>
 
-            </CRow>
+            <div className="text-end mt-2">
+              <CButton
+                size="sm"
+                color="primary"
+                onClick={() =>
+                  navigate("/therapist-details", { state: item })
+                }
+              >
+                View
+              </CButton>
+            </div>
+          </CCardBody>
+        </CCard>
+      </CCol>
+    ))
+  )}
+
+  {/* Today's Appointments */}
+  <CCol
+    xs="10"
+    sm="6"
+    md="3"
+    className="d-flex"
+    style={{ flex: "0 0 auto", minWidth: "220px" }}
+  >
+    <CCard color="primary" textColor="white" className="w-100 h-100">
+      <CCardBody className="text-center py-3 px-2">
+        <h6 className="mb-1" style={{ fontSize: "14px" }}>
+          Today's Appointments
+        </h6>
+        <h2 className="mb-1">{stats?.todayCount || 0}</h2>
+        <small>{stats?.todayTime || 0} min</small>
+      </CCardBody>
+    </CCard>
+  </CCol>
+
+  {/* Weekly */}
+  <CCol
+    xs="10"
+    sm="6"
+    md="3"
+    className="d-flex"
+    style={{ flex: "0 0 auto", minWidth: "220px" }}
+  >
+    <CCard color="success" textColor="white" className="w-100 h-100">
+      <CCardBody className="text-center py-3 px-2">
+        <h6 className="mb-1" style={{ fontSize: "14px" }}>
+          Weekly Appointment
+        </h6>
+        <h2 className="mb-1">{stats?.weekCount || 0}</h2>
+        <small>{stats?.weekTime || 0} min</small>
+      </CCardBody>
+    </CCard>
+  </CCol>
+
+  {/* Monthly */}
+  <CCol
+    xs="10"
+    sm="6"
+    md="3"
+    className="d-flex"
+    style={{ flex: "0 0 auto", minWidth: "220px" }}
+  >
+    <CCard color="warning" textColor="white" className="w-100 h-100">
+      <CCardBody className="text-center py-3 px-2">
+        <h6 className="mb-1" style={{ fontSize: "14px" }}>
+          Monthly Appointments
+        </h6>
+        <h2 className="mb-1">{stats?.monthCount || 0}</h2>
+        <small>{stats?.monthTime || 0} min</small>
+      </CCardBody>
+    </CCard>
+  </CCol>
+</CRow>
 
             {/* ✅ Sessions / Patients Section */}
             <CCard className="mt-4">
               <CCardBody>
 
                 {/* ✅ Tab Navigation */}
-                <CNav variant="tabs" className="mb-3">
-                  <CNavItem>
-                    <CNavLink active={tab === 1} onClick={() => setTab(1)} style={{ cursor: 'pointer' }}>
-                      New Sessions
-                    </CNavLink>
-                  </CNavItem>
-                  <CNavItem>
-                    <CNavLink active={tab === 2} onClick={() => setTab(2)} style={{ cursor: 'pointer' }}>
-                      Active Sessions
-                    </CNavLink>
-                  </CNavItem>
-                  <CNavItem>
-                    <CNavLink active={tab === 3} onClick={() => setTab(3)} style={{ cursor: 'pointer' }}>
-                      Completed Sessions
-                    </CNavLink>
-                  </CNavItem>
-                </CNav>
+             <CNav
+  variant="tabs"
+  className="mb-3 flex-nowrap overflow-auto"
+  style={{
+    whiteSpace: "nowrap",
+    scrollbarWidth: "none",
+  }}
+>
+  <CNavItem style={{ flex: "0 0 auto" }}>
+    <CNavLink
+      active={tab === 1}
+      onClick={() => setTab(1)}
+      style={{ cursor: "pointer" }}
+    >
+      New Sessions
+    </CNavLink>
+  </CNavItem>
+
+  <CNavItem style={{ flex: "0 0 auto" }}>
+    <CNavLink
+      active={tab === 2}
+      onClick={() => setTab(2)}
+      style={{ cursor: "pointer" }}
+    >
+      Active Sessions
+    </CNavLink>
+  </CNavItem>
+
+  <CNavItem style={{ flex: "0 0 auto" }}>
+    <CNavLink
+      active={tab === 3}
+      onClick={() => setTab(3)}
+      style={{ cursor: "pointer" }}
+    >
+      Completed Sessions
+    </CNavLink>
+  </CNavItem>
+</CNav>
 
                 <h5>Patients</h5>
 
