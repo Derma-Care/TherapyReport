@@ -106,16 +106,16 @@ export default function SessionFormModal({
         completedDate: now.toLocaleDateString(),
         completedTime: now.toLocaleTimeString(),
 
-        duration: data.duration,
+
         // exercises: data.exercises,
 
         painBefore,
         painAfter,
-        sessionTime:data.sessionTime,
-        voiceRecordUrl:data.voiceRecordUrl,
-        
-        completedSets,
-        completedRepitations,
+        duration: data.sessionTime,
+        voiceRecord: data.voiceRecordUrl,
+
+        setsDone: completedSets,
+        repetationDone: completedRepitations,
 
         therapistNotes: notes,
         // patientResponse: data.patientResponse,
@@ -267,40 +267,40 @@ export default function SessionFormModal({
 
         {/* Header info */}
 
-        <CRow>
-
-          <CCol md={6}>
-            <b>Patient :</b> {data.patientName}
+        <CRow className="g-3 mb-3 p-2 bg-light rounded text-break">
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Patient</span>
+            <span className="fw-bold">{data.patientName || 'N/A'}</span>
           </CCol>
-
-          <CCol md={6}>
-            <b>serviceType :</b> {data.serviceType}
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Service Type</span>
+            <span className="fw-bold">{data.serviceType || 'N/A'}</span>
           </CCol>
-
-          <CCol md={6}>
-            <b>Date :</b> {new Date().toLocaleDateString()}
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Session ID</span>
+            <span className="fw-bold">{data.sessionId || 'N/A'}</span>
           </CCol>
-
-          <CCol md={6}>
-            <b>Time :</b> {new Date().toLocaleTimeString()}
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Therapist Record ID</span>
+            <span className="fw-bold">{data.therapistRecordId || 'N/A'}</span>
           </CCol>
-          <CCol md={6}>
-            <b>SessionId :</b> {data.sessionId}
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Date</span>
+            <span className="fw-bold">{new Date().toLocaleDateString()}</span>
           </CCol>
-          <CCol md={6}>
-            <b>Therapist RecordId :</b> {data.therapistRecordId}
+          <CCol xs={12} sm={6} md={4}>
+            <span className="text-muted d-block mb-1" style={{ fontSize: '0.8rem' }}>Time</span>
+            <span className="fw-bold">{new Date().toLocaleTimeString()}</span>
           </CCol>
-
         </CRow>
 
         <hr />
 
         {/* Doctor notes */}
 
-        <b>Doctor Notes</b>
-
-        <div className="mb-2">
-          {data.doctorNotes}
+        <h6 className="fw-bold mt-4">Doctor Notes</h6>
+        <div className="mb-4 p-3 bg-light border rounded text-muted">
+          {data.doctorNotes || 'No notes available.'}
         </div>
 
         <hr />
@@ -308,7 +308,8 @@ export default function SessionFormModal({
         {/* Therapist notes */}
 
         <CFormTextarea
-          label="Therapist Notes"
+          label={<span className="fw-bold fs-6">Therapist Notes <span className="text-danger">*</span></span>}
+          rows={3}
           value={notes}
           onChange={(e) => {
             setNotes(e.target.value)
@@ -320,12 +321,9 @@ export default function SessionFormModal({
           <small style={{ color: "red" }}>{error.notes}</small>
         )}
         {/* Pain scale */}
-
-        <CRow className="mt-3">
-
-          <CCol md={6}>
-
-            <label>Pain Before</label>
+        <CRow className="g-3 mt-3">
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Pain Before <span className="text-danger">*</span></label>
 
             <CFormSelect
               value={painBefore}
@@ -354,9 +352,8 @@ export default function SessionFormModal({
           </CCol>
 
 
-          <CCol md={6}>
-
-            <label>Pain After</label>
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Pain After <span className="text-danger">*</span></label>
 
             <CFormSelect
               value={painAfter}
@@ -388,32 +385,33 @@ export default function SessionFormModal({
         <hr />
 
         {/* Result */}
+        <div className="mt-4">
+          <label className="fw-bold mb-1">Session Result <span className="text-danger">*</span></label>
 
-        <label>Session Result</label>
-
-        <CFormSelect
-          value={result}
-          onChange={(e) => {
-            setResult(e.target.value)
-            setError((prev) => ({ ...prev, result: "" }))
-          }}
-          invalid={!!error.result}
-        >
-          <option value="">Select</option>
-          <option>Completed</option>
-          <option>Partially Completed</option>
-          <option>Skipped</option>
-          <option>Patient not available</option>
-        </CFormSelect>
+          <CFormSelect
+            value={result}
+            onChange={(e) => {
+              setResult(e.target.value)
+              setError((prev) => ({ ...prev, result: "" }))
+            }}
+            invalid={!!error.result}
+          >
+            <option value="">Select</option>
+            <option>Completed</option>
+            <option>Partially Completed</option>
+            <option>Skipped</option>
+            <option>Patient not available</option>
+          </CFormSelect>
+        </div>
         {error.result && (
           <small style={{ color: "red" }}>{error.result}</small>
         )}
         <hr />
 
         {/* Sets and Reps */}
-        <CRow className="mt-3 mb-3">
-          <CCol md={6}>
-            <label>Completed Sets</label>
+        <CRow className="g-3 mt-3 mb-4">
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Completed Sets</label>
             <CFormInput
               type="number"
               min="0"
@@ -422,8 +420,8 @@ export default function SessionFormModal({
               onChange={(e) => setCompletedSets(e.target.value)}
             />
           </CCol>
-          <CCol md={6}>
-            <label>Completed Repetitions</label>
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Completed Repetitions</label>
             <CFormInput
               type="number"
               min="0"
@@ -436,22 +434,23 @@ export default function SessionFormModal({
         <hr />
 
         {/* Next plan */}
+        <div className="mb-4">
+          <CFormTextarea
+            label={<span className="fw-bold mb-1 mt-1">Next Session Plan</span>}
+            rows={2}
+            value={nextPlan}
+            onChange={(e) =>
+              setNextPlan(e.target.value)
+            }
+          />
+        </div>
 
-        <CFormTextarea
-          label="Next Session Plan"
-          value={nextPlan}
-          onChange={(e) =>
-            setNextPlan(e.target.value)
-          }
-        />
-
-        <hr />
+        <hr className="my-4" />
 
         {/* Images */}
-
-        <CRow>
-          <CCol md={6}>
-            <label>Before Image</label>
+        <CRow className="g-3 mb-4">
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Before Image <span className="text-danger">*</span></label>
 
             <CFormInput
               type="file"
@@ -465,8 +464,8 @@ export default function SessionFormModal({
             )}
           </CCol>
 
-          <CCol md={6}>
-            <label>After Image</label>
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">After Image <span className="text-danger">*</span></label>
 
             <CFormInput
               type="file"
@@ -484,10 +483,9 @@ export default function SessionFormModal({
         <hr />
 
         {/* Videos */}
-
-        <CRow>
-          <CCol md={6}>
-            <label>Before Video</label>
+        <CRow className="g-3 mb-4">
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">Before Video</label>
             <CFormInput
               type="file"
               accept="video/*" // 🔥 restrict file picker to videos
@@ -498,8 +496,8 @@ export default function SessionFormModal({
             )}
           </CCol>
 
-          <CCol md={6}>
-            <label>After Video</label>
+          <CCol xs={12} md={6}>
+            <label className="fw-bold mb-1">After Video</label>
             <CFormInput
               type="file"
               accept="video/*"
@@ -512,7 +510,7 @@ export default function SessionFormModal({
         </CRow>
 
         <hr />
-        <div className="d-flex justify-content-end w-100">
+        <div className="d-flex justify-content-end w-100 mt-4 mb-2">
           <CButton
             color="success"
             onClick={save}

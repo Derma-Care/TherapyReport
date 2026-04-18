@@ -39,7 +39,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             {[
               { label: "Patient", value: data.patientName },
               { label: "Therapy", value: data.therapy },
-              { label: "Date", value: data.date },
+              { label: "Date", value: data.completedDate },
               { label: "Time", value: data.completedTime },
               { label: "Patient ID", value: data.patientId },
               { label: "Booking ID", value: data.bookingId },
@@ -172,12 +172,24 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   </CModal>
 )} */}
       {preview && (
-        <CModal visible size="xl" onClose={() => setPreview(null)}>
-          <CModalBody style={{ textAlign: "center" }}>
+        <CModal
+          visible
+          size="xl"
+          onClose={() => setPreview(null)}
+          className="preview-modal"
+        >
+          <CModalBody className="preview-body">
+            <button
+              className="preview-close"
+              onClick={() => setPreview(null)}
+            >
+              ×
+            </button>
+
             {preview.startsWith("data:video") ? (
-              <video src={preview} controls style={{ width: "100%" }} />
+              <video src={preview} controls autoPlay />
             ) : (
-              <img src={preview} style={{ width: "100%" }} />
+              <img src={preview} alt="Preview" />
             )}
           </CModalBody>
         </CModal>
@@ -206,9 +218,180 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   font-size: 14px;
   color: #212529;
 }
-    `
+ 
+            /* Main Modal */
+            .custom - modal.modal - dialog {
+          max - width: 95%;
+}
+
+        .custom-modal .modal-content {
+          border - radius: 14px;
+        overflow: hidden;
+}
+
+        /* Section Title */
+        .section-title {
+          font - size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #222;
+        border-bottom: 2px solid #f1f1f1;
+        padding-bottom: 6px;
+}
+
+        /* Info Box */
+        .info-box {
+          background: #f8f9fa;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        margin-bottom: 12px;
+        min-height: 72px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+}
+
+        .label {
+          font - size: 12px;
+        color: #6c757d;
+        margin-bottom: 4px;
+}
+
+        .value {
+          font - weight: 600;
+        font-size: 14px;
+        color: #212529;
+        word-break: break-word;
+}
+
+        /* Notes */
+        .note-box {
+          background: #fff;
+        border: 1px solid #eee;
+        border-left: 4px solid #0d6efd;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+}
+
+        .note-box p {
+          margin: 6px 0 0;
+        font-size: 14px;
+        color: #444;
+}
+
+        /* Media */
+        .media-box {
+          border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fafafa;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+}
+
+        .media-box img,
+        .media-box video {
+          width: 100%;
+        max-height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+}
+
+        /* Full Preview Modal */
+        .preview-modal .modal-dialog {
+          max - width: 95vw;
+        margin: auto;
+}
+
+        .preview-modal .modal-content {
+          background: #000;
+        border-radius: 14px;
+        overflow: hidden;
+}
+
+        .preview-body {
+          padding: 15px;
+        text-align: center;
+        position: relative;
+}
+
+        .preview-body img,
+        .preview-body video {
+          max - width: 100%;
+        max-height: 85vh;
+        border-radius: 10px;
+        object-fit: contain;
+}
+
+        /* Close Button */
+        .preview-close {
+          position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255,255,255,0.9);
+        color: #000;
+        border: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        font-size: 22px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1000;
+        transition: 0.2s;
+}
+
+        .preview-close:hover {
+          background: #fff;
+        transform: scale(1.08);
+}
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+  .section - title {
+          font - size: 16px;
+  }
+
+        .info-box {
+          min - height: auto;
+        padding: 10px;
+  }
+
+        .label {
+          font - size: 11px;
+  }
+
+        .value {
+          font - size: 13px;
+  }
+
+        .media-box {
+          min - height: 140px;
+  }
+
+        .media-box img,
+        .media-box video {
+          max - height: 150px;
+  }
+
+        .preview-close {
+          width: 34px;
+        height: 34px;
+        font-size: 20px;
+        top: 8px;
+        right: 8px;
+  }
+}
+ 
+      `
         }
-      </style>
+      </style >
     </>
   )
 }

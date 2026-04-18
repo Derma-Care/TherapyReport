@@ -25,7 +25,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
 
   return (
     <>
-      <CModal visible={visible} onClose={onClose} size="xl" backdrop="static">
+      <CModal visible={visible} onClose={onClose} size="xl" backdrop="static" className="custom-modal">
         <CModalHeader>
           <CModalTitle>Patient Details</CModalTitle>
         </CModalHeader>

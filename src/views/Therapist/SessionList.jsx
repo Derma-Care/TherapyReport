@@ -17,157 +17,157 @@ import {
 
 import { useLocation } from "react-router-dom"
 import SessionFormModal from "./SessionFormModal"
-import { getSessionDetails } from "./TheraphyApi"
+import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 
-const DUMMY_DATA = {
-  "bookingId": "BOOK123",
-  "patientId": "PAT123",
-  "doctorId": "DOC123",
-  "doctorName": "Dr. John (Physio)",
-  "therapistId": "THER123",
-  "therapistName": "Therapy_1",
-  "therapistRecordId": "REC123",
-  "serviceType": "PACKAGE",
-  "totalAmount": 1250,
-  "discountAmount": 100,
-  "finalAmount": 1150,
-  "totalPaid": 800,
-  "balanceAmount": 350,
-  "paymentStatus": "Partial",
-  "sessionStartDate": "14/04/2026",
-  "totalSessionCount": 25,
-  "noOfSessionCompletedCount": 3,
-  "noOfSessionCompletedStatus": false,
-  "sessionTableCreatedStatus": true,
-  "paymentHistory": [
-    {
-      "amount": 500,
-      "paymentMode": "CASH",
-      "paymentType": "Partial",
-      "paymentLevel": "PACKAGE",
-      "paymentDate": "14/04/2026"
-    },
-    {
-      "amount": 300,
-      "paymentMode": "UPI",
-      "paymentType": "Partial",
-      "paymentLevel": "SESSION",
-      "paymentDate": "16/04/2026"
-    }
-  ],
-  "therapyWithSessions": [
-    {
-      "packageId": "PACK001",
-      "packageName": "PACKAGE_1",
-      "totalPackagePrice": 1250,
-      "paymentStatus": "Partial",
-      "programs": [
-        {
-          "programId": "PROG001",
-          "programName": "PROGRAM_1",
-          "totalProgramPrice": 625,
-          "paymentStatus": "Partial",
-          "therapyData": [
-            {
-              "therapyId": "THER001",
-              "therapyName": "THERAPY_1",
-              "totalTherapyPrice": 425,
-              "paymentStatus": "Partial",
-              "exercises": [
-                {
-                  "exerciseId": "E1",
-                  "exerciseName": "Knee Flexion",
-                  "pricePerSession": 10,
-                  "noOfSessions": 10,
-                  "totalExercisePrice": 100,
-                  "paymentStatus": "Partial",
-                  "repetitions": 10,
-                  "frequency": "2/day",
-                  "sets": 2,
-                  "youtubeUrl": "",
-                  "sessions": [
-                    {
-                      "sessionId": "E1_1",
-                      "sessionNo": 1,
-                      "date": "14/04/2026",
-                      "status": "Completed",
-                      "paymentStatus": "Paid"
-                    },
-                    {
-                      "sessionId": "E1_2",
-                      "sessionNo": 2,
-                      "date": "15/04/2026",
-                      "status": "Completed",
-                      "paymentStatus": "Paid"
-                    },
-                    {
-                      "sessionId": "E1_3",
-                      "sessionNo": 3,
-                      "date": "16/04/2026",
-                      "status": "Pending",
-                      "paymentStatus": "Paid"
-                    }
-                  ]
-                },
-                {
-                  "exerciseId": "E2",
-                  "exerciseName": "Quad Strengthening",
-                  "pricePerSession": 20,
-                  "noOfSessions": 5,
-                  "totalExercisePrice": 100,
-                  "paymentStatus": "Partial",
-                  "repetitions": 12,
-                  "frequency": "3/day",
-                  "sets": 4,
-                  "youtubeUrl": "",
-                  "sessions": [
-                    {
-                      "sessionId": "E2_1",
-                      "sessionNo": 1,
-                      "date": "14/04/2026",
-                      "status": "Pending",
-                      "paymentStatus": "Paid"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "therapyId": "THER002",
-              "therapyName": "THERAPY_2",
-              "totalTherapyPrice": 200,
-              "paymentStatus": "Paid",
-              "exercises": [
-                {
-                  "exerciseId": "E3",
-                  "exerciseName": "Hamstring Stretch",
-                  "pricePerSession": 20,
-                  "noOfSessions": 10,
-                  "totalExercisePrice": 200,
-                  "paymentStatus": "Paid",
-                  "repetitions": 10,
-                  "frequency": "2/day",
-                  "sets": 2,
-                  "youtubeUrl": "",
-                  "sessions": [
-                    {
-                      "sessionId": "E3_1",
-                      "sessionNo": 1,
-                      "date": "14/04/2026",
-                      "status": "Pending",
-                      "paymentStatus": "Paid"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-};
+// const DUMMY_DATA = {
+//   "bookingId": "BOOK123",
+//   "patientId": "PAT123",
+//   "doctorId": "DOC123",
+//   "doctorName": "Dr. John (Physio)",
+//   "therapistId": "THER123",
+//   "therapistName": "Therapy_1",
+//   "therapistRecordId": "REC123",
+//   "serviceType": "PACKAGE",
+//   "totalAmount": 1250,
+//   "discountAmount": 100,
+//   "finalAmount": 1150,
+//   "totalPaid": 800,
+//   "balanceAmount": 350,
+//   "paymentStatus": "Partial",
+//   "sessionStartDate": "14/04/2026",
+//   "totalSessionCount": 25,
+//   "noOfSessionCompletedCount": 3,
+//   "noOfSessionCompletedStatus": false,
+//   "sessionTableCreatedStatus": true,
+//   "paymentHistory": [
+//     {
+//       "amount": 500,
+//       "paymentMode": "CASH",
+//       "paymentType": "Partial",
+//       "paymentLevel": "PACKAGE",
+//       "paymentDate": "14/04/2026"
+//     },
+//     {
+//       "amount": 300,
+//       "paymentMode": "UPI",
+//       "paymentType": "Partial",
+//       "paymentLevel": "SESSION",
+//       "paymentDate": "16/04/2026"
+//     }
+//   ],
+//   "therapyWithSessions": [
+//     {
+//       "packageId": "PACK001",
+//       "packageName": "PACKAGE_1",
+//       "totalPackagePrice": 1250,
+//       "paymentStatus": "Partial",
+//       "programs": [
+//         {
+//           "programId": "PROG001",
+//           "programName": "PROGRAM_1",
+//           "totalProgramPrice": 625,
+//           "paymentStatus": "Partial",
+//           "therapyData": [
+//             {
+//               "therapyId": "THER001",
+//               "therapyName": "THERAPY_1",
+//               "totalTherapyPrice": 425,
+//               "paymentStatus": "Partial",
+//               "exercises": [
+//                 {
+//                   "exerciseId": "E1",
+//                   "exerciseName": "Knee Flexion",
+//                   "pricePerSession": 10,
+//                   "noOfSessions": 10,
+//                   "totalExercisePrice": 100,
+//                   "paymentStatus": "Partial",
+//                   "repetitions": 10,
+//                   "frequency": "2/day",
+//                   "sets": 2,
+//                   "youtubeUrl": "",
+//                   "sessions": [
+//                     {
+//                       "sessionId": "E1_1",
+//                       "sessionNo": 1,
+//                       "date": "14/04/2026",
+//                       "status": "Completed",
+//                       "paymentStatus": "Paid"
+//                     },
+//                     {
+//                       "sessionId": "E1_2",
+//                       "sessionNo": 2,
+//                       "date": "15/04/2026",
+//                       "status": "Completed",
+//                       "paymentStatus": "Paid"
+//                     },
+//                     {
+//                       "sessionId": "E1_3",
+//                       "sessionNo": 3,
+//                       "date": "17/04/2026",
+//                       "status": "Pending",
+//                       "paymentStatus": "Paid"
+//                     }
+//                   ]
+//                 },
+//                 {
+//                   "exerciseId": "E2",
+//                   "exerciseName": "Quad Strengthening",
+//                   "pricePerSession": 20,
+//                   "noOfSessions": 5,
+//                   "totalExercisePrice": 100,
+//                   "paymentStatus": "Partial",
+//                   "repetitions": 12,
+//                   "frequency": "3/day",
+//                   "sets": 4,
+//                   "youtubeUrl": "",
+//                   "sessions": [
+//                     {
+//                       "sessionId": "E2_1",
+//                       "sessionNo": 1,
+//                       "date": "14/04/2026",
+//                       "status": "Pending",
+//                       "paymentStatus": "Paid"
+//                     }
+//                   ]
+//                 }
+//               ]
+//             },
+//             {
+//               "therapyId": "THER002",
+//               "therapyName": "THERAPY_2",
+//               "totalTherapyPrice": 200,
+//               "paymentStatus": "Paid",
+//               "exercises": [
+//                 {
+//                   "exerciseId": "E3",
+//                   "exerciseName": "Hamstring Stretch",
+//                   "pricePerSession": 20,
+//                   "noOfSessions": 10,
+//                   "totalExercisePrice": 200,
+//                   "paymentStatus": "Paid",
+//                   "repetitions": 10,
+//                   "frequency": "2/day",
+//                   "sets": 2,
+//                   "youtubeUrl": "",
+//                   "sessions": [
+//                     {
+//                       "sessionId": "E3_1",
+//                       "sessionNo": 1,
+//                       "date": "17/04/2026",
+//                       "status": "Pending",
+//                       "paymentStatus": "Paid"
+//                     }
+//                   ]
+//                 }
+//               ]
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   ]
+// };
 
 const cleanHierarchy = (node) => {
   if (!node || node.paymentStatus?.toLowerCase() === 'unpaid') return null;
@@ -219,15 +219,15 @@ const deepUpdateSession = (node, updatedSession) => {
 
 
 
-const extractDirectTherapies = (node) => {
+const extractDirectExercises = (node) => {
   let list = [];
   if (!node) return list;
-  if (node.therapyId) {
+  if (node.exerciseId && node.sessions) {
     list.push(node);
   }
-  ['therapyWithSessions', 'programs', 'therapyData'].forEach(key => {
+  ['therapyWithSessions', 'programs', 'therapyData', 'exercises'].forEach(key => {
     if (node[key] && Array.isArray(node[key])) {
-      node[key].forEach(child => list = list.concat(extractDirectTherapies(child)));
+      node[key].forEach(child => list = list.concat(extractDirectExercises(child)));
     }
   });
   return list;
@@ -388,14 +388,53 @@ const ElapsedTime = ({ startTimeObj }) => {
 const SessionList = () => {
   const location = useLocation()
 
-  // Use dummy data if location.state doesn't have therapyWithSessions payload
-  const patientDataSource = location.state?.therapyWithSessions ? location.state : DUMMY_DATA;
-  const patient = location.state || { name: "John Doe", therapy: "Physiotherapy", doctorName: DUMMY_DATA.doctorName };
+  // Initial patient info from location.state or DUMMY_DATA skeleton
+  const [patientData, setPatientData] = useState(location.state || { name: "John Doe", therapy: "Physiotherapy", });
+  const [patientDataSource, setPatientDataSource] = useState(location.state);
+  const patient = patientData;
 
   const [loadingId, setLoadingId] = useState(null)
+  const [dataLoading, setDataLoading] = useState(false)
 
   // Create tree data dynamically
   const [treeData, setTreeData] = useState(() => cleanHierarchy(patientDataSource))
+
+  useEffect(() => {
+    const fetchApiData = async () => {
+      setDataLoading(true);
+      try {
+        const storedData = localStorage.getItem('therapistData')
+        const raw = storedData ? JSON.parse(storedData) : {}
+
+        const clinicId = raw?.clinicId || raw?.data?.clinicId
+        const branchId = raw?.branchId || raw?.data?.branchId
+
+        const bookingId = patientData?.bookingId
+        const therapistRecordId = patientData?.therapistRecordId
+
+        if (clinicId && branchId && bookingId && therapistRecordId) {
+          const res = await getPaidSessions(clinicId, branchId, bookingId, therapistRecordId);
+          if (res && res.data && res.data.therapyWithSessions) {
+            setPatientDataSource(res.data);
+            setTreeData(cleanHierarchy(res.data));
+            setPatientData(prev => ({ ...prev, ...res.data }));
+          } else if (res && res.therapyWithSessions) {
+            setPatientDataSource(res);
+            setTreeData(cleanHierarchy(res));
+            setPatientData(prev => ({ ...prev, ...res }));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching patient data", err);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    if (!location.state?.therapyWithSessions) {
+      fetchApiData();
+    }
+  }, [location.state])
 
   const [selected, setSelected] = useState(null)
   const [selectedSession, setSelectedSession] = useState(null)
@@ -495,7 +534,10 @@ const SessionList = () => {
     setVoiceRecordSession(null);
   }
 
-  const handleView = async (item, therapistRecordId) => {
+  const handleView = async (item, therapistRecordId, bookingId) => {
+    console.log("item", item);
+    console.log("therapistRecordId", patientDataSource.bookingId);
+
     setLoadingId(item.sessionId) // start loading
     try {
       const storedData = localStorage.getItem('therapistData')
@@ -514,7 +556,7 @@ const SessionList = () => {
         clinicId,
         branchId,
         therapistRecordId,
-        item.sessionId
+        patientDataSource.bookingId //
       )
 
       if (res && res.data) {
@@ -534,17 +576,33 @@ const SessionList = () => {
 
   /* --- RENDERING HELPERS --- */
 
+  const isDateToday = (dateStr) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+
+    if (dateStr === `${dd}/${mm}/${yyyy}` || dateStr === `${yyyy}-${mm}-${dd}`) return true;
+
+    const d = new Date(dateStr);
+    if (!isNaN(d.valueOf())) {
+      return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    }
+    return false;
+  };
+
   const renderSessionsTable = (sessions, exerciseContext) => {
     if (!sessions || sessions.length === 0) {
       return <div className="text-muted p-2 ms-2 fst-italic">No session available</div>;
     }
 
-    return (
-      <CTable bordered className="mt-2 mb-2 bg-white align-middle" responsive size="sm" style={{ fontSize: '0.9rem' }}>
+    const DesktopTable = (
+      <CTable bordered className="d-none d-md-table mt-2 mb-2 bg-white align-middle" responsive size="sm" style={{ fontSize: '0.9rem' }}>
         <thead className="bg-light">
           <tr>
             <th>Date</th>
-            <th>Duration</th>
+            {/* <th>Duration</th> */}
             <th>Session Timing</th>
             <th>Status</th>
             <th>Action</th>
@@ -557,8 +615,13 @@ const SessionList = () => {
 
             return (
               <tr key={s.sessionId || idx}>
-                <td>{s.date || s.sessionDate}</td>
-                <td className="text-nowrap">{s.duration || 'N/A'}</td>
+                <td>
+                  {s.date || s.sessionDate}
+                  {isDateToday(s.date || s.sessionDate) && (
+                    <CBadge color="info" className="ms-2">Today</CBadge>
+                  )}
+                </td>
+                {/* <td className="text-nowrap">{s.duration || 'N/A'}</td> */}
                 <td className="text-nowrap" style={{ minWidth: "160px" }}>
                   {s.startTime && s.endTime ? (
                     <span className="text-muted"><small>
@@ -631,7 +694,7 @@ const SessionList = () => {
                         size="sm"
                         color="primary"
                         disabled={loadingId === s.sessionId}
-                        onClick={() => handleView(s, patient.therapistRecordId)}
+                        onClick={() => handleView(s, patient.therapistRecordId, patient)}
                       >
                         {loadingId === s.sessionId ? (
                           <span className="spinner-border spinner-border-sm" />
@@ -647,52 +710,129 @@ const SessionList = () => {
           })}
         </tbody>
       </CTable>
-    )
+    );
+
+    const MobileCards = (
+      <div className="d-block d-md-none mt-2">
+        {sessions.map((s, idx) => {
+          const activeStartObj = activeSessions[s.sessionId];
+          const isRunning = !!activeStartObj;
+
+          return (
+            <CCard key={s.sessionId || idx} className="mb-3 shadow-sm border-light">
+              <CCardBody className="p-3">
+                <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                  <span className="fw-bold">
+                    {s.date || s.sessionDate}
+                    {isDateToday(s.date || s.sessionDate) && (
+                      <CBadge color="info" className="ms-2">Today</CBadge>
+                    )}
+                  </span>
+                  <CBadge color={s.status?.toLowerCase() === 'completed' ? 'success' : 'warning'}>
+                    {s.status || 'Pending'}
+                  </CBadge>
+                </div>
+                {/* <div className="d-flex justify-content-between mb-3 text-muted" style={{ fontSize: '0.85rem' }}>
+                  <span>Duration: {s.duration || 'N/A'}</span>
+                </div> */}
+
+                <div className="mb-3">
+                  {s.startTime && s.endTime ? (
+                    <div className="text-muted text-center p-2 bg-light rounded"><small>
+                      <i>Tracked: <strong>{s.startTime}</strong> to <strong>{s.endTime}</strong></i>
+                    </small></div>
+                  ) : s.status?.toLowerCase() === "completed" ? (
+                    <div className="text-muted text-center p-2 bg-light rounded"><small><i>Completed natively</i></small></div>
+                  ) : (
+                    !isRunning ? (
+                      <CButton size="sm" color="success" variant="outline" className="w-100 fw-bold py-2" onClick={() => handleStartSession(s.sessionId)}>
+                        ▶ Start Tracker
+                      </CButton>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center bg-light border border-danger rounded p-3 shadow-sm">
+                        <div className="d-flex w-100 justify-content-between align-items-center mb-2">
+                          <span className="spinner-grow spinner-grow-sm text-danger" role="status" aria-hidden="true" style={{ width: '0.8rem', height: '0.8rem' }}></span>
+                          <ElapsedTime startTimeObj={activeStartObj} />
+                        </div>
+                        <div style={{ fontSize: "0.8rem", color: "#6c757d" }} className="mb-3">Started {formatDisplayTime(activeStartObj)}</div>
+                        <CButton size="sm" color="danger" className="w-100 fw-bold text-white shadow py-2" onClick={() => handleStopAndComplete(s)}>
+                          ⏹ Stop & Save Time
+                        </CButton>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                <div className="d-flex gap-2">
+                  {/* Action buttons side by side */}
+                  {s.voiceRecordUrl ? (
+                    <CButton size="sm" color="info" variant="outline" className="w-100" onClick={() => setAudioPlaybackSession(s)}>
+                      ▶️ Play
+                    </CButton>
+                  ) : (s.status?.toLowerCase() !== "completed" && (
+                    <CButton size="sm" color="secondary" variant="outline" className="w-100" onClick={() => setVoiceRecordSession(s)}>
+                      🎤 Record
+                    </CButton>
+                  ))}
+
+                  {s.status?.toLowerCase() !== "completed" ? (
+                    <CButton size="sm" color="secondary" className="w-100" onClick={() => handleManualCompleteFallback(s)}>
+                      Complete Form
+                    </CButton>
+                  ) : (
+                    <CButton size="sm" color="primary" className="w-100" disabled={loadingId === s.sessionId} onClick={() => handleView(s, patient.therapistRecordId)}>
+                      {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
+                    </CButton>
+                  )}
+                </div>
+              </CCardBody>
+            </CCard>
+          )
+        })}
+      </div>
+    );
+
+    return (
+      <>
+        {DesktopTable}
+        {MobileCards}
+      </>
+    );
   }
 
-  const renderExercise = (ex) => (
-    <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
-      <CAccordionHeader>
-        <span className="fw-semibold text-success">Exercise: {ex.exerciseName}</span>
-      </CAccordionHeader>
-      <CAccordionBody>
-        <div className="mb-2" style={{ fontSize: '0.85rem' }}>
-          <strong>Freq:</strong> {ex.frequency} &bull; <strong>Sets:</strong> {ex.sets} &bull; <strong>Reps:</strong> {ex.repetitions}
-        </div>
-        {renderSessionsTable(ex.sessions, ex)}
-      </CAccordionBody>
-    </CAccordionItem>
-  )
+  const renderExercise = (ex) => {
+    const hasTodaySession = ex.sessions && ex.sessions.some(s => isDateToday(s.date || s.sessionDate));
 
-  const renderTherapy = (th) => (
-    <CAccordionItem itemKey={`th-${th.therapyId}`} key={th.therapyId}>
-      <CAccordionHeader>
-        <span className="fw-semibold text-info" style={{ fontSize: '1.25rem' }}>Therapy: {th.therapyName}</span>
-      </CAccordionHeader>
-      <CAccordionBody>
-        {th.exercises && th.exercises.length > 0 ? (
-          <CAccordion alwaysOpen activeItemKey={[`ex-${th.exercises[0]?.exerciseId}`]}>
-            {th.exercises.map(renderExercise)}
-          </CAccordion>
-        ) : (
-          <div className="text-muted fst-italic">No exercises.</div>
-        )}
-      </CAccordionBody>
-    </CAccordionItem>
-  )
+    return (
+      <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
+        <CAccordionHeader>
+          <span className="fw-semibold text-success">Exercise: {ex.exerciseName}</span>
+          {hasTodaySession && (
+            <CBadge color="info" className="ms-2">Today</CBadge>
+          )}
+        </CAccordionHeader>
+        <CAccordionBody>
+          <div className="mb-2" style={{ fontSize: '0.85rem' }}>
+            <strong>Freq:</strong> {ex.frequency} &bull; <strong>Sets:</strong> {ex.sets} &bull; <strong>Reps:</strong> {ex.repetitions}
+          </div>
+          {renderSessionsTable(ex.sessions, ex)}
+        </CAccordionBody>
+      </CAccordionItem>
+    );
+  }
 
   const renderHierarchy = (node) => {
-    let therapies = extractDirectTherapies(node);
+    let exercises = extractDirectExercises(node);
 
-    if (!therapies || therapies.length === 0) {
-      return <div className="text-muted p-4 shadow-sm bg-light rounded text-center">No structural data available for this service type.</div>;
+    if (!exercises || exercises.length === 0) {
+      return <div className="text-muted p-4 shadow-sm bg-light rounded text-center">No exercises available for this service type.</div>;
     }
 
-    const initialKeys = therapies.length > 0 ? [`th-${therapies[0].therapyId}`] : [];
+    const initialKeys = exercises.length > 0 ? [`ex-${exercises[0].exerciseId}`] : [];
 
     return (
       <CAccordion alwaysOpen activeItemKey={initialKeys}>
-        {therapies.map(renderTherapy)}
+        {exercises.map(renderExercise)}
       </CAccordion>
     );
   }
@@ -745,7 +885,7 @@ const SessionList = () => {
           />
         )}
 
-        {selected && selected.mode === "view" && (
+        {selectedSession && (
           <SessionViewModal
             visible={true}
             data={selectedSession}

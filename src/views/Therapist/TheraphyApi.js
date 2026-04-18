@@ -106,11 +106,36 @@ export const getDashboard = async (clinicId, branchId, therapistId, statusId = 1
   }
 }
 
+/* ================= GET PAID SESSIONS ================= */
+export const getPaidSessions = async (clinicId, branchId, bookingId, therapistRecordId) => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/getPaidSessionsByClinicIdBranchIdBookingIdAndTherapistRecordId/${clinicId}/${branchId}/${bookingId}/${therapistRecordId}`
+    )
+    return res.data
+  } catch (err) {
+    console.error("API Error (getPaidSessions):", err)
+    return null
+  }
+}
+
 /* ================= SESSION DETAILS ================= */
 export const getSessionDetails = async (clinicId, branchId, therapistId, sessionId) => {
   try {
     const res = await axios.get(
       `${BASE_URL}/getRecordByClinicIdBranchIdtherapistRecordIdAndSessionId/${clinicId}/${branchId}/${therapistId}/${sessionId}`
+    )
+    return res.data
+  } catch (err) {
+    console.error("API Error:", err)
+    return null
+  }
+}
+
+export const getBookingByBookingId = async (clinicId, branchId, bookingId) => {
+  try {
+    const res = await axios.get(
+      `${wifiUrl}/api/physiotherapy-doctor/clinic-branch-booking/${clinicId}/${branchId}/${bookingId}`
     )
     return res.data
   } catch (err) {

@@ -58,9 +58,9 @@ const AppHeader = () => {
   return (
     <CHeader
       position="sticky"
-      className="mb-4 p-0"
+      className="mb-4 p-0 shadow-sm"
       ref={headerRef}
-      style={{ backgroundColor: 'var(--color-bgcolor)' }}
+      style={{ backgroundColor: '#ffffff' }}
     >
       <CContainer className="border-bottom px-3" fluid >
 

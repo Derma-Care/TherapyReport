@@ -20,7 +20,7 @@ import {
 
 import { getStats } from './therapistService'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { getClinicData, getDashboard, getSessionDetails } from './TheraphyApi'
+import { getBookingByBookingId, getClinicData, getDashboard, getSessionDetails } from './TheraphyApi'
 import PatientViewModal from './PatientViewModal'
 import capitalizeWords from '../../Utils/capitalizeWords'
 
@@ -41,7 +41,8 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
   const [detailLoading, setDetailLoading] = useState(false)
 
 
-
+  const bookingId = p.bookingId;
+  console.log(bookingId)
   // ✅ Fetch full patient record before opening modal
   const handleViewDetails = async () => {
     try {
@@ -49,11 +50,10 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
 
       // API: getRecordByClinicIdBranchIdtherapistRecordIdAndSessionId
       // params: clinicId, branchId, therapistRecordId, bookingId (acts as sessionId here)
-      const res = await getSessionDetails(
+      const res = await getBookingByBookingId(
         clinicId,
         branchId,
-        p.therapistRecordId,
-        p.bookingId,
+        bookingId,
       )
 
       // res.data is the full record with patientInfo, assessment, diagnosis, etc.
@@ -77,15 +77,15 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
   return (
     <CCard key={p.patientId || index} className="mb-3">
       <CCardBody>
-        <div className="d-flex justify-content-between align-items-center">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
 
           {/* ✅ Patient Info — exact API field names */}
-          <div>
+          <div className="mb-3 mb-md-0">
             <b>Patient: {p.patientName || 'N/A'}</b>
             <br />
             Doctor: {p.doctorName || 'N/A'}
             <br />
-            serivceType: {p.serivceType || 'N/A'}
+            serviceType: {p.serivceType || 'N/A'}
             <br />
             Mobile: {p.mobileNumber || 'N/A'}
             <br />
@@ -97,13 +97,14 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
                     ? 'warning'
                     : 'secondary'
               }
+              className="mt-1"
             >
               {p.overallStatus || 'Pending'}
             </CBadge>
           </div>
 
           {/* ✅ Action Buttons */}
-          <div className="d-flex flex-column justify-content-center align-items-center gap-1">
+          <div className="d-flex flex-row flex-md-column justify-content-start justify-content-md-center align-items-stretch align-items-md-center gap-2 gap-md-1">
 
             {/* ✅ FIXED: calls getSessionDetails then opens modal with full record */}
             <CButton
@@ -112,6 +113,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
               style={{ color: 'white' }}
               disabled={detailLoading}
               onClick={handleViewDetails}
+              className="flex-grow-1 flex-md-grow-0"
             >
               {detailLoading ? <CSpinner size="sm" /> : 'View Details'}
             </CButton>
@@ -119,6 +121,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             <CButton
               size="sm"
               color="primary"
+              className="flex-grow-1 flex-md-grow-0"
               onClick={() =>
                 navigate('/session-list', {
                   state: {
@@ -134,7 +137,6 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             >
               Sessions
             </CButton>
-
 
           </div>
         </div>
@@ -229,206 +231,206 @@ const TherapyDashboard = () => {
         ) : (
           <>
             {/* ✅ Therapist Cards + Stats Row */}
-      <CRow
-  className="g-3 flex-nowrap overflow-auto pb-2"
-  style={{
-    whiteSpace: "nowrap",
-    scrollbarWidth: "none",
-    msOverflowStyle: "none",
-  }}
->
-  {/* Therapist / Doctor Cards */}
-  {list.length === 0 ? (
-    <CCol
-      xs="10"
-      sm="6"
-      md="3"
-      style={{ flex: "0 0 auto", minWidth: "220px" }}
-    >
-      <CCard className="p-3 text-center h-100">
-        <h6>No Therapist Data Found</h6>
-      </CCard>
-    </CCol>
-  ) : (
-    list.map((item, index) => (
-      <CCol
-        key={index}
-        xs="10"
-        sm="6"
-        md="3"
-        className="d-flex"
-        style={{ flex: "0 0 auto", minWidth: "220px" }}
-      >
-        <CCard
-          className="w-100 h-100 shadow-sm"
-          style={{ borderRadius: "12px" }}
-        >
-          <CCardBody className="p-2">
-            <div>
-              <CRow className="align-items-center g-2">
-                <CCol xs={4} className="text-center">
-                  <img
-                    src={
-                      item?.documents?.profilePhoto
-                        ? `data:image/jpeg;base64,${item.documents.profilePhoto}`
-                        : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                    }
-                    alt="profile"
-                    style={{
-                      width: "48px",
-                      height: "48px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
-                  />
+            <CRow
+              className="g-3 flex-nowrap overflow-auto pb-2"
+              style={{
+                whiteSpace: "nowrap",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              {/* Therapist / Doctor Cards */}
+              {list.length === 0 ? (
+                <CCol
+                  xs="10"
+                  sm="6"
+                  md="3"
+                  style={{ flex: "0 0 auto", minWidth: "220px" }}
+                >
+                  <CCard className="p-3 text-center h-100">
+                    <h6>No Therapist Data Found</h6>
+                  </CCard>
                 </CCol>
-
-                <CCol xs={8}>
-                  <h6
-                    className="mb-0"
-                    style={{
-                      fontSize: "13px",
-                      whiteSpace: "normal",
-                    }}
+              ) : (
+                list.map((item, index) => (
+                  <CCol
+                    key={index}
+                    xs="10"
+                    sm="6"
+                    md="3"
+                    className="d-flex"
+                    style={{ flex: "0 0 auto", minWidth: "220px" }}
                   >
-                    {capitalizeWords(item?.fullName)}
-                  </h6>
+                    <CCard
+                      className="w-100 h-100 shadow-sm"
+                      style={{ borderRadius: "12px" }}
+                    >
+                      <CCardBody className="p-2">
+                        <div>
+                          <CRow className="align-items-center g-2">
+                            <CCol xs={4} className="text-center">
+                              <img
+                                src={
+                                  item?.documents?.profilePhoto
+                                    ? `data:image/jpeg;base64,${item.documents.profilePhoto}`
+                                    : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                                }
+                                alt="profile"
+                                style={{
+                                  width: "48px",
+                                  height: "48px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            </CCol>
 
-                  <small style={{ fontSize: "11px" }}>
-                    {item?.qualification}
-                  </small>
+                            <CCol xs={8}>
+                              <h6
+                                className="mb-0"
+                                style={{
+                                  fontSize: "13px",
+                                  whiteSpace: "normal",
+                                }}
+                              >
+                                {capitalizeWords(item?.fullName)}
+                              </h6>
 
-                  <p
-                    className="mb-1"
-                    style={{
-                      fontSize: "10px",
-                      whiteSpace: "normal",
-                    }}
-                  >
-                    {item?.specializations?.join(", ")}
-                  </p>
-                </CCol>
-              </CRow>
-            </div>
+                              <small style={{ fontSize: "11px" }}>
+                                {item?.qualification}
+                              </small>
 
-            <div className="text-end mt-2">
-              <CButton
-                size="sm"
-                color="primary"
-                onClick={() =>
-                  navigate("/therapist-details", { state: item })
-                }
+                              <p
+                                className="mb-1"
+                                style={{
+                                  fontSize: "10px",
+                                  whiteSpace: "normal",
+                                }}
+                              >
+                                {item?.specializations?.join(", ")}
+                              </p>
+                            </CCol>
+                          </CRow>
+                        </div>
+
+                        <div className="text-end mt-2">
+                          <CButton
+                            size="sm"
+                            color="primary"
+                            onClick={() =>
+                              navigate("/therapist-details", { state: item })
+                            }
+                          >
+                            View
+                          </CButton>
+                        </div>
+                      </CCardBody>
+                    </CCard>
+                  </CCol>
+                ))
+              )}
+
+              {/* Today's Appointments */}
+              <CCol
+                xs="10"
+                sm="6"
+                md="3"
+                className="d-flex"
+                style={{ flex: "0 0 auto", minWidth: "220px" }}
               >
-                View
-              </CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    ))
-  )}
+                <CCard color="primary" textColor="white" className="w-100 h-100">
+                  <CCardBody className="text-center py-3 px-2">
+                    <h6 className="mb-1" style={{ fontSize: "14px" }}>
+                      Today's Appointments
+                    </h6>
+                    <h2 className="mb-1">{stats?.todayCount || 0}</h2>
+                    <small>{stats?.todayTime || 0} min</small>
+                  </CCardBody>
+                </CCard>
+              </CCol>
 
-  {/* Today's Appointments */}
-  <CCol
-    xs="10"
-    sm="6"
-    md="3"
-    className="d-flex"
-    style={{ flex: "0 0 auto", minWidth: "220px" }}
-  >
-    <CCard color="primary" textColor="white" className="w-100 h-100">
-      <CCardBody className="text-center py-3 px-2">
-        <h6 className="mb-1" style={{ fontSize: "14px" }}>
-          Today's Appointments
-        </h6>
-        <h2 className="mb-1">{stats?.todayCount || 0}</h2>
-        <small>{stats?.todayTime || 0} min</small>
-      </CCardBody>
-    </CCard>
-  </CCol>
+              {/* Weekly */}
+              <CCol
+                xs="10"
+                sm="6"
+                md="3"
+                className="d-flex"
+                style={{ flex: "0 0 auto", minWidth: "220px" }}
+              >
+                <CCard color="success" textColor="white" className="w-100 h-100">
+                  <CCardBody className="text-center py-3 px-2">
+                    <h6 className="mb-1" style={{ fontSize: "14px" }}>
+                      Weekly Appointment
+                    </h6>
+                    <h2 className="mb-1">{stats?.weekCount || 0}</h2>
+                    <small>{stats?.weekTime || 0} min</small>
+                  </CCardBody>
+                </CCard>
+              </CCol>
 
-  {/* Weekly */}
-  <CCol
-    xs="10"
-    sm="6"
-    md="3"
-    className="d-flex"
-    style={{ flex: "0 0 auto", minWidth: "220px" }}
-  >
-    <CCard color="success" textColor="white" className="w-100 h-100">
-      <CCardBody className="text-center py-3 px-2">
-        <h6 className="mb-1" style={{ fontSize: "14px" }}>
-          Weekly Appointment
-        </h6>
-        <h2 className="mb-1">{stats?.weekCount || 0}</h2>
-        <small>{stats?.weekTime || 0} min</small>
-      </CCardBody>
-    </CCard>
-  </CCol>
-
-  {/* Monthly */}
-  <CCol
-    xs="10"
-    sm="6"
-    md="3"
-    className="d-flex"
-    style={{ flex: "0 0 auto", minWidth: "220px" }}
-  >
-    <CCard color="warning" textColor="white" className="w-100 h-100">
-      <CCardBody className="text-center py-3 px-2">
-        <h6 className="mb-1" style={{ fontSize: "14px" }}>
-          Monthly Appointments
-        </h6>
-        <h2 className="mb-1">{stats?.monthCount || 0}</h2>
-        <small>{stats?.monthTime || 0} min</small>
-      </CCardBody>
-    </CCard>
-  </CCol>
-</CRow>
+              {/* Monthly */}
+              <CCol
+                xs="10"
+                sm="6"
+                md="3"
+                className="d-flex"
+                style={{ flex: "0 0 auto", minWidth: "220px" }}
+              >
+                <CCard color="warning" textColor="white" className="w-100 h-100">
+                  <CCardBody className="text-center py-3 px-2">
+                    <h6 className="mb-1" style={{ fontSize: "14px" }}>
+                      Monthly Appointments
+                    </h6>
+                    <h2 className="mb-1">{stats?.monthCount || 0}</h2>
+                    <small>{stats?.monthTime || 0} min</small>
+                  </CCardBody>
+                </CCard>
+              </CCol>
+            </CRow>
 
             {/* ✅ Sessions / Patients Section */}
             <CCard className="mt-4">
               <CCardBody>
 
                 {/* ✅ Tab Navigation */}
-             <CNav
-  variant="tabs"
-  className="mb-3 flex-nowrap overflow-auto"
-  style={{
-    whiteSpace: "nowrap",
-    scrollbarWidth: "none",
-  }}
->
-  <CNavItem style={{ flex: "0 0 auto" }}>
-    <CNavLink
-      active={tab === 1}
-      onClick={() => setTab(1)}
-      style={{ cursor: "pointer" }}
-    >
-      New Sessions
-    </CNavLink>
-  </CNavItem>
+                <CNav
+                  variant="tabs"
+                  className="mb-3 flex-nowrap overflow-auto"
+                  style={{
+                    whiteSpace: "nowrap",
+                    scrollbarWidth: "none",
+                  }}
+                >
+                  <CNavItem style={{ flex: "0 0 auto" }}>
+                    <CNavLink
+                      active={tab === 1}
+                      onClick={() => setTab(1)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      New Sessions
+                    </CNavLink>
+                  </CNavItem>
 
-  <CNavItem style={{ flex: "0 0 auto" }}>
-    <CNavLink
-      active={tab === 2}
-      onClick={() => setTab(2)}
-      style={{ cursor: "pointer" }}
-    >
-      Active Sessions
-    </CNavLink>
-  </CNavItem>
+                  <CNavItem style={{ flex: "0 0 auto" }}>
+                    <CNavLink
+                      active={tab === 2}
+                      onClick={() => setTab(2)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      Active Sessions
+                    </CNavLink>
+                  </CNavItem>
 
-  <CNavItem style={{ flex: "0 0 auto" }}>
-    <CNavLink
-      active={tab === 3}
-      onClick={() => setTab(3)}
-      style={{ cursor: "pointer" }}
-    >
-      Completed Sessions
-    </CNavLink>
-  </CNavItem>
-</CNav>
+                  <CNavItem style={{ flex: "0 0 auto" }}>
+                    <CNavLink
+                      active={tab === 3}
+                      onClick={() => setTab(3)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      Completed Sessions
+                    </CNavLink>
+                  </CNavItem>
+                </CNav>
 
                 <h5>Patients</h5>
 
