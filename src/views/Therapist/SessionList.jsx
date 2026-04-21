@@ -20,154 +20,154 @@ import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 
-// const DUMMY_DATA = {
-//   "bookingId": "BOOK123",
-//   "patientId": "PAT123",
-//   "doctorId": "DOC123",
-//   "doctorName": "Dr. John (Physio)",
-//   "therapistId": "THER123",
-//   "therapistName": "Therapy_1",
-//   "therapistRecordId": "REC123",
-//   "serviceType": "PACKAGE",
-//   "totalAmount": 1250,
-//   "discountAmount": 100,
-//   "finalAmount": 1150,
-//   "totalPaid": 800,
-//   "balanceAmount": 350,
-//   "paymentStatus": "Partial",
-//   "sessionStartDate": "14/04/2026",
-//   "totalSessionCount": 25,
-//   "noOfSessionCompletedCount": 3,
-//   "noOfSessionCompletedStatus": false,
-//   "sessionTableCreatedStatus": true,
-//   "paymentHistory": [
-//     {
-//       "amount": 500,
-//       "paymentMode": "CASH",
-//       "paymentType": "Partial",
-//       "paymentLevel": "PACKAGE",
-//       "paymentDate": "14/04/2026"
-//     },
-//     {
-//       "amount": 300,
-//       "paymentMode": "UPI",
-//       "paymentType": "Partial",
-//       "paymentLevel": "SESSION",
-//       "paymentDate": "16/04/2026"
-//     }
-//   ],
-//   "therapyWithSessions": [
-//     {
-//       "packageId": "PACK001",
-//       "packageName": "PACKAGE_1",
-//       "totalPackagePrice": 1250,
-//       "paymentStatus": "Partial",
-//       "programs": [
-//         {
-//           "programId": "PROG001",
-//           "programName": "PROGRAM_1",
-//           "totalProgramPrice": 625,
-//           "paymentStatus": "Partial",
-//           "therapyData": [
-//             {
-//               "therapyId": "THER001",
-//               "therapyName": "THERAPY_1",
-//               "totalTherapyPrice": 425,
-//               "paymentStatus": "Partial",
-//               "exercises": [
-//                 {
-//                   "exerciseId": "E1",
-//                   "exerciseName": "Knee Flexion",
-//                   "pricePerSession": 10,
-//                   "noOfSessions": 10,
-//                   "totalExercisePrice": 100,
-//                   "paymentStatus": "Partial",
-//                   "repetitions": 10,
-//                   "frequency": "2/day",
-//                   "sets": 2,
-//                   "youtubeUrl": "",
-//                   "sessions": [
-//                     {
-//                       "sessionId": "E1_1",
-//                       "sessionNo": 1,
-//                       "date": "14/04/2026",
-//                       "status": "Completed",
-//                       "paymentStatus": "Paid"
-//                     },
-//                     {
-//                       "sessionId": "E1_2",
-//                       "sessionNo": 2,
-//                       "date": "15/04/2026",
-//                       "status": "Completed",
-//                       "paymentStatus": "Paid"
-//                     },
-//                     {
-//                       "sessionId": "E1_3",
-//                       "sessionNo": 3,
-//                       "date": "17/04/2026",
-//                       "status": "Pending",
-//                       "paymentStatus": "Paid"
-//                     }
-//                   ]
-//                 },
-//                 {
-//                   "exerciseId": "E2",
-//                   "exerciseName": "Quad Strengthening",
-//                   "pricePerSession": 20,
-//                   "noOfSessions": 5,
-//                   "totalExercisePrice": 100,
-//                   "paymentStatus": "Partial",
-//                   "repetitions": 12,
-//                   "frequency": "3/day",
-//                   "sets": 4,
-//                   "youtubeUrl": "",
-//                   "sessions": [
-//                     {
-//                       "sessionId": "E2_1",
-//                       "sessionNo": 1,
-//                       "date": "14/04/2026",
-//                       "status": "Pending",
-//                       "paymentStatus": "Paid"
-//                     }
-//                   ]
-//                 }
-//               ]
-//             },
-//             {
-//               "therapyId": "THER002",
-//               "therapyName": "THERAPY_2",
-//               "totalTherapyPrice": 200,
-//               "paymentStatus": "Paid",
-//               "exercises": [
-//                 {
-//                   "exerciseId": "E3",
-//                   "exerciseName": "Hamstring Stretch",
-//                   "pricePerSession": 20,
-//                   "noOfSessions": 10,
-//                   "totalExercisePrice": 200,
-//                   "paymentStatus": "Paid",
-//                   "repetitions": 10,
-//                   "frequency": "2/day",
-//                   "sets": 2,
-//                   "youtubeUrl": "",
-//                   "sessions": [
-//                     {
-//                       "sessionId": "E3_1",
-//                       "sessionNo": 1,
-//                       "date": "17/04/2026",
-//                       "status": "Pending",
-//                       "paymentStatus": "Paid"
-//                     }
-//                   ]
-//                 }
-//               ]
-//             }
-//           ]
-//         }
-//       ]
-//     }
-//   ]
-// };
+const DUMMY_DATA = {
+  "bookingId": "BOOK123",
+  "patientId": "PAT123",
+  "doctorId": "DOC123",
+  "doctorName": "Dr. John (Physio)",
+  "therapistId": "THER123",
+  "therapistName": "Therapy_1",
+  "therapistRecordId": "REC123",
+  "serviceType": "PACKAGE",
+  "totalAmount": 1250,
+  "discountAmount": 100,
+  "finalAmount": 1150,
+  "totalPaid": 800,
+  "balanceAmount": 350,
+  "paymentStatus": "Partial",
+  "sessionStartDate": "14/04/2026",
+  "totalSessionCount": 25,
+  "noOfSessionCompletedCount": 3,
+  "noOfSessionCompletedStatus": false,
+  "sessionTableCreatedStatus": true,
+  "paymentHistory": [
+    {
+      "amount": 500,
+      "paymentMode": "CASH",
+      "paymentType": "Partial",
+      "paymentLevel": "PACKAGE",
+      "paymentDate": "14/04/2026"
+    },
+    {
+      "amount": 300,
+      "paymentMode": "UPI",
+      "paymentType": "Partial",
+      "paymentLevel": "SESSION",
+      "paymentDate": "16/04/2026"
+    }
+  ],
+  "therapyWithSessions": [
+    {
+      "packageId": "PACK001",
+      "packageName": "PACKAGE_1",
+      "totalPackagePrice": 1250,
+      "paymentStatus": "Partial",
+      "programs": [
+        {
+          "programId": "PROG001",
+          "programName": "PROGRAM_1",
+          "totalProgramPrice": 625,
+          "paymentStatus": "Partial",
+          "therapyData": [
+            {
+              "therapyId": "THER001",
+              "therapyName": "THERAPY_1",
+              "totalTherapyPrice": 425,
+              "paymentStatus": "Partial",
+              "exercises": [
+                {
+                  "exerciseId": "E1",
+                  "exerciseName": "Knee Flexion",
+                  "pricePerSession": 10,
+                  "noOfSessions": 10,
+                  "totalExercisePrice": 100,
+                  "paymentStatus": "Partial",
+                  "repetitions": 10,
+                  "frequency": "2/day",
+                  "sets": 2,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E1_1",
+                      "sessionNo": 1,
+                      "date": "14/04/2026",
+                      "status": "Completed",
+                      "paymentStatus": "Paid"
+                    },
+                    {
+                      "sessionId": "E1_2",
+                      "sessionNo": 2,
+                      "date": "15/04/2026",
+                      "status": "Completed",
+                      "paymentStatus": "Paid"
+                    },
+                    {
+                      "sessionId": "E1_3",
+                      "sessionNo": 3,
+                      "date": "17/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                },
+                {
+                  "exerciseId": "E2",
+                  "exerciseName": "Quad Strengthening",
+                  "pricePerSession": 20,
+                  "noOfSessions": 5,
+                  "totalExercisePrice": 100,
+                  "paymentStatus": "Partial",
+                  "repetitions": 12,
+                  "frequency": "3/day",
+                  "sets": 4,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E2_1",
+                      "sessionNo": 1,
+                      "date": "14/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "therapyId": "THER002",
+              "therapyName": "THERAPY_2",
+              "totalTherapyPrice": 200,
+              "paymentStatus": "Paid",
+              "exercises": [
+                {
+                  "exerciseId": "E3",
+                  "exerciseName": "Hamstring Stretch",
+                  "pricePerSession": 20,
+                  "noOfSessions": 10,
+                  "totalExercisePrice": 200,
+                  "paymentStatus": "Paid",
+                  "repetitions": 10,
+                  "frequency": "2/day",
+                  "sets": 2,
+                  "youtubeUrl": "",
+                  "sessions": [
+                    {
+                      "sessionId": "E3_1",
+                      "sessionNo": 1,
+                      "date": "17/04/2026",
+                      "status": "Pending",
+                      "paymentStatus": "Paid"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
 
 const cleanHierarchy = (node) => {
   if (!node || node.paymentStatus?.toLowerCase() === 'unpaid') return null;
