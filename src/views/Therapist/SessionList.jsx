@@ -216,8 +216,9 @@ const deepUpdateSession = (node, updatedSession) => {
 
   return newNode;
 }
-
-
+// const [sets, setSests] = useState(0);
+// const [repetation, setRepetation] = useState(0);
+ 
 
 const extractDirectExercises = (node) => {
   let list = [];
@@ -514,7 +515,7 @@ const SessionList = () => {
   }
 
   // Still maintaining fallback manually Complete form button if they need edge cases
-  const handleManualCompleteFallback = (sessionItem) => {
+  const handleManualCompleteFallback = (sessionItem,session) => {
     let calculatedDuration = "";
     if (sessionItem.startTime && sessionItem.endTime) {
       const [startH, startM] = sessionItem.startTime.split(':').map(Number);
@@ -526,6 +527,10 @@ const SessionList = () => {
       const mins = diffMins % 60;
       calculatedDuration = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
     }
+    console.log("calculatedDuration", sessionItem);
+    console.log("patientDataSource", patientDataSource);
+    console.log("patient", patient);
+    console.log("patient", session);
 
     setSelected({
       ...sessionItem,
@@ -537,6 +542,8 @@ const SessionList = () => {
       bookingId: patientDataSource.bookingId,
       patientId: patientDataSource.patientId,
       serviceType: patientDataSource.serviceType,
+      sets: session.sets,
+      repetitions: session.repetitions,
       disease: patient.disease,
       therapistRecordId: patient.therapistRecordId,
       voiceRecordUrl: sessionItem.voiceRecordUrl || ""
@@ -709,7 +716,7 @@ const SessionList = () => {
                         size="sm"
                         color="secondary"
                         title="Manual Complete (Fallback)"
-                        onClick={() => handleManualCompleteFallback(s)}
+                        onClick={() => handleManualCompleteFallback(s,exerciseContext)}
                       >
                         Complete Form
                       </CButton>
@@ -800,7 +807,7 @@ const SessionList = () => {
                   ))}
 
                   {s.status?.toLowerCase() !== "completed" ? (
-                    <CButton size="sm" color="secondary" className="w-100" onClick={() => handleManualCompleteFallback(s)}>
+                    <CButton size="sm" color="secondary" className="w-100" onClick={() => handleManualCompleteFallback(s,exerciseContext)}>
                       Complete Form
                     </CButton>
                   ) : (
@@ -826,7 +833,8 @@ const SessionList = () => {
 
   const renderExercise = (ex) => {
     const hasTodaySession = ex.sessions && ex.sessions.some(s => isDateToday(s.date || s.sessionDate));
-
+// setSests(ex.sets);
+// setRepetation(ex.repetitions);
     return (
       <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
         <CAccordionHeader>

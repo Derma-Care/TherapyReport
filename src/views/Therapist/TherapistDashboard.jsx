@@ -43,7 +43,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
 
   const bookingId = p.bookingId;
   console.log(bookingId)
-  // ✅ Fetch full patient record before opening modal
+  // ✅ Fetch full patient record before opening modals
   const handleViewDetails = async () => {
     try {
       setDetailLoading(true)
