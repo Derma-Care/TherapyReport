@@ -25,6 +25,10 @@ const SessionViewModal = ({ visible, data, onClose }) => {
     const blob = base64ToBlob(base64, "video/mp4")
     return URL.createObjectURL(blob)
   }
+  const audioSrc =
+  data?.voiceRecord ||
+  data?.voiceRecordUrl ||
+  "";
   return (
     <>
       <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
@@ -86,6 +90,34 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           <h6 className="section-title">Media</h6>
 
           <CRow>
+            <CRow className="g-3">
+
+  {/* No Sets Completed */}
+  <CCol md={6}>
+    <strong>No Sets Completed:</strong>
+    <div>{data?.noSetsCompleted || "-"}</div>
+  </CCol>
+
+  {/* Repetition Done */}
+  <CCol md={6}>
+    <strong>Repetition Done:</strong>
+    <div>{data?.repetitionDone || "-"}</div>
+  </CCol>
+
+  {/* Audio */}
+<CCol md={12}>
+  <strong>Audio Record:</strong>
+
+  <div className="mt-2">
+    {audioSrc ? (
+      <audio controls src={audioSrc} style={{ width: "100%" }} />
+    ) : (
+      <span>No Audio</span>
+    )}
+  </div>
+</CCol>
+
+</CRow>
 
             {/* Images */}
             <CCol md={6}>

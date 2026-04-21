@@ -306,14 +306,33 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
     setStatus('PREVIEW');
   };
 
-  const handleSend = () => {
-    setStatus('STOPPED');
-    // Simulate storage & send delay to the mock backend
+const blobToBase64 = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+  });
+
+const handleSend = async () => {
+  try {
+    setStatus("STOPPED");
+
+    const blob = new Blob(chunksRef.current, {
+      type: "audio/webm",
+    });
+
+    const base64Audio = await blobToBase64(blob);
+
     setTimeout(() => {
-      onSave(audioUrl);
+      onSave(base64Audio); // ✅ send base64 instead of blob url
       onClose();
     }, 1500);
+  } catch (error) {
+    console.error("Audio convert error:", error);
+    setStatus("PREVIEW");
   }
+};
 
   return (
     <CModal visible={visible} onClose={() => status !== 'STOPPED' && onClose()} alignment="center" size="sm" backdrop="static">
@@ -556,7 +575,7 @@ const SessionList = () => {
         clinicId,
         branchId,
         therapistRecordId,
-        patientDataSource.bookingId //
+        item.sessionId //
       )
 
       if (res && res.data) {
@@ -601,6 +620,7 @@ const SessionList = () => {
       <CTable bordered className="d-none d-md-table mt-2 mb-2 bg-white align-middle" responsive size="sm" style={{ fontSize: '0.9rem' }}>
         <thead className="bg-light">
           <tr>
+            <th>Session_Id</th>
             <th>Date</th>
             {/* <th>Duration</th> */}
             <th>Session Timing</th>
@@ -615,6 +635,10 @@ const SessionList = () => {
 
             return (
               <tr key={s.sessionId || idx}>
+                  <td>
+                  {s.sessionId}
+                  
+                </td>
                 <td>
                   {s.date || s.sessionDate}
                   {isDateToday(s.date || s.sessionDate) && (
