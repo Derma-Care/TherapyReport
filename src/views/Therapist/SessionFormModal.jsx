@@ -100,8 +100,8 @@ export default function SessionFormModal({
         therapistId: theraphydata?.therapistId,
         sessionId: data.sessionId,
 
-         exercises: data?.exercises || "",
- date: data?.sessionDate || data?.date || "",
+        //  exercises: data?.exercises || "",
+//  date: data?.sessionDate || data?.date || "",
         patientName: data.patientName,
         serviceType: data.serviceType,
 
@@ -109,9 +109,9 @@ export default function SessionFormModal({
         completedDate: now.toLocaleDateString(),
         completedTime: now.toLocaleTimeString(),
 
-therapy: data.serviceType || "",
-        exercises: data.sessionId,
-status: "Completed",
+// therapy: data.serviceType || "",
+        // exercises: data.sessionId,
+// status: "Completed",
         painBefore,
         painAfter,
         duration: data.sessionTime,
