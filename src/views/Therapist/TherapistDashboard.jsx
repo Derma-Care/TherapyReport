@@ -23,6 +23,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { getBookingByBookingId, getClinicData, getDashboard, getSessionDetails } from './TheraphyApi'
 import PatientViewModal from './PatientViewModal'
 import capitalizeWords from '../../Utils/capitalizeWords'
+import { COLORS } from '../../Constant/Themes'
 
 
 
@@ -42,7 +43,9 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
 
 
   const bookingId = p.bookingId;
-  console.log(bookingId)
+  const patientId = p.patientId;
+  const therapistRecordId = p.therapistRecordId;
+  console.log(p)
   // ✅ Fetch full patient record before opening modals
   const handleViewDetails = async () => {
     try {
@@ -53,7 +56,9 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
       const res = await getBookingByBookingId(
         clinicId,
         branchId,
+        patientId,
         bookingId,
+        therapistRecordId
       )
 
       // res.data is the full record with patientInfo, assessment, diagnosis, etc.
@@ -109,18 +114,18 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             {/* ✅ FIXED: calls getSessionDetails then opens modal with full record */}
             <CButton
               size="sm"
-              color="info"
-              style={{ color: 'white' }}
+             
+              style={{ color: 'white',backgroundColor:COLORS.primary }}
               disabled={detailLoading}
               onClick={handleViewDetails}
               className="flex-grow-1 flex-md-grow-0"
             >
-              {detailLoading ? <CSpinner size="sm" /> : 'View Details'}
+              {detailLoading ? <CSpinner size="sm" style={{color: 'white'}}/> : 'View Details'}
             </CButton>
 
             <CButton
               size="sm"
-              color="primary"
+             style={{backgroundColor:COLORS.primary, color:"white"}}
               className="flex-grow-1 flex-md-grow-0"
               onClick={() =>
                 navigate('/session-list', {
@@ -316,7 +321,7 @@ const TherapyDashboard = () => {
                         <div className="text-end mt-2">
                           <CButton
                             size="sm"
-                            color="primary"
+                           style={{color:"white", backgroundColor:COLORS.primary}}
                             onClick={() =>
                               navigate("/therapist-details", { state: item })
                             }
@@ -338,7 +343,7 @@ const TherapyDashboard = () => {
                 className="d-flex"
                 style={{ flex: "0 0 auto", minWidth: "220px" }}
               >
-                <CCard color="primary" textColor="white" className="w-100 h-100">
+                <CCard  style={{color:COLORS.primary}} className="w-100 h-100">
                   <CCardBody className="text-center py-3 px-2">
                     <h6 className="mb-1" style={{ fontSize: "14px" }}>
                       Today's Appointments
@@ -357,7 +362,7 @@ const TherapyDashboard = () => {
                 className="d-flex"
                 style={{ flex: "0 0 auto", minWidth: "220px" }}
               >
-                <CCard color="success" textColor="white" className="w-100 h-100">
+                <CCard  style={{color:COLORS.primary}} className="w-100 h-100">
                   <CCardBody className="text-center py-3 px-2">
                     <h6 className="mb-1" style={{ fontSize: "14px" }}>
                       Weekly Appointment
@@ -376,7 +381,7 @@ const TherapyDashboard = () => {
                 className="d-flex"
                 style={{ flex: "0 0 auto", minWidth: "220px" }}
               >
-                <CCard color="warning" textColor="white" className="w-100 h-100">
+                <CCard  style={{color:COLORS.primary}} className="w-100 h-100">
                   <CCardBody className="text-center py-3 px-2">
                     <h6 className="mb-1" style={{ fontSize: "14px" }}>
                       Monthly Appointments
@@ -395,6 +400,7 @@ const TherapyDashboard = () => {
                 {/* ✅ Tab Navigation */}
                 <CNav
                   variant="tabs"
+                  color={COLORS.primary}
                   className="mb-3 flex-nowrap overflow-auto"
                   style={{
                     whiteSpace: "nowrap",
@@ -405,7 +411,7 @@ const TherapyDashboard = () => {
                     <CNavLink
                       active={tab === 1}
                       onClick={() => setTab(1)}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer",color:COLORS.primary }}
                     >
                       New Sessions
                     </CNavLink>
@@ -415,7 +421,7 @@ const TherapyDashboard = () => {
                     <CNavLink
                       active={tab === 2}
                       onClick={() => setTab(2)}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer",color:COLORS.primary }}
                     >
                       Active Sessions
                     </CNavLink>
@@ -425,7 +431,7 @@ const TherapyDashboard = () => {
                     <CNavLink
                       active={tab === 3}
                       onClick={() => setTab(3)}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer",color:COLORS.primary }}
                     >
                       Completed Sessions
                     </CNavLink>

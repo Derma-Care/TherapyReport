@@ -184,12 +184,12 @@ localStorage.setItem('hospitalId', JSON.stringify(HospitalId));
 
                 {/* Main content - flex center */}
                 <div className="w-100 d-flex flex-column align-items-center justify-content-center px-3" style={{ zIndex: 1, flex: 1 }}>
-                    <div className="text-center mb-4">
+                    {/* <div className="text-center mb-4">
                          <img src={DermaLogo} alt="Logo" style={{ maxHeight: '70px', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.2))' }} />
-                    </div>
+                    </div> */}
                     <CCard className="shadow-lg border-0" style={{ width: '100%', maxWidth: '420px', borderRadius: '24px', backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', padding: '10px' }}>
                         <CCardBody className="p-4 p-md-5">
-                            <h4 className="text-center fw-bold mb-1" style={{ color: '#2c3e50', letterSpacing: '-0.5px' }}>Therapist Login</h4>
+                            <h4 className="text-center fw-bold mb-1" style={{ color: COLORS.primary, letterSpacing: '-0.5px' }}>Therapist Login</h4>
                             <p className="text-center mb-4" style={{ color: '#6c757d', fontSize: '0.875rem' }}>Sign in to your account</p>
 
                             {/* Error message */}
@@ -247,7 +247,7 @@ localStorage.setItem('hospitalId', JSON.stringify(HospitalId));
                                     <small className="text-danger d-block mb-3 mt-n2">{fieldErrors.password}</small>
                                 )}
 
-                                <div className="d-flex justify-content-between align-items-center mt-2 mb-4">
+                                {/* <div className="d-flex justify-content-between align-items-center mt-2 mb-4">
                                     <a
                                         href="#"
                                         className="text-decoration-none"
@@ -259,7 +259,7 @@ localStorage.setItem('hospitalId', JSON.stringify(HospitalId));
                                     >
                                         Forgot password?
                                     </a>
-                                </div>
+                                </div> */}
 
                                 <CButton
                                     type="submit"

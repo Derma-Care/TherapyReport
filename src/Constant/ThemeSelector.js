@@ -5,7 +5,7 @@ import { cilContrast } from '@coreui/icons'
 
 // Theme options
 const themeOptions = {
-    classic: { name: 'Classic', bgcolor: '#a5c4d4', black: '#7e3a93' }, // default
+    classic: { name: 'Classic', bgcolor: '#1B4F8A', black: '#fff' }, // default
     light: { name: 'Light', bgcolor: '#F2E8CF', black: '#2B2B2B' },
     neutral: { name: 'Neutral', bgcolor: '#F6E2E7', black: '#3C0A21' },
     Ocean: { name: 'Ocean', bgcolor: '#6898c9ff', black: '#1b4ca0ff' },

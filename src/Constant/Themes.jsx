@@ -1,7 +1,7 @@
 // src/styles/constants.ts
 
 export const COLORS = {
-  primary: '#0061c2',
+  primary: '#1B4F8A',
   secondary: '#0196ee',
   danger: '#ff4d4f',
   success: '#28a745',

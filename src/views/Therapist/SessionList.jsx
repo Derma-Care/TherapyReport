@@ -19,6 +19,7 @@ import { useLocation } from "react-router-dom"
 import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
+import { COLORS } from "../../Constant/Themes"
 
 const DUMMY_DATA = {
   "bookingId": "BOOK123",
@@ -624,7 +625,7 @@ const SessionList = () => {
     }
 
     const DesktopTable = (
-      <CTable bordered className="d-none d-md-table mt-2 mb-2 bg-white align-middle" responsive size="sm" style={{ fontSize: '0.9rem' }}>
+      <CTable bordered className="d-none d-md-table mt-2 mb-2 bg-white align-middle pink-table" responsive size="sm" style={{ fontSize: '0.9rem' }}>
         <thead className="bg-light">
           <tr>
             <th>Session_Id</th>
@@ -649,7 +650,7 @@ const SessionList = () => {
                 <td>
                   {s.date || s.sessionDate}
                   {isDateToday(s.date || s.sessionDate) && (
-                    <CBadge color="info" className="ms-2">Today</CBadge>
+                    <CBadge style={{backgroundColor:COLORS.primary, color:"white"}} className="ms-2">Today</CBadge>
                   )}
                 </td>
                 {/* <td className="text-nowrap">{s.duration || 'N/A'}</td> */}
@@ -662,7 +663,7 @@ const SessionList = () => {
                     <span className="text-muted"><small><i>Completed natively</i></small></span>
                   ) : (
                     !isRunning ? (
-                      <CButton size="sm" color="success" variant="outline" className="w-100 fw-bold" onClick={() => handleStartSession(s.sessionId)}>
+                      <CButton size="sm" style={{ color:COLORS.primary}} variant="outline" className="w-100 fw-bold" onClick={() => handleStartSession(s.sessionId)}>
                         ▶ Start Tracker
                       </CButton>
                     ) : (
@@ -714,7 +715,7 @@ const SessionList = () => {
                     {s.status?.toLowerCase() !== "completed" ? (
                       <CButton
                         size="sm"
-                        color="secondary"
+                       style={{color:"white", backgroundColor:COLORS.primary}}
                         title="Manual Complete (Fallback)"
                         onClick={() => handleManualCompleteFallback(s,exerciseContext)}
                       >
@@ -756,7 +757,7 @@ const SessionList = () => {
                   <span className="fw-bold">
                     {s.date || s.sessionDate}
                     {isDateToday(s.date || s.sessionDate) && (
-                      <CBadge color="info" className="ms-2">Today</CBadge>
+                      <CBadge  className="ms-2" style={{backgroundColor:COLORS.primary}}>Today</CBadge>
                     )}
                   </span>
                   <CBadge color={s.status?.toLowerCase() === 'completed' ? 'success' : 'warning'}>
@@ -838,9 +839,9 @@ const SessionList = () => {
     return (
       <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
         <CAccordionHeader>
-          <span className="fw-semibold text-success">Exercise: {ex.exerciseName}</span>
+          <span className="fw-semibold " style={{ color:COLORS.primary}}>Exercise: {ex.exerciseName}</span>
           {hasTodaySession && (
-            <CBadge color="info" className="ms-2">Today</CBadge>
+            <CBadge style={{backgroundColor:COLORS.primary, color:"white"}} className="ms-2">Today</CBadge>
           )}
         </CAccordionHeader>
         <CAccordionBody>
@@ -863,7 +864,7 @@ const SessionList = () => {
     const initialKeys = exercises.length > 0 ? [`ex-${exercises[0].exerciseId}`] : [];
 
     return (
-      <CAccordion alwaysOpen activeItemKey={initialKeys}>
+      <CAccordion alwaysOpen activeItemKey={initialKeys} style={{color:COLORS.primary}}>
         {exercises.map(renderExercise)}
       </CAccordion>
     );
@@ -871,14 +872,14 @@ const SessionList = () => {
 
   return (
     <CCard>
-      <CCardBody>
+      <CCardBody style={{color: COLORS.primary}}>
         <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
           <div>
-            <h4 className="fw-bold text-dark mb-1">{patient.name || 'Patient Sessions'}</h4>
-            <div className="text-muted"><strong>Doctor:</strong> {patient.doctorName || patientDataSource.doctorName || 'N/A'}</div>
+            <h4 className="fw-bold mb-1" style={{color: COLORS.primary}}>{patient.name || 'Patient Sessions'}</h4>
+            <div className="text-muted" style={{color: COLORS.primary}}><strong>Doctor:</strong> {patient.doctorName || patientDataSource.doctorName || 'N/A'}</div>
           </div>
-          <div className="text-end">
-            <CBadge color="primary" shape="rounded-pill" style={{ fontSize: '1rem', padding: '8px 16px' }}>
+          <div className="text-end" style={{backgroundColor: COLORS.primary}}>
+            <CBadge   shape="rounded-pill" style={{ fontSize: '1rem', padding: '8px 16px',color: "white" }}>
               {patientDataSource.serviceType || 'CUSTOM'}
             </CBadge>
           </div>

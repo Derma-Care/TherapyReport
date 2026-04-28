@@ -132,11 +132,14 @@ export const getSessionDetails = async (clinicId, branchId, therapistId, session
   }
 }
 
-export const getBookingByBookingId = async (clinicId, branchId, bookingId) => {
+export const getBookingByBookingId = async (clinicId, branchId, patientId, bookingId, therapistRecordId) => {
   try {
     const res = await axios.get(
-      `${wifiUrl}/api/physiotherapy-doctor/clinic-branch-booking/${clinicId}/${branchId}/${bookingId}`
+      // `${wifiUrl}/api/physiotherapy-doctor/clinic-branch-booking/${clinicId}/${branchId}/${bookingId}`
+      `${wifiUrl}/api/physiotherapy-doctor/get-record/${clinicId}/${branchId}/${patientId}/${bookingId}/${therapistRecordId}`
     )
+
+
     return res.data
   } catch (err) {
     console.error("API Error:", err)

@@ -18,6 +18,7 @@ import { createTherapyNotes, getDashboard } from "./TheraphyApi"
 import { useNavigate } from "react-router-dom"
 import { convertToBase64 } from "../../Utils/Base64Convert"
 import { showCustomToast } from "../../Utils/Toaster"
+import { COLORS } from "../../Constant/Themes"
 
 export default function SessionFormModal({
   visible,
@@ -99,28 +100,30 @@ export default function SessionFormModal({
         therapistId: theraphydata?.therapistId,
         sessionId: data.sessionId,
 
+         exercises: data?.exercises || "",
+ date: data?.sessionDate || data?.date || "",
         patientName: data.patientName,
         serviceType: data.serviceType,
 
-        date: data.sessionDate,
+        date: now.toLocaleDateString(),
         completedDate: now.toLocaleDateString(),
         completedTime: now.toLocaleTimeString(),
 
-
-        // exercises: data.exercises,
-
+therapy: data.serviceType || "",
+        exercises: data.sessionId,
+status: "Completed",
         painBefore,
         painAfter,
         duration: data.sessionTime,
         voiceRecord: data.voiceRecordUrl,
 
-        // setsDone: completedSets,
-        // repetationDone: completedRepitations,
+        setsDone: completedSets,
+        repetationDone: completedRepitations,
         setsDone: `${completedSets || 0}/${data?.sets || 0}`,
 repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
 
         therapistNotes: notes,
-        // patientResponse: data.patientResponse,
+        patientResponse: data.patientResponse || "Good",
 
         result,
         mode: "complete",
@@ -167,7 +170,7 @@ repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
       console.log("FAILED", err?.response?.data || err.message)
 
       // ❌ Error toast
-      toast.error(
+      showCustomToast(
         err?.response?.data?.message || "Something went wrong!"
       )
     } finally {
@@ -540,7 +543,8 @@ repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
         <hr />
         <div className="d-flex justify-content-end w-100 mt-4 mb-2">
           <CButton
-            color="success"
+           backdrop="static"
+            style={{color:"white",backgroundColor:COLORS.primary}}
             onClick={save}
             disabled={loading} // 🔥 disable while loading
           >
