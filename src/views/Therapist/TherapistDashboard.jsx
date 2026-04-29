@@ -24,6 +24,8 @@ import { getBookingByBookingId, getClinicData, getDashboard, getSessionDetails }
 import PatientViewModal from './PatientViewModal'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
+ 
 
 
 
@@ -229,10 +231,17 @@ const TherapyDashboard = () => {
     <>
       <CContainer fluid>
         {loading ? (
-          <div style={{ textAlign: 'center', marginTop: '100px' }}>
-            <CSpinner color="primary" />
-            <p>Loading therapy data...</p>
-          </div>
+     <div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "100vh",
+    width: "100%",
+  }}
+>
+  <LoadingIndicator message="Loading therapy data..." />
+</div>
         ) : (
           <>
             {/* ✅ Therapist Cards + Stats Row */}
@@ -244,96 +253,7 @@ const TherapyDashboard = () => {
                 msOverflowStyle: "none",
               }}
             >
-              {/* Therapist / Doctor Cards */}
-              {list.length === 0 ? (
-                <CCol
-                  xs="10"
-                  sm="6"
-                  md="3"
-                  style={{ flex: "0 0 auto", minWidth: "220px" }}
-                >
-                  <CCard className="p-3 text-center h-100">
-                    <h6>No Therapist Data Found</h6>
-                  </CCard>
-                </CCol>
-              ) : (
-                list.map((item, index) => (
-                  <CCol
-                    key={index}
-                    xs="10"
-                    sm="6"
-                    md="3"
-                    className="d-flex"
-                    style={{ flex: "0 0 auto", minWidth: "220px" }}
-                  >
-                    <CCard
-                      className="w-100 h-100 shadow-sm"
-                      style={{ borderRadius: "12px" }}
-                    >
-                      <CCardBody className="p-2">
-                        <div>
-                          <CRow className="align-items-center g-2">
-                            <CCol xs={4} className="text-center">
-                              <img
-                                src={
-                                  item?.documents?.profilePhoto
-                                    ? `data:image/jpeg;base64,${item.documents.profilePhoto}`
-                                    : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                                }
-                                alt="profile"
-                                style={{
-                                  width: "48px",
-                                  height: "48px",
-                                  borderRadius: "50%",
-                                  objectFit: "cover",
-                                }}
-                              />
-                            </CCol>
-
-                            <CCol xs={8}>
-                              <h6
-                                className="mb-0"
-                                style={{
-                                  fontSize: "13px",
-                                  whiteSpace: "normal",
-                                }}
-                              >
-                                {capitalizeWords(item?.fullName)}
-                              </h6>
-
-                              <small style={{ fontSize: "11px" }}>
-                                {item?.qualification}
-                              </small>
-
-                              <p
-                                className="mb-1"
-                                style={{
-                                  fontSize: "10px",
-                                  whiteSpace: "normal",
-                                }}
-                              >
-                                {item?.specializations?.join(", ")}
-                              </p>
-                            </CCol>
-                          </CRow>
-                        </div>
-
-                        <div className="text-end mt-2">
-                          <CButton
-                            size="sm"
-                           style={{color:"white", backgroundColor:COLORS.primary}}
-                            onClick={() =>
-                              navigate("/therapist-details", { state: item })
-                            }
-                          >
-                            View
-                          </CButton>
-                        </div>
-                      </CCardBody>
-                    </CCard>
-                  </CCol>
-                ))
-              )}
+              
 
               {/* Today's Appointments */}
               <CCol
@@ -437,17 +357,17 @@ const TherapyDashboard = () => {
                     </CNavLink>
                   </CNavItem>
                 </CNav>
-
-                <h5>Patients</h5>
-
+{patientList.length !== 0 && 
+                <h5 className='mb-4' style={{color:COLORS.primary}}>Patients</h5>
+}
                 {/* ✅ Patient List */}
                 {dashboardLoading ? (
-                  <div style={{ textAlign: 'center', padding: '40px' }}>
-                    <CSpinner color="primary" size="sm" />
-                    <p>Loading patients...</p>
+                  <div  >
+                    
+                    <LoadingIndicator message='Loading patients...'/>
                   </div>
                 ) : patientList.length === 0 ? (
-                  <p>No Data Found</p>
+                  <p style={{ textAlign: 'center', color: COLORS.primary }}>No Data Found</p>
                 ) : (
                   patientList.map((p, index) => (
                     <PatientRow

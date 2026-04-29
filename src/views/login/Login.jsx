@@ -278,7 +278,7 @@ localStorage.setItem('hospitalId', JSON.stringify(HospitalId));
                                     onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                                     onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                                 >
-                                    {isLoading ? <CSpinner size="sm" /> : 'Sign In'}
+                                    {isLoading ? <CSpinner size="sm" color='white'/> : 'Sign In'}
                                 </CButton>
                             </CForm>
                         </CCardBody>

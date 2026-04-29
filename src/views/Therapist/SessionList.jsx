@@ -20,6 +20,7 @@ import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 import { COLORS } from "../../Constant/Themes"
+import LoadingIndicator from "../../Utils/loader"
 
 const DUMMY_DATA = {
   "bookingId": "BOOK123",
@@ -724,7 +725,7 @@ const SessionList = () => {
                     ) : (
                       <CButton
                         size="sm"
-                        color="primary"
+                         style={{backgroundColor:COLORS.primary,color:"white"}}
                         disabled={loadingId === s.sessionId}
                         onClick={() => handleView(s, patient.therapistRecordId, patient)}
                       >
@@ -744,85 +745,156 @@ const SessionList = () => {
       </CTable>
     );
 
-    const MobileCards = (
-      <div className="d-block d-md-none mt-2">
-        {sessions.map((s, idx) => {
-          const activeStartObj = activeSessions[s.sessionId];
-          const isRunning = !!activeStartObj;
+ const MobileCards = (
+  <div className="d-block d-md-none mt-2">
+    {sessions.map((s, idx) => {
+      const activeStartObj = activeSessions[s.sessionId]
+      const isRunning = !!activeStartObj
 
-          return (
-            <CCard key={s.sessionId || idx} className="mb-3 shadow-sm border-light">
-              <CCardBody className="p-3">
-                <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-                  <span className="fw-bold">
-                    {s.date || s.sessionDate}
-                    {isDateToday(s.date || s.sessionDate) && (
-                      <CBadge  className="ms-2" style={{backgroundColor:COLORS.primary}}>Today</CBadge>
-                    )}
-                  </span>
-                  <CBadge color={s.status?.toLowerCase() === 'completed' ? 'success' : 'warning'}>
-                    {s.status || 'Pending'}
+      return (
+        <CCard
+          key={s.sessionId || idx}
+          className="mb-3 shadow-sm border-light"
+        >
+          <CCardBody className="p-2" style={{ fontSize: "13px" }}>
+            
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+              <span className="fw-bold" style={{ fontSize: "12px" }}>
+                {s.date || s.sessionDate}
+
+                {isDateToday(s.date || s.sessionDate) && (
+                  <CBadge
+                    className="ms-1"
+                    style={{
+                      backgroundColor: COLORS.primary,
+                      fontSize: "10px",
+                    }}
+                  >
+                    Today
                   </CBadge>
-                </div>
-                {/* <div className="d-flex justify-content-between mb-3 text-muted" style={{ fontSize: '0.85rem' }}>
-                  <span>Duration: {s.duration || 'N/A'}</span>
-                </div> */}
+                )}
+              </span>
 
-                <div className="mb-3">
-                  {s.startTime && s.endTime ? (
-                    <div className="text-muted text-center p-2 bg-light rounded"><small>
-                      <i>Tracked: <strong>{s.startTime}</strong> to <strong>{s.endTime}</strong></i>
-                    </small></div>
-                  ) : s.status?.toLowerCase() === "completed" ? (
-                    <div className="text-muted text-center p-2 bg-light rounded"><small><i>Completed natively</i></small></div>
+              <CBadge
+                color={
+                  s.status?.toLowerCase() === "completed"
+                    ? "success"
+                    : "warning"
+                }
+                style={{ fontSize: "10px" }}
+              >
+                {s.status || "Pending"}
+              </CBadge>
+            </div>
+
+            {/* Tracker */}
+            <div className="mb-2">
+              {!isRunning ? (
+                <CButton
+                  size="sm"
+                  className="w-100 py-1"
+                  style={{ fontSize: "12px" }}
+                  color="success"
+                  variant="outline"
+                  onClick={() => handleStartSession(s.sessionId)}
+                >
+                  ▶ Start Tracker
+                </CButton>
+              ) : (
+                <div className="text-center p-2 border rounded">
+                  <div style={{ fontSize: "12px" }}>
+                    <ElapsedTime startTimeObj={activeStartObj} />
+                  </div>
+
+                  <div
+                    className="mb-2 text-muted"
+                    style={{ fontSize: "11px" }}
+                  >
+                    Started {formatDisplayTime(activeStartObj)}
+                  </div>
+
+                  <CButton
+                    size="sm"
+                    color="danger"
+                    className="w-100 py-1"
+                    style={{ fontSize: "12px" }}
+                    onClick={() => handleStopAndComplete(s)}
+                  >
+                    ⏹ Stop & Save Time
+                  </CButton>
+                </div>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="d-flex gap-2">
+              {s.voiceRecordUrl ? (
+                <CButton
+                  size="sm"
+                  className="w-100 py-1"
+                  style={{ fontSize: "11px" }}
+                  color="info"
+                  variant="outline"
+                  onClick={() => setAudioPlaybackSession(s)}
+                >
+                  ▶️ Play
+                </CButton>
+              ) : (
+                s.status?.toLowerCase() !== "completed" && (
+                  <CButton
+                    size="sm"
+                    className="w-100 py-1"
+                    style={{ fontSize: "11px" }}
+                    color="secondary"
+                    variant="outline"
+                    onClick={() => setVoiceRecordSession(s)}
+                  >
+                    🎤 Record
+                  </CButton>
+                )
+              )}
+
+              {s.status?.toLowerCase() !== "completed" ? (
+                <CButton
+                  size="sm"
+                  className="w-100 py-1"
+                  style={{ fontSize: "11px" }}
+                  color="secondary"
+                  onClick={() =>
+                    handleManualCompleteFallback(s, exerciseContext)
+                  }
+                >
+                  Complete
+                </CButton>
+              ) : (
+                <CButton
+                  size="sm"
+                  className="w-100 py-1"
+                  style={{
+                    fontSize: "11px",
+                    backgroundColor: COLORS.primary,
+                    color: "white",
+                  }}
+                  disabled={loadingId === s.sessionId}
+                  onClick={() =>
+                    handleView(s, patient.therapistRecordId)
+                  }
+                >
+                  {loadingId === s.sessionId ? (
+                    <span className="spinner-border spinner-border-sm" />
                   ) : (
-                    !isRunning ? (
-                      <CButton size="sm" color="success" variant="outline" className="w-100 fw-bold py-2" onClick={() => handleStartSession(s.sessionId)}>
-                        ▶ Start Tracker
-                      </CButton>
-                    ) : (
-                      <div className="d-flex flex-column align-items-center bg-light border border-danger rounded p-3 shadow-sm">
-                        <div className="d-flex w-100 justify-content-between align-items-center mb-2">
-                          <span className="spinner-grow spinner-grow-sm text-danger" role="status" aria-hidden="true" style={{ width: '0.8rem', height: '0.8rem' }}></span>
-                          <ElapsedTime startTimeObj={activeStartObj} />
-                        </div>
-                        <div style={{ fontSize: "0.8rem", color: "#6c757d" }} className="mb-3">Started {formatDisplayTime(activeStartObj)}</div>
-                        <CButton size="sm" color="danger" className="w-100 fw-bold text-white shadow py-2" onClick={() => handleStopAndComplete(s)}>
-                          ⏹ Stop & Save Time
-                        </CButton>
-                      </div>
-                    )
+                    "View"
                   )}
-                </div>
-
-                <div className="d-flex gap-2">
-                  {/* Action buttons side by side */}
-                  {s.voiceRecordUrl ? (
-                    <CButton size="sm" color="info" variant="outline" className="w-100" onClick={() => setAudioPlaybackSession(s)}>
-                      ▶️ Play
-                    </CButton>
-                  ) : (s.status?.toLowerCase() !== "completed" && (
-                    <CButton size="sm" color="secondary" variant="outline" className="w-100" onClick={() => setVoiceRecordSession(s)}>
-                      🎤 Record
-                    </CButton>
-                  ))}
-
-                  {s.status?.toLowerCase() !== "completed" ? (
-                    <CButton size="sm" color="secondary" className="w-100" onClick={() => handleManualCompleteFallback(s,exerciseContext)}>
-                      Complete Form
-                    </CButton>
-                  ) : (
-                    <CButton size="sm" color="primary" className="w-100" disabled={loadingId === s.sessionId} onClick={() => handleView(s, patient.therapistRecordId)}>
-                      {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
-                    </CButton>
-                  )}
-                </div>
-              </CCardBody>
-            </CCard>
-          )
-        })}
-      </div>
-    );
+                </CButton>
+              )}
+            </div>
+          </CCardBody>
+        </CCard>
+      )
+    })}
+  </div>
+)
 
     return (
       <>
@@ -839,7 +911,16 @@ const SessionList = () => {
     return (
       <CAccordionItem itemKey={`ex-${ex.exerciseId}`} key={ex.exerciseId}>
         <CAccordionHeader>
-          <span className="fw-semibold " style={{ color:COLORS.primary}}>Exercise: {ex.exerciseName}</span>
+         <span
+    className="fw-semibold"
+    style={{
+      color: COLORS.primary,
+      fontSize: "13px",
+      lineHeight: "1.2",
+    }}
+  >
+    {ex.exerciseName}
+  </span>
           {hasTodaySession && (
             <CBadge style={{backgroundColor:COLORS.primary, color:"white"}} className="ms-2">Today</CBadge>
           )}
@@ -873,21 +954,65 @@ const SessionList = () => {
   return (
     <CCard>
       <CCardBody style={{color: COLORS.primary}}>
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-          <div>
-            <h4 className="fw-bold mb-1" style={{color: COLORS.primary}}>{patient.name || 'Patient Sessions'}</h4>
-            <div className="text-muted" style={{color: COLORS.primary}}><strong>Doctor:</strong> {patient.doctorName || patientDataSource.doctorName || 'N/A'}</div>
-          </div>
-          <div className="text-end" style={{backgroundColor: COLORS.primary}}>
-            <CBadge   shape="rounded-pill" style={{ fontSize: '1rem', padding: '8px 16px',color: "white" }}>
-              {patientDataSource.serviceType || 'CUSTOM'}
-            </CBadge>
-          </div>
-        </div>
+  <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
+  <div className="flex-grow-1">
+    <h5
+      className="fw-bold mb-1"
+      style={{
+        color: COLORS.primary,
+        fontSize: "clamp(14px, 4vw, 22px)",
+      }}
+    >
+      {patient.name || "Patient Sessions"}
+    </h5>
 
-        <div className="hierarchy-container">
-          {renderHierarchy(treeData)}
-        </div>
+    <div
+      className="text-muted"
+      style={{
+        color: COLORS.primary,
+        fontSize: "clamp(12px, 3vw, 16px)",
+      }}
+    >
+      <strong>Doctor:</strong> {patient.doctorName || "N/A"}
+    </div>
+  </div>
+
+  <div className="text-end">
+    <CBadge
+      shape="rounded-pill"
+      style={{
+        backgroundColor: COLORS.primary,
+        fontSize: "clamp(10px, 2.5vw, 14px)",
+        padding: "6px 12px",
+        color: "white",
+        borderRadius: "20px",
+      }}
+    >
+      {patientDataSource.serviceType || "CUSTOM"}
+    </CBadge>
+  </div>
+</div>
+
+<div className="hierarchy-container">
+  {dataLoading ? (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "300px",
+        width: "100%",
+      }}
+    >
+      <div className="text-center">
+        
+       <LoadingIndicator message=" Loading Session data..."/>
+      </div>
+    </div>
+  ) : (
+    renderHierarchy(treeData)
+  )}
+</div>
 
         {/* Dynamic Modals */}
         <VoiceRecordModal

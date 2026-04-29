@@ -1,103 +1,205 @@
-import React, { useState } from 'react'
-import { CDropdown, CDropdownItem, CDropdownMenu, CDropdownToggle } from '@coreui/react'
-import { cilSettings, cilAccountLogout, cilHospital } from '@coreui/icons'
-import CIcon from '@coreui/icons-react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from "react"
+import {
+  CDropdown,
+  CDropdownItem,
+  CDropdownMenu,
+  CDropdownToggle,
+} from "@coreui/react"
+import {
+  cilAccountLogout,
+  cilHospital,
+  cilUser,
+} from "@coreui/icons"
+import CIcon from "@coreui/icons-react"
+import { useNavigate } from "react-router-dom"
 
-import { useHospital } from '../Context/HospitalContext'
-import ConfirmModal from '../Utils/ConfirmLogoutModal'
+import { useHospital } from "../Context/HospitalContext"
+import ConfirmModal from "../Utils/ConfirmLogoutModal"
+import { getClinicData } from "../views/Therapist/TheraphyApi"
 
 const AppHeaderDropdown = () => {
-    const navigate = useNavigate()
-    const { selectedHospital } = useHospital()
-    const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const navigate = useNavigate()
+  const { selectedHospital } = useHospital()
 
-    const handleLogout = () => {
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('user')
-        localStorage.removeItem('HospitalId')
-        localStorage.removeItem('HospitalName')
-        localStorage.clear()
-        navigate('/login')
-    }
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [dropdownVisible, setDropdownVisible] =
+    useState(false)
 
-     const hospitalData = JSON.parse(localStorage.getItem("selectedClinic") || "{}");
+  const handleLogout = () => {
+    localStorage.clear()
+    navigate("/login")
+  }
+
+  const hospitalData = JSON.parse(
+    localStorage.getItem("selectedClinic") || "{}"
+  )
 
   const hospitalLogo = hospitalData?.hospitalLogo
     ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
-    : "";
-    const hospitalName = selectedHospital?.data?.name || 'Hospital'
+    : ""
 
-    const isValidLogo =
-        hospitalLogo &&
-        hospitalLogo !== 'null' &&
-        hospitalLogo !== 'undefined' &&
-        hospitalLogo.trim() !== ''
+  const hospitalName =
+    selectedHospital?.data?.name || "Hospital"
 
-    return (
-        <>
-            <CDropdown variant="nav-item" style={{cursor:"pointer"}}>
-                <CDropdownToggle caret={false} className="py-0 pe-0">
-                    {isValidLogo ? (
-                        <img
-                            src={
-                                hospitalLogo.startsWith('data:')
-                                    ? hospitalLogo
-                                    : `data:image/jpeg;base64,${hospitalLogo}`
-                            }
-                            alt={hospitalName}
-                            width={40}
-                            height={40}
-                            style={{
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                objectFit: 'contain',
-                            }}
-                        />
-                    ) : (
-                        <div
-                            style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: '50%',
-                                backgroundColor: '#e9ecef',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <CIcon icon={cilHospital} size="lg" />
-                        </div>
-                    )}
-                </CDropdownToggle>
+  const isValidLogo =
+    hospitalLogo &&
+    hospitalLogo !== "null" &&
+    hospitalLogo !== "undefined" &&
+    hospitalLogo.trim() !== ""
 
-                <CDropdownMenu className="pt-0" placement="bottom-end">
-                    <CDropdownItem>
-                        <CIcon icon={cilSettings} className="me-2" />
-                        Settings
-                    </CDropdownItem>
+const handleProfileClick = async () => {
+  if (loading) return
 
-                    <CDropdownItem onClick={() => setShowLogoutModal(true)}>
-                        <CIcon icon={cilAccountLogout} className="me-2" />
-                        Logout
-                    </CDropdownItem>
-                </CDropdownMenu>
-            </CDropdown>
-            <ConfirmModal
-                visible={showLogoutModal}
-                onClose={() => setShowLogoutModal(false)}
-                onConfirm={() => {
-                    setShowLogoutModal(false)
-                    handleLogout()
-                }}
-                title="Confirm Logout"
-                message="Are you sure you want to logout from the Clinic Portal?"
-                confirmText="Yes, Logout"
-                cancelText="Cancel"
-                confirmColor="danger"
-            />
-        </>
+  try {
+    setLoading(true)
+    setDropdownVisible(true) // keep open
+
+    const stored = JSON.parse(
+      localStorage.getItem("therapistData") || "{}"
     )
+
+    const clinicId =
+      stored?.clinicId || stored?.data?.clinicId
+
+    const branchId =
+      stored?.branchId || stored?.data?.branchId
+
+    const therapistId =
+      stored?.therapistId || stored?.data?.therapistId
+
+    const res = await getClinicData(
+      clinicId,
+      branchId,
+      therapistId
+    )
+
+    const list = res?.data || []
+
+    const item = Array.isArray(list)
+      ? list.find(
+          (x) => x.therapistId === therapistId
+        )
+      : list
+
+    // close after success
+    setDropdownVisible(false)
+
+    setTimeout(() => {
+      navigate("/therapist-details", {
+        state: item,
+      })
+    }, 200)
+  } catch (err) {
+    console.error("Clinic Fetch Error:", err)
+  } finally {
+    setLoading(false)
+  }
+}
+
+  return (
+    <>
+      <CDropdown
+        variant="nav-item"
+        visible={dropdownVisible}
+        onVisibleChange={setDropdownVisible}
+      >
+        <CDropdownToggle
+          caret={false}
+          className="py-0 pe-0"  
+ 
+  style={{ cursor: "pointer" }}
+        >
+          {isValidLogo ? (
+            <img
+              src={hospitalLogo}
+              alt={hospitalName}
+              width={40}
+              height={40}
+              style={{
+                borderRadius: "50%",
+                objectFit: "contain",   
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                backgroundColor: "#e9ecef",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center", 
+              }}
+            >
+              <CIcon icon={cilHospital} size="lg" />
+            </div>
+          )}
+        </CDropdownToggle>
+
+        <CDropdownMenu
+          className="pt-0"
+          placement="bottom-end"
+        >
+   <CDropdownItem
+  onClick={(e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    handleProfileClick()
+  }}
+  disabled={loading}
+   style={{ cursor: "pointer" }}
+>
+  {loading ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-2"
+        role="status"
+        aria-hidden="true" 
+      ></span>
+      Loading Profile...
+    </>
+  ) : (
+    <>
+      <CIcon icon={cilUser} className="me-2"   />
+      Profile
+    </>
+  )}
+</CDropdownItem>
+
+          <CDropdownItem
+            onClick={() =>
+              setShowLogoutModal(true)
+            }
+             style={{ cursor: "pointer" }}
+          >
+            <CIcon
+              icon={cilAccountLogout}
+              className="me-2" 
+            />
+            Logout
+          </CDropdownItem>
+        </CDropdownMenu>
+      </CDropdown>
+
+      <ConfirmModal
+        visible={showLogoutModal}
+        onClose={() =>
+          setShowLogoutModal(false)
+        }
+        onConfirm={() => {
+          setShowLogoutModal(false)
+          handleLogout()
+        }}
+        title="Confirm Logout"
+        message="Are you sure you want to logout from the Clinic Portal?"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+        confirmColor="danger"
+      />
+    </>
+  )
 }
 
 export default AppHeaderDropdown

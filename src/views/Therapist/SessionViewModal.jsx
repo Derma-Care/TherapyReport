@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react'
 import { CModal, CModalHeader, CModalBody, CCol, CRow } from '@coreui/react'
+import { COLORS } from '../../Constant/Themes'
 
 const SessionViewModal = ({ visible, data, onClose }) => {
   const [preview, setPreview] = useState(null)
@@ -31,15 +32,15 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   "";
   return (
     <>
-      <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
-        <CModalHeader>Session Details</CModalHeader>
+      <CModal visible={visible}  onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
+        <CModalHeader closeButton  style={{backgroundColor: COLORS.primary,color:"white"}} className="text-white">Session Details</CModalHeader>
 
         <CModalBody>
 
           {/* 🔷 HEADER */}
-          <h5 className="section-title">Session Information</h5>
+          <h6 className="section-title" style={{color: COLORS.primary}}>Session Information</h6>
 
-          <CRow className="mb-3">
+          <CRow className="mb-3" style={{color: COLORS.primary}}>
             {[
               { label: "Patient", value: data.patientName },
               { label: "Therapy", value: data.therapy },
@@ -52,42 +53,164 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             ].map((item, i) => (
               <CCol md={6} key={i}>
                 <div className="info-box">
-                  <span className="label">{item.label}</span>
-                  <span className="value">{item.value || "-"}</span>
+                  <span className="label" style={{color: COLORS.primary}}>{item.label}</span>
+                  <span className="value" style={{color: COLORS.primary}}>{item.value || "-"}</span>
                 </div>
               </CCol>
             ))}
           </CRow>
 
           {/* 🔷 NOTES */}
-          <h6 className="section-title">Notes</h6>
+          <h6 className="section-title" style={{color: COLORS.primary}}>Notes</h6>
 
           {/* <div className="note-box">
     <b>Doctor Notes</b>
     <p>{data.doctorNotes || "-"}</p>
   </div> */}
 
-          <div className="note-box">
+          <div className="note-box mb-4">
             <b>Therapist Notes</b>
-            <p>{data.therapistNotes || "-"}</p>
+            <p style={{color: COLORS.primary}}>{data.therapistNotes || "-"}</p>
           </div>
 
           {/* 🔷 SESSION DETAILS */}
-          <h6 className="section-title">Session Details</h6>
+          <h6 className="section-title" style={{color: COLORS.primary}}>Session Details</h6>
 
-          <CRow>
-            <CCol md={6}><b>Pain Before:</b> {data.painBefore || "-"}</CCol>
-            <CCol md={6}><b>Pain After:</b> {data.painAfter || "-"}</CCol>
-            <CCol md={6}><b>Result:</b> {data.result || "-"}</CCol>
-            <CCol md={6}><b>Duration:</b> {data.duration || "-"}  </CCol>
-            <CCol md={12}>
-              <b>Next Plan:</b>
-              <div>{data.nextPlan || "-"}</div>
-            </CCol>
-          </CRow>
+       <CRow className="g-3 mt-1">
+  <CCol md={6}>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: "10px",
+        padding: "12px",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          
+          fontWeight: "600",
+          marginBottom: "4px",
+        }}
+      >
+        Pain Before
+      </div>
+      <div style={{ fontSize: "15px", fontWeight: "500" }}>
+        {data.painBefore || "-"}
+      </div>
+    </div>
+  </CCol>
+
+  <CCol md={6}>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: "10px",
+        padding: "12px",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+     
+          fontWeight: "600",
+          marginBottom: "4px",
+        }}
+      >
+        Pain After
+      </div>
+      <div style={{ fontSize: "15px", fontWeight: "500" }}>
+        {data.painAfter || "-"}
+      </div>
+    </div>
+  </CCol>
+
+  <CCol md={6}>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        
+        borderRadius: "10px",
+        padding: "12px",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+ color: COLORS.primary,
+          fontWeight: "600",
+          marginBottom: "4px",
+        }}
+      >
+        Result
+      </div>
+      <div style={{ fontSize: "15px", fontWeight: "500" }}>
+        {data.result || "-"}
+      </div>
+    </div>
+  </CCol>
+
+  <CCol md={6}>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: "10px",
+         color: COLORS.primary,
+        padding: "12px",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          color: COLORS.primary,
+          fontWeight: "600",
+          marginBottom: "4px",
+        }}
+      >
+        Duration
+      </div>
+      <div style={{ fontSize: "15px", fontWeight: "500" }}>
+        {data.duration || "-"}
+      </div>
+    </div>
+  </CCol>
+
+  <CCol md={12}>
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: "10px",
+        padding: "12px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#64748b",
+          fontWeight: "600",
+          marginBottom: "4px",
+        }}
+      >
+        Next Plan
+      </div>
+      <div style={{ fontSize: "15px", fontWeight: "500" ,color: COLORS.primary}}>
+        {data.nextPlan || "-"}
+      </div>
+    </div>
+  </CCol>
+</CRow>
 
           {/* 🔷 MEDIA */}
-          <h6 className="section-title">Media</h6>
+          <h6 className="section-title mt-4" style={{color: COLORS.primary}}>Media</h6>
 
           <CRow>
             <CRow className="g-3">
@@ -105,7 +228,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   </CCol>
 
   {/* Audio */}
-<CCol md={12}>
+<CCol md={12} className='mt-5'>
   <strong>Audio Record:</strong>
 
   <div className="mt-2">
@@ -120,7 +243,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 </CRow>
 
             {/* Images */}
-            <CCol md={6}>
+            <CCol md={6} className="mt-3">
               <b>Before Image</b>
               <div  >
                 {data.beforeImage ? (
@@ -134,7 +257,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
               </div>
             </CCol>
 
-            <CCol md={6}>
+            <CCol md={6} className="mt-3">
               <b>After Image</b>
               <div  >
                 {data.afterImage ? (
@@ -149,7 +272,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             </CCol>
 
             {/* Videos */}
-            <CCol md={6} className="mt-3">
+            <CCol md={6} className="mt-4">
               <b>Before Video</b>
               <div className="media-box">
                 {data.beforeVideo ? (
@@ -162,7 +285,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
               </div>
             </CCol>
 
-            <CCol md={6} className="mt-3">
+            <CCol md={6} className="mt-4">
               <b>After Video</b>
               <div className="media-box">
                 {data.afterVideo ? (
@@ -249,6 +372,9 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   font-weight: 600;
   font-size: 14px;
   color: #212529;
+}.custom-modal .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 1;
 }
  
             /* Main Modal */
