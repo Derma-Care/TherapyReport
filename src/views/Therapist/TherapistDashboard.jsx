@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import {
   CSpinner,
   CCollapse,
+  CButton,
 } from '@coreui/react'
 import { getStats } from './therapistService'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -15,6 +16,7 @@ import {
   CheckCircle2, Clock, CalendarDays, ArrowRight,
   ClipboardList, Users, Zap,
 } from 'lucide-react'
+import { COLORS } from '../../Constant/Themes'
 
 // ─── Status config ────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -213,6 +215,10 @@ const TherapyDashboard = () => {
             <h1 className="td-page-title">Therapy Dashboard</h1>
             <p className="td-page-sub">Manage your patient sessions and appointments</p>
           </div>
+
+          <CButton style={{backgroundColor:COLORS.primary,color:"white"}} onClick={() => navigate('/therapist/attendance', { state: { clinicId, branchId, therapistId } })}>
+            Attendance Page
+          </CButton>
         </div>
 
         {/* ── Session tabs panel ────────────────── */}
