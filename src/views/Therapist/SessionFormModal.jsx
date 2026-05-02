@@ -218,6 +218,19 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     setErrors(err)
   }
 
+  const getCurrentLocation = () => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString() }),
+          () => resolve({ latitude: "", longitude: "" })
+        );
+      } else {
+        resolve({ latitude: "", longitude: "" });
+      }
+    });
+  };
+
   /* ── save ── */
   const save = async () => {
     let err = {}
@@ -232,12 +245,14 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
 
     try {
       setLoading(true)
+      const loc = await getCurrentLocation();
       const beforeBase64      = await convertToBase64(before)
       const afterBase64       = await convertToBase64(after)
       const beforeVideoBase64 = beforeVideo ? await convertToBase64(beforeVideo) : ''
       const afterVideoBase64  = afterVideo  ? await convertToBase64(afterVideo)  : ''
       const now               = new Date()
       const td                = JSON.parse(localStorage.getItem('therapistData'))
+      const formattedDate     = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
       const payload = {
         therapistRecordId:  data.therapistRecordId,
@@ -249,8 +264,8 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         sessionId:          data.sessionId,
         patientName:        data.patientName,
         serviceType:        data.serviceType,
-        date:               now.toLocaleDateString(),
-        completedDate:      now.toLocaleDateString(),
+        date:               formattedDate,
+        completedDate:      formattedDate,
         completedTime:      now.toLocaleTimeString(),
         painBefore, painAfter,
         duration:           data.sessionTime,
@@ -262,6 +277,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         result, mode: 'complete', nextPlan,
         beforeImage: beforeBase64, afterImage: afterBase64,
         beforeVideo: beforeVideoBase64, afterVideo: afterVideoBase64,
+        latitude: loc.latitude, longitude: loc.longitude,
       }
 
       const res = await createTherapyNotes(payload)

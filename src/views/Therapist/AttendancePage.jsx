@@ -9,7 +9,55 @@ import {
   CButton,
   CFormInput,
   CFormLabel,
+  CSpinner,
 } from "@coreui/react";
+import { BASE_URL } from "../../API/BaseUrl";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
+
+const ScrollPicker = ({ items, selected, onChange, label }) => {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '70px' }}>
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
+      <div style={{
+        height: '120px',
+        overflowY: 'auto',
+        border: '1px solid #d1d5db',
+        borderRadius: 8,
+        width: '100%',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+      }}
+        className="hide-scrollbar"
+      >
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        {items.map(item => (
+          <div
+            key={item}
+            onClick={() => onChange(item)}
+            style={{
+              padding: '8px 0',
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: selected === item ? '#1B4F8A' : 'transparent',
+              color: selected === item ? '#fff' : '#374151',
+              fontWeight: selected === item ? 600 : 400,
+              fontSize: 14,
+              transition: 'all 0.2s'
+            }}
+          >
+            {item.toString().padStart(2, '0')}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const AttendanceTracker = () => {
   const today = new Date();
   const dateStr = today.toISOString().split("T")[0];
@@ -27,48 +75,98 @@ const AttendanceTracker = () => {
   const [activeTab, setActiveTab] = useState("daily");
   const [showModal, setShowModal] = useState(false);
   const [activity, setActivity] = useState("");
-  const [duration, setDuration] = useState("");
+  const [durationHours, setDurationHours] = useState(0);
+  const [durationMinutes, setDurationMinutes] = useState(0);
   const [address, setAddress] = useState("Fetching...");
 
-  const [data, setData] = useState([
-    {
-      id: 1,
-      activity: "Manual Therapy",
-      duration: "50 mins",
-      address: "Hyderabad, Telangana, India",
-      date: dateStr,
-    },
-  ]);
+  const [data, setData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
 
-  const [monthlyData] = useState([
-    {
-      date: "Apr 27",
-      inTime: "09:00",
-      outTime: "18:00",
-      logTime: "9h",
-      workingHours: "50m",
-      idleTime: "8h 10m",
-    },
-    {
-      date: "Apr 28",
-      inTime: "10:00",
-      outTime: "17:00",
-      logTime: "7h",
-      workingHours: "1h",
-      idleTime: "6h",
-    },
-  ]);
+  const [loadingDaily, setLoadingDaily] = useState(true);
+  const [loadingMonthly, setLoadingMonthly] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const location = useLocation();
+  const storedData = localStorage.getItem('therapistData');
+  const therapistData = location.state || (storedData ? JSON.parse(storedData) : {});
+  const therapistId = therapistData?.therapistId;
+
+  const getCurrentLocation = () => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString() }),
+          () => resolve({ latitude: "", longitude: "" })
+        );
+      } else {
+        resolve({ latitude: "", longitude: "" });
+      }
+    });
+  };
+
+  const fetchDailyData = async () => {
+    try {
+      setLoadingDaily(true);
+      const res = await axios.get(`${BASE_URL}/getDaily/${therapistId}/${dateStr}`);
+      const result = res.data;
+      if (result.success && result.data) {
+        setData(result.data.sessions || []);
+        if (result.data.login?.time) {
+          setLoginTime(result.data.login.time);
+          setLoggedIn(true);
+        } else {
+          setLoginTime("");
+          setLoggedIn(false);
+        }
+        if (result.data.logout?.time) {
+          setLogoutTime(result.data.logout.time);
+          setLoggedOut(true);
+          setLoggedIn(false);
+        } else {
+          setLogoutTime("");
+          setLoggedOut(false);
+        }
+      } else {
+        setData([]);
+      }
+    } catch (err) {
+      console.error("Error fetching daily data:", err);
+    } finally {
+      setLoadingDaily(false);
+    }
+  };
+
+  const fetchMonthlyData = async () => {
+    try {
+      setLoadingMonthly(true);
+      const monthStr = dateStr.substring(0, 7);
+      const res = await axios.get(`${BASE_URL}/getMonthly/${therapistId}/${monthStr}`);
+      const result = res.data;
+      if (result.success && result.data) {
+        setMonthlyData(result.data || []);
+      } else {
+        setMonthlyData([]);
+      }
+    } catch (err) {
+      console.error("Error fetching monthly data:", err);
+    } finally {
+      setLoadingMonthly(false);
+    }
+  };
 
   useEffect(() => {
+    fetchDailyData();
+    fetchMonthlyData();
+
     navigator.geolocation &&
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
-            const res = await fetch(
+            const res = await axios.get(
               `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`
             );
-            const json = await res.json();
-            setAddress(json.display_name);
+            setAddress(res.data.display_name);
           } catch {
             setAddress("Unable to fetch address");
           }
@@ -77,102 +175,148 @@ const AttendanceTracker = () => {
       );
   }, []);
 
+  const updateTimes = async (type, timeStr) => {
+    try {
+      setIsUpdatingStatus(true);
+
+      let payload = {
+        completedDate: dateStr,
+      };
+
+      if (type === "login") {
+        payload.loginTime = timeStr;
+        payload.loginLocation = address;
+      } else if (type === "logout") {
+        payload.logoutTime = timeStr;
+        payload.logoutLocation = address;
+      }
+
+      await axios.put(`${BASE_URL}/updateAttendance/${therapistId}`, payload);
+      await fetchDailyData();
+      await fetchMonthlyData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const handleLogin = () => {
     if (loggedIn || loggedOut) return;
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     setLoggedIn(true);
-    setLoginTime(
-      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+    setLoginTime(time);
+    updateTimes("login", time);
   };
 
   const handleLogout = () => {
     if (!loggedIn || loggedOut) return;
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     setLoggedIn(false);
     setLoggedOut(true);
-    setLogoutTime(
-      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+    setLogoutTime(time);
+    updateTimes("logout", time);
   };
 
-const handleAdd = () => {
-  let newErrors = {};
+  const handleAdd = async () => {
+    let newErrors = {};
 
-  if (!activity.trim()) {
-    newErrors.activity = "Activity is required";
-  }
+    if (!activity.trim()) {
+      newErrors.activity = "Activity is required";
+    }
 
-  if (!duration.trim()) {
-    newErrors.duration = "Duration is required";
-  } else if (Number(duration) <= 0) {
-    newErrors.duration = "Enter valid duration";
-  }
+    if (durationHours === 0 && durationMinutes === 0) {
+      newErrors.duration = "Please select a valid duration";
+    }
 
-  setErrors(newErrors);
+    setErrors(newErrors);
 
-  // stop if errors exist
-  if (Object.keys(newErrors).length > 0) return;
+    // stop if errors exist
+    if (Object.keys(newErrors).length > 0) return;
 
-  // success
-  setData([
-    ...data,
-    { id: Date.now(), activity, duration, address, date: dateStr },
-  ]);
+    try {
+      setIsSubmitting(true);
+      let durationStr = "";
+      if (durationHours > 0) durationStr += `${durationHours} Hour${durationHours > 1 ? 's' : ''} `;
+      if (durationMinutes > 0) durationStr += `${durationMinutes} Minute${durationMinutes > 1 ? 's' : ''}`;
+      durationStr = durationStr.trim();
 
-  // reset
-  setActivity("");
-  setDuration("");
-  setErrors({});
-  setShowModal(false);
-};
+      const loc = await getCurrentLocation();
+      const payload = {
+        completedDate: dateStr,
+        activity,
+        duration: durationStr,
+        location: address
+      };
+
+      const res = await axios.post(`${BASE_URL}/attendance/manual-session/${therapistId}`, payload);
+      const result = res.data;
+      if (result) {
+        await fetchDailyData();
+        await fetchMonthlyData();
+
+        // reset
+        setActivity("");
+        setDurationHours(0);
+        setDurationMinutes(0);
+        setErrors({});
+        setShowModal(false);
+      }
+    } catch (err) {
+      console.error("Error updating attendance:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ─── Styles ────────────────────────────────────────────────────────────────
-const isMobile = window.innerWidth <= 576;
-const isTablet = window.innerWidth > 576 && window.innerWidth <= 992;
+  const isMobile = window.innerWidth <= 576;
+  const isTablet = window.innerWidth > 576 && window.innerWidth <= 992;
   const styles = {
-wrap: {
-  padding: isMobile ? "1rem" : "1.5rem",
-  width: "100%",
-  maxWidth: "100%",
-  margin: "0 auto",
-},
-header: {
-  display: "flex",
-  flexDirection: isMobile ? "column" : "row",
-  alignItems: isMobile ? "flex-start" : "center",
-  justifyContent: "space-between",
-  gap: isMobile ? 10 : 0,
-  marginBottom: "1.5rem",
-  padding: "12px 16px",
-  borderRadius: 10,
-  color: "#fff",
-},
-h2: { fontSize: 18, fontWeight: 600, margin: 0, color: COLORS.primary },
-subtext: { fontSize: 13, color: "#cbd5e1", marginTop: 2 },
+    wrap: {
+      padding: isMobile ? "1rem" : "1.5rem",
+      width: "100%",
+      maxWidth: "100%",
+      margin: "0 auto",
+    },
+    header: {
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: isMobile ? "flex-start" : "center",
+      justifyContent: "space-between",
+      gap: isMobile ? 10 : 0,
+      marginBottom: "1.5rem",
+      padding: "12px 16px",
+      borderRadius: 10,
+      color: "#fff",
+    },
+    h2: { fontSize: 18, fontWeight: 600, margin: 0, color: COLORS.primary },
+    subtext: { fontSize: 13, color: "#cbd5e1", marginTop: 2 },
     subtext: { fontSize: 13, color: "#6b7280", marginTop: 2 },
 
     // Stat cards
-statsGrid: {
-  display: "grid",
-  gridTemplateColumns: isMobile
-    ? "repeat(2, 1fr)"
-    : isTablet
-    ? "repeat(2, 1fr)"
-    : "repeat(4, 1fr)",
-  gap: 10,
-  marginBottom: "1.5rem",
-},
-  statCard: {
-  background: "#ffffff",
-  borderRadius: 10,
-  padding: "14px 16px",
-  borderLeft: "4px solid #1B4F8A", // ✅ highlight
-  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-},
-statValue: {
-  fontSize: 20,
-  fontWeight: 600,
-  color: "#1B4F8A",
-},
+    statsGrid: {
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "repeat(2, 1fr)"
+        : isTablet
+          ? "repeat(2, 1fr)"
+          : "repeat(4, 1fr)",
+      gap: 10,
+      marginBottom: "1.5rem",
+    },
+    statCard: {
+      background: "#ffffff",
+      borderRadius: 10,
+      padding: "14px 16px",
+      borderLeft: "4px solid #1B4F8A", // ✅ highlight
+      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: 600,
+      color: "#1B4F8A",
+    },
     statLabel: {
       fontSize: 11,
       color: "#6b7280",
@@ -180,16 +324,16 @@ statValue: {
       letterSpacing: "0.04em",
       marginBottom: 6,
     },
-    
+
 
     // Tabs
- tabs: {
-  display: "flex",
-  overflowX: isMobile ? "auto" : "visible",
-  borderBottom: "0.5px solid #e5e7eb",
-  marginBottom: "1rem",
-  color:COLORS.primary
-},
+    tabs: {
+      display: "flex",
+      overflowX: isMobile ? "auto" : "visible",
+      borderBottom: "0.5px solid #e5e7eb",
+      marginBottom: "1rem",
+      color: COLORS.primary
+    },
     tab: (active) => ({
       padding: "8px 18px",
       fontSize: 16,
@@ -220,10 +364,10 @@ statValue: {
     },
     cardTitle: { fontSize: 18, fontWeight: 500 },
     table: {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontSize: isMobile ? 11 : 13,
-},
+      width: "100%",
+      borderCollapse: "collapse",
+      fontSize: isMobile ? 11 : 13,
+    },
     th: {
       padding: "10px 18px",
       textAlign: "left",
@@ -387,19 +531,19 @@ statValue: {
       display: "inline-block",
       marginRight: 5,
     }),
-addrCell: {
-  fontSize: 11,
- 
-  maxWidth: isMobile ? 120 : 180,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-},
+    addrCell: {
+      fontSize: 11,
+
+      maxWidth: isMobile ? 120 : 180,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    },
   };
-const [errors, setErrors] = useState({
-  activity: "",
-  duration: "",
-});
+  const [errors, setErrors] = useState({
+    activity: "",
+    duration: "",
+  });
   // ─── Status badge ──────────────────────────────────────────────────────────
   const StatusBadge = () => {
     if (loggedOut)
@@ -413,6 +557,13 @@ const [errors, setErrors] = useState({
 
   // ─── Action button ─────────────────────────────────────────────────────────
   const ActionButton = () => {
+    if (isUpdatingStatus)
+      return (
+        <button style={{ ...styles.btn, color: "#9ca3af" }} disabled>
+          <CSpinner size="sm" style={{ width: '1rem', height: '1rem', marginRight: '6px' }} />
+          Updating...
+        </button>
+      );
     if (loggedOut)
       return (
         <span style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>
@@ -479,7 +630,7 @@ const [errors, setErrors] = useState({
         <div style={styles.card} >
           <div style={styles.cardHeader}>
             <span style={styles.cardTitle}>Today's activities</span>
-            { !loggedOut && (
+            {!loggedOut && (
               <button
                 style={styles.btnBlue}
                 onClick={() => setShowModal(true)}
@@ -489,33 +640,48 @@ const [errors, setErrors] = useState({
             )}
           </div>
           <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
-          <table style={styles.table}    >
-            <thead>
-              <tr>
-                {["#", "Activity", "Duration", "Location", "Date"].map((h) => (
-                  <th key={h} style={styles.th}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item, i) => (
-                <tr key={item.id}>
-                  <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.td}>{item.activity}</td>
-                  <td style={styles.td}>
-                    <span style={styles.badgeAmber}>{item.duration}</span>
-                  </td>
-                  <td style={styles.td}>
-                    <div style={styles.addrCell}>{item.address}</div>
-                  </td>
-                  <td style={styles.td}>{item.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {loadingDaily ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>
+                <CSpinner color="primary" />
+              </div>
+            ) : (
+              <table style={styles.table}    >
+                <thead>
+                  <tr>
+                    {["#", "Activity", "Duration", "Location", "Date"].map((h) => (
+                      <th key={h} style={styles.th}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((item, i) => (
+                    <tr key={item.sessionId || i}>
+                      <td style={styles.td}>{i + 1}</td>
+                      <td style={styles.td}>{item.activity}</td>
+                      <td style={styles.td}>
+                        <span style={styles.badgeAmber}>{item.duration}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={styles.addrCell}>
+                          {item.location}
+                        </div>
+                      </td>
+                      <td style={styles.td}>{dateStr}</td>
+                    </tr>
+                  ))}
+                  {data.length === 0 && (
+                    <tr>
+                      <td colSpan="5" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                        No activities logged today.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 
@@ -526,115 +692,133 @@ const [errors, setErrors] = useState({
             <span style={styles.cardTitle}>Monthly summary</span>
           </div>
           <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
-          <table style={styles.table}  >
-            <thead>
-              <tr>
-                {["Date", "Login", "Logout", "Total", "Working", "Idle"].map(
-                  (h) => (
-                    <th key={h} style={styles.th}>
-                      {h}
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {monthlyData.map((item, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{item.date}</td>
-                  <td style={styles.td}>{item.inTime}</td>
-                  <td style={styles.td}>{item.outTime}</td>
-                  <td style={styles.td}>{item.logTime}</td>
-                  <td style={styles.td}>
-                    <span style={styles.badgeGreen}>{item.workingHours}</span>
-                  </td>
-                  <td style={styles.td}>{item.idleTime}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {loadingMonthly ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>
+                <CSpinner color="primary" />
+              </div>
+            ) : (
+              <table style={styles.table}  >
+                <thead>
+                  <tr>
+                    {["Date", "Login", "Logout", "Total", "Working", "Idle"].map(
+                      (h) => (
+                        <th key={h} style={styles.th}>
+                          {h}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthlyData.map((item, i) => (
+                    <tr key={i}>
+                      <td style={styles.td}>{item.date}</td>
+                      <td style={styles.td}>{item.inTime}</td>
+                      <td style={styles.td}>{item.outTime}</td>
+                      <td style={styles.td}>{item.logTime}</td>
+                      <td style={styles.td}>
+                        <span style={styles.badgeGreen}>{item.workingHours}</span>
+                      </td>
+                      <td style={styles.td}>{item.idleTime}</td>
+                    </tr>
+                  ))}
+                  {monthlyData.length === 0 && (
+                    <tr>
+                      <td colSpan="6" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                        No records found for this month.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
-      <CModal
-  visible={showModal}
-  onClose={() => setShowModal(false)}
-  alignment="center" backdrop="static" 
->
-  <CModalHeader>
-    <CModalTitle>Add Activity</CModalTitle>
-  </CModalHeader>
+        <CModal
+          visible={showModal}
+          onClose={() => setShowModal(false)}
+          alignment="center" backdrop="static"
+        >
+          <CModalHeader>
+            <CModalTitle>Add Activity</CModalTitle>
+          </CModalHeader>
 
-  <CModalBody>
-    {/* Activity */}
-    <div style={{ marginBottom: 12 }}>
-      <CFormLabel>Activity Name</CFormLabel>
-      <CFormInput
-        placeholder="Enter Activity Name"
-        value={activity}
-        onChange={(e) => {
-          setActivity(e.target.value);
-          setErrors({ ...errors, activity: "" });
-        }}
-        invalid={!!errors.activity}
-      />
-      {errors.activity && (
-        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-          {errors.activity}
-        </div>
-      )}
-    </div>
+          <CModalBody>
+            {/* Activity */}
+            <div style={{ marginBottom: 12 }}>
+              <CFormLabel>Activity Name</CFormLabel>
+              <CFormInput
+                placeholder="Enter Activity Name"
+                value={activity}
+                onChange={(e) => {
+                  setActivity(e.target.value);
+                  setErrors({ ...errors, activity: "" });
+                }}
+                invalid={!!errors.activity}
+              />
+              {errors.activity && (
+                <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                  {errors.activity}
+                </div>
+              )}
+            </div>
 
-    {/* Duration */}
-    <div style={{ marginBottom: 12 }}>
-      <CFormLabel>Duration</CFormLabel>
-      <CFormInput
-        type="number"
-        placeholder="Enter Duration"
-        value={duration}
-        onChange={(e) => {
-          setDuration(e.target.value);
-          setErrors({ ...errors, duration: "" });
-        }}
-        invalid={!!errors.duration}
-      />
-      {errors.duration && (
-        <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-          {errors.duration}
-        </div>
-      )}
-    </div>
+            {/* Duration */}
+            <div style={{ marginBottom: 12 }}>
+              <CFormLabel>Duration</CFormLabel>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <ScrollPicker
+                  items={Array.from({ length: 13 }, (_, i) => i)}
+                  selected={durationHours}
+                  onChange={(val) => { setDurationHours(val); setErrors({ ...errors, duration: "" }); }}
+                  label="Hours"
+                />
+                <div style={{ fontSize: 20, fontWeight: 'bold', color: '#6b7280', marginTop: 15 }}>:</div>
+                <ScrollPicker
+                  items={Array.from({ length: 60 }, (_, i) => i)}
+                  selected={durationMinutes}
+                  onChange={(val) => { setDurationMinutes(val); setErrors({ ...errors, duration: "" }); }}
+                  label="Minutes"
+                />
+              </div>
+              {errors.duration && (
+                <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                  {errors.duration}
+                </div>
+              )}
+            </div>
 
-    {/* Info Box */}
-    <div
-      style={{
-        background: "#f9fafb",
-        padding: 10,
-        borderRadius: 8,
-        fontSize: 12,
-      }}
-    >
-      <div className="mb-4">
-        <strong>Date:</strong> {dateStr}
-      </div>
-      <div>
-        <strong>Location:</strong> {address}
-      </div>
-    </div>
-  </CModalBody>
+            {/* Info Box */}
+            <div
+              style={{
+                background: "#f9fafb",
+                padding: 10,
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+            >
+              <div className="mb-4">
+                <strong>Date:</strong> {dateStr}
+              </div>
+              <div>
+                <strong>Location:</strong> {address}
+              </div>
+            </div>
+          </CModalBody>
 
-  <CModalFooter>
-    <CButton color="secondary" onClick={() => setShowModal(false)}>
-      Cancel
-    </CButton>
-    <CButton color="primary" onClick={handleAdd}>
-      Save
-    </CButton>
-  </CModalFooter>
-</CModal>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setShowModal(false)} disabled={isSubmitting}>
+              Cancel
+            </CButton>
+            <CButton color="primary" onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? <CSpinner size="sm" /> : "Save"}
+            </CButton>
+          </CModalFooter>
+        </CModal>
       )}
     </div>
   );
