@@ -545,8 +545,7 @@ const SessionList = () => {
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", justifyContent: isMobile ? "flex-start" : "flex-end" }}>
             <span style={{ ...S.metaPill, ...S.metaPillBlue }}><Calendar size={12} /> {ex.frequency}</span>
-            <span style={{ ...S.metaPill, ...S.metaPillAmber }}><Activity size={12} /> {ex.sets} Sets</span>
-            <span style={{ ...S.metaPill, ...S.metaPillGreen }}><Zap size={12} /> {ex.repetitions} Reps</span>
+            {/* Removed Sets and Reps from header as per user request */}
             <span style={{
               ...S.metaPill,
               ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
@@ -559,6 +558,34 @@ const SessionList = () => {
         </div>
         {isOpen && (
           <div style={{ background: "#f8fafd", borderTop: `1px solid ${T.border}` }}>
+            {/* Details Bar */}
+            <div style={{ 
+              padding: "0.8rem 1.25rem", 
+              display: "flex", 
+              gap: "1.5rem", 
+              flexWrap: "wrap", 
+              background: T.white,
+              borderBottom: `1px solid ${T.border}`,
+              fontSize: "0.82rem"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Activity size={14} style={{ color: T.navy }} />
+                <span style={{ color: T.muted }}>Type:</span>
+                <span style={{ fontWeight: 600, color: T.navy }}>{ex.activityType || "N/A"}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Zap size={14} style={{ color: T.navy }} />
+                <span style={{ color: T.muted }}>Prescription:</span>
+                <span style={{ fontWeight: 600, color: T.navy }}>{ex.sets} Sets x {ex.repetitions} Reps</span>
+              </div>
+              {ex.activityDuration && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Clock size={14} style={{ color: T.navy }} />
+                  <span style={{ color: T.muted }}>Duration:</span>
+                  <span style={{ fontWeight: 600, color: T.navy }}>{ex.activityDuration} mins</span>
+                </div>
+              )}
+            </div>
             {renderSessionsTable(ex.sessions, ex)}
           </div>
         )}
