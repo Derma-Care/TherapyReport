@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { COLORS } from "../../Constant/Themes";
 import {
   CModal,
   CModalHeader,
@@ -11,6 +10,13 @@ import {
   CFormLabel,
   CSpinner,
 } from "@coreui/react";
+import {
+  User, Phone, Stethoscope, Activity,
+  CheckCircle2, Clock, CalendarDays, ArrowRight,
+  ClipboardList, Users, Zap, LogIn, LogOut, ShieldCheck, MapPin, ChevronRight, ListChecks
+} from 'lucide-react';
+import { COLORS } from "../../Constant/Themes";
+import ConfirmModal from "../../Utils/ConfirmLogoutModal";
 import { BASE_URL } from "../../API/BaseUrl";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
@@ -77,6 +83,7 @@ const AttendanceTracker = () => {
   const [activity, setActivity] = useState("");
   const [durationHours, setDurationHours] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(0);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [address, setAddress] = useState("Fetching...");
 
   const [data, setData] = useState([]);
@@ -211,11 +218,16 @@ const AttendanceTracker = () => {
 
   const handleLogout = () => {
     if (!loggedIn || loggedOut) return;
+    setIsLogoutModalVisible(true);
+  };
+
+  const confirmLogout = () => {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     setLoggedIn(false);
     setLoggedOut(true);
     setLogoutTime(time);
     updateTimes("logout", time);
+    setIsLogoutModalVisible(false);
   };
 
   const handleAdd = async () => {
@@ -281,36 +293,35 @@ const AttendanceTracker = () => {
     },
     header: {
       display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      alignItems: isMobile ? "flex-start" : "center",
+      flexDirection: "row",
+      alignItems: "center",
       justifyContent: "space-between",
-      gap: isMobile ? 10 : 0,
+      gap: 10,
       marginBottom: "1.5rem",
       padding: "12px 16px",
       borderRadius: 10,
       color: "#fff",
     },
     h2: { fontSize: 18, fontWeight: 600, margin: 0, color: COLORS.primary },
-    subtext: { fontSize: 13, color: "#cbd5e1", marginTop: 2 },
     subtext: { fontSize: 13, color: "#6b7280", marginTop: 2 },
 
     // Stat cards
     statsGrid: {
       display: "grid",
-      gridTemplateColumns: isMobile
-        ? "repeat(2, 1fr)"
-        : isTablet
-          ? "repeat(2, 1fr)"
-          : "repeat(4, 1fr)",
-      gap: 10,
+      gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(160px, 1fr))",
+      gap: isMobile ? 12 : 16,
       marginBottom: "1.5rem",
     },
     statCard: {
       background: "#ffffff",
-      borderRadius: 10,
-      padding: "14px 16px",
-      borderLeft: "4px solid #1B4F8A", // ✅ highlight
-      boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+      borderRadius: 12,
+      padding: isMobile ? "1rem" : "1.25rem",
+      borderLeft: "4px solid #1B4F8A",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      minHeight: isMobile ? 90 : 100,
     },
     statValue: {
       fontSize: 20,
@@ -329,23 +340,23 @@ const AttendanceTracker = () => {
     // Tabs
     tabs: {
       display: "flex",
-      overflowX: isMobile ? "auto" : "visible",
-      borderBottom: "0.5px solid #e5e7eb",
-      marginBottom: "1rem",
-      color: COLORS.primary
+      borderBottom: "1px solid #e5e7eb",
+      marginBottom: "1.25rem",
+      gap: isMobile ? 0 : "1rem",
     },
     tab: (active) => ({
-      padding: "8px 18px",
-      fontSize: 16,
+      flex: isMobile ? 1 : "initial",
+      textAlign: "center",
+      padding: isMobile ? "12px 0" : "10px 24px",
+      fontSize: isMobile ? 14 : 15,
       cursor: "pointer",
-      color: active ? `${COLORS.primary}` : "#6b7280",
-      fontWeight: active ? 500 : 400,
-      borderBottom: active ? "2px solid #111827" : "2px solid transparent",
+      color: active ? "#1B4F8A" : "#6b7280",
+      fontWeight: active ? 600 : 500,
+      borderBottom: active ? "3px solid #1B4F8A" : "3px solid transparent",
       background: "none",
       border: "none",
-      borderBottom: active ? "2px solid #111827" : "2px solid transparent",
+      transition: "all 0.2s",
       marginBottom: -1,
-      cursor: "pointer",
     }),
 
     // Card / Table
@@ -478,7 +489,8 @@ const AttendanceTracker = () => {
       background: "#fff",
       border: "0.5px solid #e5e7eb",
       borderRadius: 12,
-      width: 380,
+      width: "95%",
+      maxWidth: 380,
       overflow: "hidden",
     },
     modalHeader: {
@@ -533,12 +545,39 @@ const AttendanceTracker = () => {
     }),
     addrCell: {
       fontSize: 11,
-
+      color: "#6b7280",
       maxWidth: isMobile ? 120 : 180,
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
     },
+    // Mobile specific
+    mobileCard: {
+      background: "#fff",
+      borderRadius: 12,
+      padding: "1rem",
+      marginBottom: "0.85rem",
+      border: "0.5px solid #e5e7eb",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
+    },
+    mobileCardRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    mobileLabel: {
+      fontSize: 11,
+      textTransform: "uppercase",
+      color: "#9ca3af",
+      fontWeight: 600,
+      letterSpacing: "0.03em",
+    },
+    mobileValue: {
+      fontSize: 13,
+      color: "#374151",
+      fontWeight: 500,
+    }
   };
   const [errors, setErrors] = useState({
     activity: "",
@@ -591,22 +630,35 @@ const AttendanceTracker = () => {
       {/* Header */}
       <div style={styles.header}>
         <div>
-          <h2 style={styles.h2}>Attendance tracker</h2>
+          <h2 style={styles.h2}>Daily Duty Log</h2>
           <p style={styles.subtext}>{dateDisplay}</p>
         </div>
         <ActionButton />
       </div>
 
+      <ConfirmModal
+        visible={isLogoutModalVisible}
+        onClose={() => setIsLogoutModalVisible(false)}
+        onConfirm={confirmLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to logout and end your session for today?"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+      />
+
       {/* Stat cards */}
       <div style={styles.statsGrid}>
         {[
-          { label: "Login", value: loginTime || "—" },
-          { label: "Logout", value: logoutTime || "—" },
-          { label: "Activities", value: data.length },
-          { label: "Status", value: <StatusBadge /> },
+          { label: "Login", value: loginTime || "—", icon: <LogIn size={14} /> },
+          { label: "Logout", value: logoutTime || "—", icon: <LogOut size={14} /> },
+          { label: "Activities", value: data.length, icon: <Activity size={14} /> },
+          { label: "Status", value: <StatusBadge />, icon: <ShieldCheck size={14} /> },
         ].map((s) => (
           <div key={s.label} style={styles.statCard}>
-            <div style={styles.statLabel}>{s.label}</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={styles.statLabel}>{s.label}</div>
+              <div style={{ color: "#1B4F8A", opacity: 0.6 }}>{s.icon}</div>
+            </div>
             <div style={styles.statValue}>{s.value}</div>
           </div>
         ))}
@@ -639,47 +691,72 @@ const AttendanceTracker = () => {
               </button>
             )}
           </div>
-          <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
+          <div style={{ padding: isMobile ? "0 4px" : 0 }}>
             {loadingDaily ? (
               <div style={{ padding: "40px", textAlign: "center" }}>
                 <CSpinner color="primary" />
               </div>
+            ) : isMobile ? (
+              /* Mobile Daily View */
+              <div style={{ padding: "1rem" }}>
+                {data.map((item, i) => (
+                  <div key={item.sessionId || i} style={styles.mobileCard}>
+                    <div style={styles.mobileCardRow}>
+                      <span style={styles.mobileLabel}>Activity</span>
+                      <span style={{ ...styles.mobileValue, fontWeight: 700, color: "#1B4F8A" }}>{item.activity}</span>
+                    </div>
+                    <div style={styles.mobileCardRow}>
+                      <span style={styles.mobileLabel}>Duration</span>
+                      <span style={styles.badgeAmber}>{item.duration}</span>
+                    </div>
+                    <div style={{ ...styles.mobileCardRow, marginBottom: 0, paddingTop: 8, borderTop: "0.5px solid #f3f4f6" }}>
+                      <span style={styles.mobileLabel}><MapPin size={11} style={{ marginRight: 4 }} /> Location</span>
+                      <span style={{ ...styles.mobileValue, fontSize: 11, maxWidth: "60%", textAlign: "right" }}>{item.location}</span>
+                    </div>
+                  </div>
+                ))}
+                {data.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
+                    <ListChecks size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+                    <p style={{ fontSize: 13 }}>No activities logged today.</p>
+                  </div>
+                )}
+              </div>
             ) : (
-              <table style={styles.table}    >
-                <thead>
-                  <tr>
-                    {["#", "Activity", "Duration", "Location", "Date"].map((h) => (
-                      <th key={h} style={styles.th}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((item, i) => (
-                    <tr key={item.sessionId || i}>
-                      <td style={styles.td}>{i + 1}</td>
-                      <td style={styles.td}>{item.activity}</td>
-                      <td style={styles.td}>
-                        <span style={styles.badgeAmber}>{item.duration}</span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.addrCell}>
-                          {item.location}
-                        </div>
-                      </td>
-                      <td style={styles.td}>{dateStr}</td>
-                    </tr>
-                  ))}
-                  {data.length === 0 && (
+              /* Desktop Daily View */
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
                     <tr>
-                      <td colSpan="5" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
-                        No activities logged today.
-                      </td>
+                      {["#", "Activity", "Duration", "Location", "Date"].map((h) => (
+                        <th key={h} style={styles.th}>{h}</th>
+                      ))}
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.map((item, i) => (
+                      <tr key={item.sessionId || i}>
+                        <td style={styles.td}>{i + 1}</td>
+                        <td style={styles.td}>{item.activity}</td>
+                        <td style={styles.td}>
+                          <span style={styles.badgeAmber}>{item.duration}</span>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={styles.addrCell}>{item.location}</div>
+                        </td>
+                        <td style={styles.td}>{dateStr}</td>
+                      </tr>
+                    ))}
+                    {data.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                          No activities logged today.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
@@ -691,46 +768,81 @@ const AttendanceTracker = () => {
           <div style={styles.cardHeader}>
             <span style={styles.cardTitle}>Monthly summary</span>
           </div>
-          <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
+          <div style={{ padding: isMobile ? "0 4px" : 0 }}>
             {loadingMonthly ? (
               <div style={{ padding: "40px", textAlign: "center" }}>
                 <CSpinner color="primary" />
               </div>
+            ) : isMobile ? (
+              /* Mobile Monthly View */
+              <div style={{ padding: "1rem" }}>
+                {monthlyData.map((item, i) => (
+                  <div key={i} style={styles.mobileCard}>
+                    <div style={{ ...styles.mobileCardRow, borderBottom: "1px solid #f3f4f6", pb: 8, mb: 10 }}>
+                      <span style={{ ...styles.mobileValue, fontWeight: 700 }}>{item.date}</span>
+                      <ChevronRight size={14} color="#9ca3af" />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
+                      <div>
+                        <div style={styles.mobileLabel}>Login</div>
+                        <div style={styles.mobileValue}>{item.inTime || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={styles.mobileLabel}>Logout</div>
+                        <div style={styles.mobileValue}>{item.outTime || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={styles.mobileLabel}>Working</div>
+                        <span style={styles.badgeGreen}>{item.workingHours || "—"}</span>
+                      </div>
+                      <div>
+                        <div style={styles.mobileLabel}>Total Log</div>
+                        <div style={styles.mobileValue}>{item.logTime || "—"}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {monthlyData.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
+                    <CalendarDays size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+                    <p style={{ fontSize: 13 }}>No records found for this month.</p>
+                  </div>
+                )}
+              </div>
             ) : (
-              <table style={styles.table}  >
-                <thead>
-                  <tr>
-                    {["Date", "Login", "Logout", "Total", "Working", "Idle"].map(
-                      (h) => (
-                        <th key={h} style={styles.th}>
-                          {h}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyData.map((item, i) => (
-                    <tr key={i}>
-                      <td style={styles.td}>{item.date}</td>
-                      <td style={styles.td}>{item.inTime}</td>
-                      <td style={styles.td}>{item.outTime}</td>
-                      <td style={styles.td}>{item.logTime}</td>
-                      <td style={styles.td}>
-                        <span style={styles.badgeGreen}>{item.workingHours}</span>
-                      </td>
-                      <td style={styles.td}>{item.idleTime}</td>
-                    </tr>
-                  ))}
-                  {monthlyData.length === 0 && (
+              /* Desktop Monthly View */
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
                     <tr>
-                      <td colSpan="6" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
-                        No records found for this month.
-                      </td>
+                      {["Date", "Login", "Logout", "Total", "Working", "Idle"].map((h) => (
+                        <th key={h} style={styles.th}>{h}</th>
+                      ))}
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {monthlyData.map((item, i) => (
+                      <tr key={i}>
+                        <td style={styles.td}>{item.date}</td>
+                        <td style={styles.td}>{item.inTime}</td>
+                        <td style={styles.td}>{item.outTime}</td>
+                        <td style={styles.td}>{item.logTime}</td>
+                        <td style={styles.td}>
+                          <span style={styles.badgeGreen}>{item.workingHours}</span>
+                        </td>
+                        <td style={styles.td}>{item.idleTime}</td>
+                      </tr>
+                    ))}
+                    {monthlyData.length === 0 && (
+                      <tr>
+                        <td colSpan="6" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                          No records found for this month.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

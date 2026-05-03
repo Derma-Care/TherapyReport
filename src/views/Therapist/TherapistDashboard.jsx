@@ -58,58 +58,62 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
       {/* Left accent */}
       <div className="td-patient-accent" style={{ background: status.dot }} />
 
-      {/* Avatar */}
-      <div className="td-patient-avatar">
-        {initials(p.patientName)}
-      </div>
+      <div className="td-patient-top">
+        {/* Avatar */}
+        <div className="td-patient-avatar">
+          {initials(p.patientName)}
+        </div>
 
-      {/* Info */}
-      <div className="td-patient-info">
-        <div className="td-patient-name">{p.patientName || 'N/A'}</div>
-        <div className="td-patient-meta">
-          <span><Stethoscope size={11} /> {p.doctorName || 'N/A'}</span>
-          <span><Activity size={11} /> {p.serivceType || 'N/A'}</span>
-          <span><Phone size={11} /> {p.mobileNumber || 'N/A'}</span>
+        {/* Info */}
+        <div className="td-patient-info">
+          <div className="td-patient-name">{p.patientName || 'N/A'}</div>
+          <div className="td-patient-meta">
+            <span><Stethoscope size={11} /> {p.doctorName || 'N/A'}</span>
+            <span><Activity size={11} /> {p.serivceType || 'N/A'}</span>
+            <span><Phone size={11} /> {p.mobileNumber || 'N/A'}</span>
+          </div>
         </div>
       </div>
 
-      {/* Status badge */}
-      <div className="td-patient-mid">
-        <span
-          className="td-status-badge"
-          style={{ background: status.bg, color: status.color, borderColor: status.border }}
-        >
-          <span className="td-status-dot" style={{ background: status.dot }} />
-          {p.overallStatus || 'Pending'}
-        </span>
-      </div>
+      <div className="td-patient-bottom">
+        {/* Status badge */}
+        <div className="td-patient-mid">
+          <span
+            className="td-status-badge"
+            style={{ background: status.bg, color: status.color, borderColor: status.border }}
+          >
+            <span className="td-status-dot" style={{ background: status.dot }} />
+            {p.overallStatus || 'Pending'}
+          </span>
+        </div>
 
-      {/* Actions */}
-      <div className="td-patient-actions">
-        <button
-          className="td-btn td-btn-outline"
-          disabled={detailLoading}
-          onClick={handleViewDetails}
-        >
-          {detailLoading
-            ? <CSpinner size="sm" style={{ width: 12, height: 12 }} />
-            : <><ClipboardList size={12} /> Details</>}
-        </button>
-        <button
-          className="td-btn td-btn-primary"
-          onClick={() => navigate('/session-list', {
-            state: {
-              name: p.patientName,
-              therapy: p.programName,
-              doctorName: p.doctorName,
-              therapistRecordId: p.therapistRecordId,
-              patientId: p.patientId,
-              bookingId: p.bookingId,
-            },
-          })}
-        >
-          Sessions <ArrowRight size={12} />
-        </button>
+        {/* Actions */}
+        <div className="td-patient-actions">
+          <button
+            className="td-btn td-btn-outline"
+            disabled={detailLoading}
+            onClick={handleViewDetails}
+          >
+            {detailLoading
+              ? <CSpinner size="sm" style={{ width: 12, height: 12 }} />
+              : <><ClipboardList size={12} /> Details</>}
+          </button>
+          <button
+            className="td-btn td-btn-primary"
+            onClick={() => navigate('/session-list', {
+              state: {
+                name: p.patientName,
+                therapy: p.programName,
+                doctorName: p.doctorName,
+                therapistRecordId: p.therapistRecordId,
+                patientId: p.patientId,
+                bookingId: p.bookingId,
+              },
+            })}
+          >
+            Sessions <ArrowRight size={12} />
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -216,8 +220,11 @@ const TherapyDashboard = () => {
             <p className="td-page-sub">Manage your patient sessions and appointments</p>
           </div>
 
-          <CButton style={{backgroundColor:COLORS.primary,color:"white"}} onClick={() => navigate('/therapist/attendance', { state: { clinicId, branchId, therapistId } })}>
-            Attendance Page
+          <CButton 
+            style={{ backgroundColor: COLORS.primary, color: "white", display: "flex", alignItems: "center", gap: 8 }} 
+            onClick={() => navigate('/therapist/attendance', { state: { clinicId, branchId, therapistId } })}
+          >
+            <Clock size={16} /> Duty Logs
           </CButton>
         </div>
 
@@ -436,6 +443,11 @@ const TherapyDashboard = () => {
           color: #888780;
           margin: 0;
         }
+        @media (max-width: 576px) {
+          .td-page { padding: 0.75rem; }
+          .td-page-header { flex-direction: column; align-items: stretch; }
+          .td-page-header .btn { width: 100%; }
+        }
 
         /* Main panel */
         .td-panel {
@@ -483,6 +495,11 @@ const TherapyDashboard = () => {
           box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
           z-index: 1;
         }
+        @media (max-width: 576px) {
+          .td-tabs { gap: 6px; padding: 10px; }
+          .td-tab { flex: 1; justify-content: center; padding: 10px 8px; font-size: 11px; border-radius: 8px; border-bottom: 0.5px solid #d0dce9; }
+          .td-tab.active { border-bottom-color: transparent; }
+        }
 
         /* Patient list */
         .td-patient-list { padding: 1.25rem; }
@@ -506,8 +523,7 @@ const TherapyDashboard = () => {
         /* Patient card */
         .td-patient-card {
           display: flex;
-          align-items: center;
-          gap: 14px;
+          flex-direction: column;
           background: rgba(255,255,255,0.9);
           border: 0.5px solid #d0dce9;
           border-radius: 12px;
@@ -516,7 +532,37 @@ const TherapyDashboard = () => {
           position: relative;
           overflow: hidden;
           transition: box-shadow 0.15s, border-color 0.15s;
+          gap: 12px;
+        }
+        .td-patient-top {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .td-patient-bottom {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
           flex-wrap: wrap;
+        }
+        @media (min-width: 768px) {
+          .td-patient-card {
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+          }
+          .td-patient-top { flex: 1; min-width: 0; }
+          .td-patient-bottom { flex-shrink: 0; gap: 20px; }
+        }
+        @media (max-width: 576px) {
+          .td-patient-card { padding: 12px; }
+          .td-patient-bottom { flex-direction: column; align-items: stretch; }
+          .td-patient-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+          .td-btn { justify-content: center; }
+          .td-patient-avatar { width: 42px; height: 42px; margin-left: 0; }
+          .td-patient-name { font-size: 13.5px; }
+          .td-patient-meta { gap: 8px; font-size: 11px; }
         }
         .td-patient-card:hover {
           border-color: #b5d4f4;

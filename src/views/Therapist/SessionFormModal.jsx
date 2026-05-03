@@ -7,6 +7,7 @@ import {
   CFormInput,
   CFormTextarea,
   CFormSelect,
+  CModalFooter,
 } from '@coreui/react'
 import { createTherapyNotes } from './TheraphyApi'
 import { useNavigate } from 'react-router-dom'
@@ -16,16 +17,16 @@ import { showCustomToast } from '../../Utils/Toaster'
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
 const t = {
-  primary:   PRIMARY,
-  text:      '#1e293b',
+  primary: PRIMARY,
+  text: '#1e293b',
   textMuted: '#64748b',
-  surface:   '#f8fafc',
-  border:    '#e2e8f0',
-  danger:    '#dc2626',
-  success:   '#16a34a',
-  radius:    '10px',
-  radiusSm:  '6px',
-  shadow:    '0 1px 3px rgba(0,0,0,0.07)',
+  surface: '#f8fafc',
+  border: '#e2e8f0',
+  danger: '#dc2626',
+  success: '#16a34a',
+  radius: '10px',
+  radiusSm: '6px',
+  shadow: '0 1px 3px rgba(0,0,0,0.07)',
 }
 
 /* ─── Primitives ─── */
@@ -151,7 +152,7 @@ const PainSelect = ({ label, value, onChange, error }) => (
     <FieldLabel required>{label}</FieldLabel>
     <Sel value={value} onChange={e => onChange(e.target.value)} error={error}>
       <option value="">Select 1–10</option>
-      {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n}>{n}</option>)}
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n}>{n}</option>)}
     </Sel>
     <FieldError msg={error} />
   </div>
@@ -161,25 +162,25 @@ const PainSelect = ({ label, value, onChange, error }) => (
 
 export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const navigate = useNavigate()
-  const [notes,               setNotes]               = useState('')
-  const [before,              setBefore]              = useState(null)
-  const [beforePreview,       setBeforePreview]       = useState(null)
-  const [after,               setAfter]               = useState(null)
-  const [afterPreview,        setAfterPreview]        = useState(null)
-  const [loading,             setLoading]             = useState(false)
-  const [beforeVideo,         setBeforeVideo]         = useState(null)
-  const [afterVideo,          setAfterVideo]          = useState(null)
-  const [painBefore,          setPainBefore]          = useState('')
-  const [painAfter,           setPainAfter]           = useState('')
-  const [result,              setResult]              = useState('')
-  const [nextPlan,            setNextPlan]            = useState('')
-  const [completedSets,       setCompletedSets]       = useState('')
-  const [completedRepitations,setCompletedRepitations]= useState('')
-  const [error,               setError]               = useState({})
-  const [errors,              setErrors]              = useState({})
+  const [notes, setNotes] = useState('')
+  const [before, setBefore] = useState(null)
+  const [beforePreview, setBeforePreview] = useState(null)
+  const [after, setAfter] = useState(null)
+  const [afterPreview, setAfterPreview] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [beforeVideo, setBeforeVideo] = useState(null)
+  const [afterVideo, setAfterVideo] = useState(null)
+  const [painBefore, setPainBefore] = useState('')
+  const [painAfter, setPainAfter] = useState('')
+  const [result, setResult] = useState('')
+  const [nextPlan, setNextPlan] = useState('')
+  const [completedSets, setCompletedSets] = useState('')
+  const [completedRepitations, setCompletedRepitations] = useState('')
+  const [error, setError] = useState({})
+  const [errors, setErrors] = useState({})
 
-  const storedData    = localStorage.getItem('therapistData')
-  const theraphydata  = location.state || (storedData ? JSON.parse(storedData) : {})
+  const storedData = localStorage.getItem('therapistData')
+  const theraphydata = location.state || (storedData ? JSON.parse(storedData) : {})
 
   /* ── file handlers ── */
   const handleBeforeImage = (file) => {
@@ -234,46 +235,46 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   /* ── save ── */
   const save = async () => {
     let err = {}
-    if (!notes)       err.notes      = 'Notes required'
-    if (!before)      err.before     = 'Before image required'
-    if (!after)       err.after      = 'After image required'
-    if (!painBefore)  err.painBefore = 'Select pain before'
-    if (!painAfter)   err.painAfter  = 'Select pain after'
-    if (!result)      err.result     = 'Select result'
+    if (!notes) err.notes = 'Notes required'
+    if (!before) err.before = 'Before image required'
+    if (!after) err.after = 'After image required'
+    if (!painBefore) err.painBefore = 'Select pain before'
+    if (!painAfter) err.painAfter = 'Select pain after'
+    if (!result) err.result = 'Select result'
     setError(err)
     if (Object.keys(err).length > 0) return
 
     try {
       setLoading(true)
       const loc = await getCurrentLocation();
-      const beforeBase64      = await convertToBase64(before)
-      const afterBase64       = await convertToBase64(after)
+      const beforeBase64 = await convertToBase64(before)
+      const afterBase64 = await convertToBase64(after)
       const beforeVideoBase64 = beforeVideo ? await convertToBase64(beforeVideo) : ''
-      const afterVideoBase64  = afterVideo  ? await convertToBase64(afterVideo)  : ''
-      const now               = new Date()
-      const td                = JSON.parse(localStorage.getItem('therapistData'))
-      const formattedDate     = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const afterVideoBase64 = afterVideo ? await convertToBase64(afterVideo) : ''
+      const now = new Date()
+      const td = JSON.parse(localStorage.getItem('therapistData'))
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
       const payload = {
-        therapistRecordId:  data.therapistRecordId,
-        clinicId:           td?.clinicId,
-        branchId:           td?.branchId,
-        patientId:          data.patientId,
-        bookingId:          data.bookingId,
-        therapistId:        td?.therapistId,
-        sessionId:          data.sessionId,
-        patientName:        data.patientName,
-        serviceType:        data.serviceType,
-        date:               formattedDate,
-        completedDate:      formattedDate,
-        completedTime:      now.toLocaleTimeString(),
+        therapistRecordId: data.therapistRecordId,
+        clinicId: td?.clinicId,
+        branchId: td?.branchId,
+        patientId: data.patientId,
+        bookingId: data.bookingId,
+        therapistId: td?.therapistId,
+        sessionId: data.sessionId,
+        patientName: data.patientName,
+        serviceType: data.serviceType,
+        date: formattedDate,
+        completedDate: formattedDate,
+        completedTime: now.toLocaleTimeString(),
         painBefore, painAfter,
-        duration:           data.sessionTime,
-        voiceRecord:        data.voiceRecordUrl,
-        setsDone:           `${completedSets || 0}/${data?.sets || 0}`,
-        repetationDone:     `${completedRepitations || 0}/${data?.repetitions || 0}`,
-        therapistNotes:     notes,
-        patientResponse:    data.patientResponse || 'Good',
+        duration: data.sessionTime,
+        voiceRecord: data.voiceRecordUrl,
+        setsDone: `${completedSets || 0}/${data?.sets || 0}`,
+        repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
+        therapistNotes: notes,
+        patientResponse: data.patientResponse || 'Good',
         result, mode: 'complete', nextPlan,
         beforeImage: beforeBase64, afterImage: afterBase64,
         beforeVideo: beforeVideoBase64, afterVideo: afterVideoBase64,
@@ -295,7 +296,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
 
   /* ─── render ─── */
   return (
-    <CModal visible={visible} onClose={onClose} backdrop="static" size="lg">
+    <CModal visible={visible} onClose={onClose} backdrop="static" size="lg" className='custom-modal'>
 
       {/* ── Header ── */}
       <CModalHeader style={{ backgroundColor: PRIMARY, padding: '14px 20px', borderBottom: 'none' }}>
@@ -313,12 +314,12 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           border: `1px solid ${t.border}`, padding: '16px',
           display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '4px',
         }}>
-          <InfoChip label="Patient"            value={data.patientName} />
-          <InfoChip label="Service Type"       value={data.serviceType} />
-          <InfoChip label="Session ID"         value={data.sessionId} />
-          <InfoChip label="Record ID"          value={data.therapistRecordId} />
-          <InfoChip label="Date"               value={new Date().toLocaleDateString()} />
-          <InfoChip label="Time"               value={new Date().toLocaleTimeString()} />
+          <InfoChip label="Patient" value={data.patientName} />
+          <InfoChip label="Service Type" value={data.serviceType} />
+          <InfoChip label="Session ID" value={data.sessionId} />
+          <InfoChip label="Record ID" value={data.therapistRecordId} />
+          <InfoChip label="Date" value={new Date().toLocaleDateString()} />
+          <InfoChip label="Time" value={new Date().toLocaleTimeString()} />
         </div>
 
         {/* ── Doctor Notes ── */}
@@ -423,12 +424,16 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         <SectionHeading title="Before & After Videos (Optional)" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
           <FileField label="Before Video" accept="video/*" error={errors.beforeVideo} onChange={handleBeforeVideo} />
-          <FileField label="After Video"  accept="video/*" error={errors.afterVideo}  onChange={handleAfterVideo} />
+          <FileField label="After Video" accept="video/*" error={errors.afterVideo} onChange={handleAfterVideo} />
         </div>
 
         <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '4px' }}>
           Images: max 1 MB &nbsp;·&nbsp; Videos: max 2 MB
         </div>
+
+
+      </CModalBody>
+      <CModalFooter>
 
         {/* ── Actions ── */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '24px', paddingTop: '16px', borderTop: `1px solid ${t.border}` }}>
@@ -440,8 +445,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
             }
           </Btn>
         </div>
-
-      </CModalBody>
+      </CModalFooter>
     </CModal>
   )
 }

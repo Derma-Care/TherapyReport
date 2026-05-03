@@ -2,37 +2,41 @@ import React, { useState, useEffect, useRef } from "react"
 import {
   CModal, CModalHeader, CModalTitle, CModalBody,
 } from "@coreui/react"
-import { useLocation ,useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 import LoadingIndicator from "../../Utils/loader"
+import {
+  User, Calendar, ClipboardList, X, ChevronDown,
+  Play, Mic, Activity, Clock, CheckCircle, Zap
+} from "lucide-react"
 
 /* ─── THEME ─────────────────────────────────────────────────────────────── */
 const T = {
-  navy:      "#1B4F8A",
-  navyDark:  "#163f6e",
+  navy: "#1B4F8A",
+  navyDark: "#163f6e",
   navyLight: "#e8f0fa",
-  navyMid:   "#2563a8",
-  accent:    "#0ea5e9",
-  accentBg:  "#e0f2fe",
-  success:   "#16a34a",
+  navyMid: "#2563a8",
+  accent: "#0ea5e9",
+  accentBg: "#e0f2fe",
+  success: "#16a34a",
   successBg: "#dcfce7",
-  warning:   "#d97706",
+  warning: "#d97706",
   warningBg: "#fef9c3",
-  danger:    "#dc2626",
-  dangerBg:  "#fee2e2",
-  text:      "#1e293b",
-  muted:     "#64748b",
-  border:    "#e2e8f0",
-  white:     "#ffffff",
-  bg:        "#f0f4f8",
-  cardBg:    "#ffffff",
+  danger: "#dc2626",
+  dangerBg: "#fee2e2",
+  text: "#1e293b",
+  muted: "#64748b",
+  border: "#e2e8f0",
+  white: "#ffffff",
+  bg: "#f0f4f8",
+  cardBg: "#ffffff",
 }
 
 const S = {
   /* Page */
-  page: {  minHeight: "100vh", padding: "1.5rem", fontFamily: "'Segoe UI', system-ui, sans-serif" },
+  page: (isMobile) => ({ minHeight: "100vh", padding: isMobile ? "0.75rem" : "1.5rem", fontFamily: "'Segoe UI', system-ui, sans-serif" }),
 
   /* Patient card header */
   patientCard: {
@@ -42,8 +46,8 @@ const S = {
     display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
   },
   patientName: { color: T.white, fontSize: "1.35rem", fontWeight: 700, margin: 0 },
-  patientSub:  { color: "rgba(255,255,255,0.75)", fontSize: "0.85rem", marginTop: 4 },
-  serviceTag:  { background: "rgba(255,255,255,0.18)", color: T.white, borderRadius: 20, padding: "0.3rem 1rem", fontSize: "0.8rem", fontWeight: 600, border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(4px)" },
+  patientSub: { color: "rgba(255,255,255,0.75)", fontSize: "0.85rem", marginTop: 4 },
+  serviceTag: { background: "rgba(255,255,255,0.18)", color: T.white, borderRadius: 20, padding: "0.3rem 1rem", fontSize: "0.8rem", fontWeight: 600, border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(4px)" },
 
   /* Stats row */
   statsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.85rem", marginBottom: "1.5rem" },
@@ -64,7 +68,15 @@ const S = {
   exHeaderOpen: { background: T.navyLight },
   exTitle: { fontWeight: 600, color: T.navy, fontSize: "0.92rem", display: "flex", alignItems: "center", gap: "0.5rem" },
   exMeta: { fontSize: "0.75rem", color: T.muted, display: "flex", gap: "0.75rem" },
-  metaPill: { background: T.navyLight, color: T.navy, borderRadius: 20, padding: "0.18rem 0.6rem", fontSize: "0.72rem", fontWeight: 600 },
+  metaPill: {
+    display: "inline-flex", alignItems: "center", gap: 5,
+    padding: "0.22rem 0.65rem", borderRadius: 6, fontSize: "0.71rem", fontWeight: 600,
+    whiteSpace: "nowrap"
+  },
+  metaPillBlue: { background: "#eef6ff", color: "#1b4f8a", border: "0.5px solid #d0e4f8" },
+  metaPillAmber: { background: "#fff9eb", color: "#854f0b", border: "0.5px solid #ffe9b5" },
+  metaPillGreen: { background: "#f0faf5", color: "#0d6e4a", border: "0.5px solid #c2edda" },
+  metaPillPurple: { background: "#f8f7ff", color: "#5a4fcf", border: "0.5px solid #e0deff" },
 
   /* Therapy / Program section label */
   sectionLabel: {
@@ -82,12 +94,12 @@ const S = {
   badge: (type) => {
     const map = {
       completed: { bg: T.successBg, color: T.success, border: "#bbf7d0" },
-      pending:   { bg: T.warningBg, color: T.warning, border: "#fde68a" },
-      today:     { bg: T.navy,      color: T.white,   border: T.navy },
-      paid:      { bg: T.accentBg,  color: "#0369a1", border: "#bae6fd" },
+      pending: { bg: T.warningBg, color: T.warning, border: "#fde68a" },
+      today: { bg: T.danger, color: T.white, border: T.danger, padding: "2px 6px", fontSize: "0.55rem" },
+      paid: { bg: T.accentBg, color: "#0369a1", border: "#bae6fd" },
     }
     const c = map[type] || map.pending
-    return { background: c.bg, color: c.color, border: `1px solid ${c.border}`, borderRadius: 20, padding: "0.2rem 0.65rem", fontSize: "0.71rem", fontWeight: 700, display: "inline-block", whiteSpace: "nowrap" }
+    return { background: c.bg, color: c.color, border: `1px solid ${c.border}`, borderRadius: 20, padding: c.padding || "0.2rem 0.65rem", fontSize: c.fontSize || "0.71rem", fontWeight: 800, display: "inline-block", whiteSpace: "nowrap", textTransform: "uppercase" }
   },
 
   /* Buttons */
@@ -95,91 +107,45 @@ const S = {
     const base = { borderRadius: 7, border: "none", cursor: "pointer", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4, transition: "all 0.15s", whiteSpace: "nowrap" }
     const pad = size === "sm" ? { padding: "0.3rem 0.75rem", fontSize: "0.75rem" } : { padding: "0.5rem 1.1rem", fontSize: "0.82rem" }
     const map = {
-      primary:   { background: T.navy,    color: T.white },
-      success:   { background: T.success, color: T.white },
-      danger:    { background: T.danger,  color: T.white },
-      warning:   { background: T.warning, color: T.white },
-      outline:   { background: "transparent", color: T.navy, border: `1.5px solid ${T.navy}` },
-      ghost:     { background: T.navyLight, color: T.navy },
-      info:      { background: T.accentBg, color: "#0369a1", border: "1px solid #bae6fd" },
+      primary: { background: T.navy, color: T.white },
+      success: { background: T.success, color: T.white },
+      danger: { background: T.danger, color: T.white },
+      warning: { background: T.warning, color: T.white },
+      outline: { background: "transparent", color: T.navy, border: `1.5px solid ${T.navy}` },
+      ghost: { background: T.navyLight, color: T.navy },
+      info: { background: T.accentBg, color: "#0369a1", border: "1px solid #bae6fd" },
       secondary: { background: "#f1f5f9", color: T.muted, border: "1px solid #e2e8f0" },
     }
     return { ...base, ...pad, ...(map[variant] || map.primary) }
   },
 
   /* Tracker box */
-  trackerBox: { background: "#fff5f5", border: `1.5px solid ${T.danger}`, borderRadius: 9, padding: "0.6rem 0.85rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 150 },
-  trackerTime: { color: T.danger, fontFamily: "monospace", fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 },
-  trackerHint: { fontSize: "0.7rem", color: T.muted },
+  trackerBox: { background: "#fff5f5", border: `1.5px solid ${T.danger}`, borderRadius: 10, padding: "0.75rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 140, boxShadow: "0 2px 8px rgba(220,38,38,0.1)" },
+  trackerTime: { color: T.danger, fontFamily: "monospace", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 },
+  trackerHint: { fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", letterSpacing: "0.02em" },
 
   /* Mobile card */
-  mobileCard: { background: T.white, borderRadius: 10, padding: "0.85rem", marginBottom: "0.65rem", boxShadow: "0 1px 6px rgba(0,0,0,0.07)", border: `1px solid ${T.border}` },
+  mobileCard: {
+    background: T.white, borderRadius: 12, padding: "1rem", marginBottom: "0.75rem",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: `1px solid ${T.border}`,
+    display: "flex", flexDirection: "column", gap: "0.75rem"
+  },
 }
 
-/* ─── DUMMY DATA ─────────────────────────────────────────────────────────── */
-const DUMMY_DATA = {
-  bookingId: "BOOK123", patientId: "PAT123", doctorId: "DOC123",
-  doctorName: "Dr. John (Physio)", therapistId: "THER123", therapistName: "Therapy_1",
-  therapistRecordId: "REC123", serviceType: "PACKAGE", totalAmount: 1250,
-  discountAmount: 100, finalAmount: 1150, totalPaid: 800, balanceAmount: 350,
-  paymentStatus: "Partial", sessionStartDate: "14/04/2026", totalSessionCount: 25,
-  noOfSessionCompletedCount: 3, noOfSessionCompletedStatus: false, sessionTableCreatedStatus: true,
-  paymentHistory: [
-    { amount: 500, paymentMode: "CASH", paymentType: "Partial", paymentLevel: "PACKAGE", paymentDate: "14/04/2026" },
-    { amount: 300, paymentMode: "UPI",  paymentType: "Partial", paymentLevel: "SESSION", paymentDate: "16/04/2026" },
-  ],
-  therapyWithSessions: [
-    {
-      packageId: "PACK001", packageName: "PACKAGE_1", totalPackagePrice: 1250, paymentStatus: "Partial",
-      programs: [{
-        programId: "PROG001", programName: "PROGRAM_1", totalProgramPrice: 625, paymentStatus: "Partial",
-        therapyData: [
-          {
-            therapyId: "THER001", therapyName: "THERAPY_1", totalTherapyPrice: 425, paymentStatus: "Partial",
-            exercises: [
-              { exerciseId: "E1", exerciseName: "Knee Flexion", pricePerSession: 10, noOfSessions: 10, totalExercisePrice: 100, paymentStatus: "Partial", repetitions: 10, frequency: "2/day", sets: 2, youtubeUrl: "", sessions: [
-                { sessionId: "E1_1", sessionNo: 1, date: "14/04/2026", status: "Completed", paymentStatus: "Paid" },
-                { sessionId: "E1_2", sessionNo: 2, date: "15/04/2026", status: "Completed", paymentStatus: "Paid" },
-                { sessionId: "E1_3", sessionNo: 3, date: "17/04/2026", status: "Pending",   paymentStatus: "Paid" },
-              ]},
-              { exerciseId: "E2", exerciseName: "Quad Strengthening", pricePerSession: 20, noOfSessions: 5, totalExercisePrice: 100, paymentStatus: "Partial", repetitions: 12, frequency: "3/day", sets: 4, youtubeUrl: "", sessions: [
-                { sessionId: "E2_1", sessionNo: 1, date: "14/04/2026", status: "Pending", paymentStatus: "Paid" },
-              ]},
-            ],
-          },
-          {
-            therapyId: "THER002", therapyName: "THERAPY_2", totalTherapyPrice: 200, paymentStatus: "Paid",
-            exercises: [
-              { exerciseId: "E3", exerciseName: "Hamstring Stretch", pricePerSession: 20, noOfSessions: 10, totalExercisePrice: 200, paymentStatus: "Paid", repetitions: 10, frequency: "2/day", sets: 2, youtubeUrl: "", sessions: [
-                { sessionId: "E3_1", sessionNo: 1, date: "17/04/2026", status: "Pending", paymentStatus: "Paid" },
-              ]},
-            ],
-          },
-        ],
-      }],
-    },
-  ],
-}
 
 /* ─── HELPERS ────────────────────────────────────────────────────────────── */
 const cleanHierarchy = (node) => {
-  if (!node || node.paymentStatus?.toLowerCase() === "unpaid") return null
-  let r = { ...node }
-  if (Array.isArray(node.sessions))           r.sessions           = node.sessions.filter(s => s.paymentStatus?.toLowerCase() !== "unpaid")
-  if (Array.isArray(node.exercises))          r.exercises          = node.exercises.map(cleanHierarchy).filter(Boolean)
-  if (Array.isArray(node.therapyData))        r.therapyData        = node.therapyData.map(cleanHierarchy).filter(Boolean)
-  if (Array.isArray(node.programs))           r.programs           = node.programs.map(cleanHierarchy).filter(Boolean)
-  if (Array.isArray(node.therapyWithSessions)) r.therapyWithSessions = node.therapyWithSessions.map(cleanHierarchy).filter(Boolean)
-  return r
+  if (!node) return null
+  return node
 }
 
 const deepUpdateSession = (node, upd) => {
   if (!node) return node
   let n = { ...node }
   if (n.sessions) n.sessions = n.sessions.map(s => s.sessionId === upd.sessionId ? { ...s, ...upd } : s)
-  ;["therapyWithSessions","programs","therapyData","exercises"].forEach(k => {
-    if (n[k]) n[k] = n[k].map(c => deepUpdateSession(c, upd))
-  })
+    ;["therapyWithSessions", "programs", "therapyData", "exercises"].forEach(k => {
+      if (n[k]) n[k] = n[k].map(c => deepUpdateSession(c, upd))
+    })
   return n
 }
 
@@ -187,9 +153,9 @@ const extractExercises = (node) => {
   let list = []
   if (!node) return list
   if (node.exerciseId && node.sessions) list.push(node)
-  ;["therapyWithSessions","programs","therapyData","exercises"].forEach(k => {
-    if (node[k]) node[k].forEach(c => list = list.concat(extractExercises(c)))
-  })
+    ;["therapyWithSessions", "programs", "therapyData", "exercises"].forEach(k => {
+      if (node[k]) node[k].forEach(c => list = list.concat(extractExercises(c)))
+    })
   return list
 }
 
@@ -201,7 +167,7 @@ const isDateToday = (dateStr) => {
   const yyyy = today.getFullYear()
   if (dateStr === `${dd}/${mm}/${yyyy}` || dateStr === `${yyyy}-${mm}-${dd}`) return true
   const d = new Date(dateStr)
-  return !isNaN(d) && d.getDate()===today.getDate() && d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear()
+  return !isNaN(d) && d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
 }
 
 const fmt12 = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
@@ -317,6 +283,13 @@ const SessionList = () => {
   const [voiceRecordSession, setVoiceRecordSession] = useState(null)
   const [audioPlaybackSession, setAudioPlaybackSession] = useState(null)
   const [activeSessions, setActiveSessions] = useState({})
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   /* ── fetch ── */
   useEffect(() => {
@@ -330,7 +303,10 @@ const SessionList = () => {
         if (clinicId && branchId && bookingId && therapistRecordId) {
           const res = await getPaidSessions(clinicId, branchId, bookingId, therapistRecordId)
           const d = res?.data?.therapyWithSessions ? res.data : res?.therapyWithSessions ? res : null
+          console.log("d", d)
           if (d) { setPatientDataSource(d); setTreeData(cleanHierarchy(d)); setPatientData(p => ({ ...p, ...d })) }
+
+
         }
       } catch (e) { console.error(e) } finally { setDataLoading(false) }
     }
@@ -389,8 +365,8 @@ const SessionList = () => {
   const exercises = treeData ? extractExercises(treeData) : []
   const allSessions = exercises.flatMap(e => e.sessions || [])
   const completedCount = allSessions.filter(s => s.status?.toLowerCase() === "completed").length
-  const pendingCount   = allSessions.filter(s => s.status?.toLowerCase() !== "completed").length
-  const todayCount     = allSessions.filter(s => isDateToday(s.date || s.sessionDate)).length
+  const pendingCount = allSessions.filter(s => s.status?.toLowerCase() !== "completed").length
+  const todayCount = allSessions.filter(s => isDateToday(s.date || s.sessionDate)).length
 
   /* ── session table ── */
   const renderSessionsTable = (sessions, ex) => {
@@ -455,8 +431,8 @@ const SessionList = () => {
                         {!completed
                           ? <button style={S.btn("primary", "sm")} onClick={() => handleManualCompleteFallback(s, ex)}>Complete Form</button>
                           : <button style={S.btn("ghost", "sm")} disabled={loadingId === s.sessionId} onClick={() => handleView(s)}>
-                              {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
-                            </button>}
+                            {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
+                          </button>}
                       </div>
                     </td>
                   </tr>
@@ -467,41 +443,71 @@ const SessionList = () => {
         </div>
 
         {/* Mobile */}
-        <div className="d-block d-md-none" style={{ padding: "0.75rem" }}>
+        <div className="d-block d-md-none" style={{ padding: "1rem 0.75rem" }}>
           {sessions.map((s, i) => {
             const activeObj = activeSessions[s.sessionId]
             const isRunning = !!activeObj
             const completed = s.status?.toLowerCase() === "completed"
             return (
               <div key={s.sessionId || i} style={S.mobileCard}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontFamily: "monospace", fontSize: "0.75rem", color: T.navy, fontWeight: 700 }}>{s.sessionId}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Session ID</div>
+                    <div style={{ fontFamily: "monospace", fontSize: "0.85rem", color: T.navy, fontWeight: 700 }}>{s.sessionId}</div>
+                  </div>
                   <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
                 </div>
-                <div style={{ fontSize: "0.8rem", color: T.muted, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                  📅 {s.date || s.sessionDate}
+
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "0.75rem 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", color: T.text, fontWeight: 500 }}>
+                    <Calendar size={14} style={{ color: T.navy }} />
+                    {s.date || s.sessionDate}
+                  </div>
                   {isDateToday(s.date || s.sessionDate) && <span style={S.badge("today")}>Today</span>}
                 </div>
+
                 {!completed && (
-                  <div style={{ marginBottom: 8 }}>
-                    {!isRunning
-                      ? <button style={{ ...S.btn("outline", "sm"), width: "100%" }} onClick={() => handleStartSession(s.sessionId)}>▶ Start Tracker</button>
-                      : <div style={{ ...S.trackerBox, width: "100%" }}>
+                  <div>
+                    {!isRunning ? (
+                      <button style={{ ...S.btn("outline", "sm"), width: "100%", justifyContent: "center", padding: "0.6rem" }} onClick={() => handleStartSession(s.sessionId)}>
+                        <Play size={14} fill={T.navy} /> Start Tracker
+                      </button>
+                    ) : (
+                      <div style={{ ...S.trackerBox, width: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.danger, animation: "pulse 1s infinite", boxShadow: `0 0 10px ${T.danger}` }} />
                           <ElapsedTime startTimeObj={activeObj} />
-                          <div style={S.trackerHint}>Started {fmt12(activeObj)}</div>
-                          <button style={{ ...S.btn("danger", "sm"), width: "100%" }} onClick={() => handleStopAndComplete(s)}>⏹ Stop & Save</button>
-                        </div>}
+                        </div>
+                        <div style={S.trackerHint}>Started at {fmt12(activeObj)}</div>
+                        <button style={{ ...S.btn("danger", "sm"), width: "100%", marginTop: 8, justifyContent: "center", padding: "0.6rem" }} onClick={() => handleStopAndComplete(s)}>
+                          Stop & Save Session
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-                <div style={{ display: "flex", gap: 6 }}>
-                  {s.voiceRecordUrl
-                    ? <button style={{ ...S.btn("info", "sm"), flex: 1 }} onClick={() => setAudioPlaybackSession(s)}>▶️ Play</button>
-                    : (!completed && <button style={{ ...S.btn("secondary", "sm"), flex: 1 }} onClick={() => setVoiceRecordSession(s)}>🎤 Record</button>)}
-                  {!completed
-                    ? <button style={{ ...S.btn("primary", "sm"), flex: 1 }} onClick={() => handleManualCompleteFallback(s, ex)}>Complete</button>
-                    : <button style={{ ...S.btn("ghost", "sm"), flex: 1 }} disabled={loadingId === s.sessionId} onClick={() => handleView(s)}>
-                        {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
-                      </button>}
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  {s.voiceRecordUrl ? (
+                    <button style={{ ...S.btn("info", "sm"), flex: 1, justifyContent: "center" }} onClick={() => setAudioPlaybackSession(s)}>
+                      <Play size={14} /> Listen
+                    </button>
+                  ) : (
+                    !completed && (
+                      <button style={{ ...S.btn("secondary", "sm"), flex: 1, justifyContent: "center" }} onClick={() => setVoiceRecordSession(s)}>
+                        <Mic size={14} /> Record
+                      </button>
+                    )
+                  )}
+                  {!completed ? (
+                    <button style={{ ...S.btn("primary", "sm"), flex: 1, justifyContent: "center" }} onClick={() => handleManualCompleteFallback(s, ex)}>
+                      <CheckCircle size={14} /> Complete
+                    </button>
+                  ) : (
+                    <button style={{ ...S.btn("ghost", "sm"), flex: 1, justifyContent: "center" }} disabled={loadingId === s.sessionId} onClick={() => handleView(s)}>
+                      {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View Summary"}
+                    </button>
+                  )}
                 </div>
               </div>
             )
@@ -521,23 +527,34 @@ const SessionList = () => {
     return (
       <div key={ex.exerciseId} style={{ borderBottom: `1px solid ${T.border}` }}>
         <div
-          style={{ ...S.exHeader, ...(isOpen ? S.exHeaderOpen : {}) }}
+          style={{
+            ...S.exHeader,
+            ...(isOpen ? S.exHeaderOpen : {}),
+            padding: isMobile ? "0.85rem 1rem" : "1rem 1.25rem",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: isMobile ? 10 : 0
+          }}
           onClick={() => setOpenExercises(p => ({ ...p, [ex.exerciseId]: !p[ex.exerciseId] }))}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-            <span style={{ color: T.navy, fontSize: "0.9rem", fontWeight: 600 }}>{ex.exerciseName}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flex: 1, minWidth: 0 }}>
+            <span style={{ color: T.navy, fontSize: isMobile ? "0.95rem" : "1.05rem", fontWeight: 700, whiteSpace: "normal" }}>{ex.exerciseName}</span>
             {hasToday && <span style={S.badge("today")}>Today</span>}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <div style={S.exMeta}>
-              <span style={S.metaPill}>📆 {ex.frequency}</span>
-              <span style={S.metaPill}>🔁 {ex.sets} sets</span>
-              <span style={S.metaPill}>💪 {ex.repetitions} reps</span>
-              <span style={{ ...S.metaPill, background: completedSessions === totalSessions ? T.successBg : T.navyLight, color: completedSessions === totalSessions ? T.success : T.navy }}>
-                ✅ {completedSessions}/{totalSessions}
-              </span>
-            </div>
-            <span style={{ color: T.navy, fontSize: "1rem", transition: "transform 0.2s", display: "inline-block", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", justifyContent: isMobile ? "flex-start" : "flex-end" }}>
+            <span style={{ ...S.metaPill, ...S.metaPillBlue }}><Calendar size={12} /> {ex.frequency}</span>
+            <span style={{ ...S.metaPill, ...S.metaPillAmber }}><Activity size={12} /> {ex.sets} Sets</span>
+            <span style={{ ...S.metaPill, ...S.metaPillGreen }}><Zap size={12} /> {ex.repetitions} Reps</span>
+            <span style={{
+              ...S.metaPill,
+              ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
+              ...(completedSessions === totalSessions ? { fontWeight: 700 } : {})
+            }}>
+              <CheckCircle size={12} /> {completedSessions}/{totalSessions}
+            </span>
+            <ChevronDown size={18} style={{ color: T.navy, marginLeft: 4, transition: "transform 0.2s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
           </div>
         </div>
         {isOpen && (
@@ -563,53 +580,97 @@ const SessionList = () => {
 
   /* ── render ── */
   return (
-    <div style={S.page}>
+    <div style={S.page(isMobile)}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         .session-row:hover { background: #f0f6ff !important; }
       `}</style>
 
       {/* Patient header */}
-  <div style={S.patientCard}>
-        <div>
-          <h4 style={S.patientName}>{patient.name || "Patient Sessions"}</h4>
-          <div style={S.patientSub}>
-            <span>👨‍⚕️ {patient.doctorName || "N/A"}</span>
-            {patientDataSource?.sessionStartDate && <span style={{ marginLeft: "1rem" }}>📅 Started: {patientDataSource.sessionStartDate}</span>}
+      <div style={{
+        ...S.patientCard,
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "flex-start" : "center",
+        padding: isMobile ? "1.25rem" : "1.5rem 1.75rem"
+      }}>
+        <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
+          <h4 style={{ ...S.patientName, fontSize: isMobile ? "1.4rem" : "1.6rem", marginBottom: 12, whiteSpace: "normal", wordBreak: "break-word" }}>{patient.name || "Patient Sessions"}</h4>
+          <div style={{ ...S.patientSub, display: "flex", flexDirection: "column", gap: 10, color: "#ffffff" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <User size={16} color="#ffffff" /> <span style={{ color: "#fff" }}>{patient.doctorName || "N/A"}</span>
+            </div>
+            {patientDataSource?.sessionStartDate && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Calendar size={16} color="#ffffff" /> <span style={{ color: "#fff" }}>Started: {patientDataSource.sessionStartDate}</span>
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Activity size={16} color="#ffffff" /> <span style={{ color: "#fff" }}>ID: {patientDataSource?.bookingId || "N/A"}</span>
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <span style={S.serviceTag}>{patientDataSource?.serviceType || "CUSTOM"}</span>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: isMobile ? "space-between" : "flex-end",
+          gap: "1rem",
+          width: isMobile ? "100%" : "auto",
+          marginTop: isMobile ? "1rem" : 0,
+          borderTop: isMobile ? "1px solid rgba(255,255,255,0.1)" : "none",
+          paddingTop: isMobile ? "1rem" : 0
+        }}>
+          <span style={{ ...S.serviceTag, textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.8rem", padding: "0.4rem 1rem" }}>{patientDataSource?.serviceType || "CUSTOM"}</span>
           <button
             onClick={() => navigate(-1)}
-            title="Close"
             style={{
               background: "rgba(255,255,255,0.15)",
               border: "1.5px solid rgba(255,255,255,0.4)",
               borderRadius: "50%",
-              width: 32, height: 32,
+              width: 38, height: 38,
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer",
               color: T.white,
-              fontSize: "1rem",
-              lineHeight: 1,
-              transition: "background 0.15s",
+              transition: "all 0.2s",
             }}
             onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
             onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
           >
-            ✕
+            <X size={22} />
           </button>
         </div>
       </div>
 
-   
+      {/* Stats row */}
+      <div style={S.statsRow}>
+        {[
+          { label: "Total Exercises", value: exercises.length, icon: <ClipboardList size={18} /> },
+          { label: "Total Sessions", value: allSessions.length, icon: <Activity size={18} /> },
+          { label: "Completed", value: completedCount, icon: <CheckCircle size={18} />, color: T.success },
+          { label: "Pending", value: pendingCount, icon: <Clock size={18} />, color: T.warning },
+          { label: "Today", value: todayCount, icon: <Zap size={18} />, color: T.navy },
+        ].map((s, i) => (
+          <div key={i} style={{ ...S.statCard, borderLeft: `4px solid ${s.color || T.navy}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={S.statLbl}>{s.label}</div>
+              <div style={{ color: s.color || T.navy, opacity: 0.8 }}>{s.icon}</div>
+            </div>
+            <div style={{ ...S.statVal, color: s.color || T.navy }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+
 
       {/* Main card */}
       <div style={S.mainCard}>
-        <div style={{ background: T.navy, padding: "0.9rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ color: T.white, fontWeight: 700, fontSize: "0.95rem" }}>📋 Session Exercises</span>
-          <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.78rem" }}>{exercises.length} exercise{exercises.length !== 1 ? "s" : ""}</span>
+        <div style={{ background: T.navy, padding: "1.1rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <ClipboardList size={22} color={T.white} />
+            <span style={{ color: T.white, fontWeight: 700, fontSize: "1.1rem" }}>Session Activity Log</span>
+          </div>
+          <span style={{ background: "rgba(255,255,255,0.2)", color: T.white, padding: "0.2rem 0.6rem", borderRadius: 12, fontSize: "0.75rem", fontWeight: 600 }}>
+            {exercises.length} activity{exercises.length !== 1 ? "s" : ""}
+          </span>
         </div>
 
         {dataLoading ? (
@@ -617,7 +678,7 @@ const SessionList = () => {
             <LoadingIndicator message="Loading session data..." />
           </div>
         ) : (
-          <div>{treeData ? renderHierarchy(treeData) : renderHierarchy(cleanHierarchy(DUMMY_DATA))}</div>
+          <div>{renderHierarchy(treeData)}</div>
         )}
       </div>
 
