@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import {
   CContainer,
   CHeader,
@@ -16,8 +18,12 @@ const AppHeader = () => {
   const headerRef = useRef()
   const [scrolled, setScrolled] = useState(false)
   const [bellHover, setBellHover] = useState(false)
-
+  const navigate = useNavigate()
+  const location = useLocation()
   const { selectedHospital } = useHospital()
+
+  // Hide back button on dashboard
+  const isDashboard = location.pathname === '/therapist' || location.pathname === '/'
 
   const storedData = localStorage.getItem('therapistData')
   const storedClinic = localStorage.getItem('selectedClinic')
@@ -123,6 +129,18 @@ const AppHeader = () => {
           font-size: 13px; font-weight: 700; color: #fff;
           border: 1.5px solid rgba(255,255,255,0.35); flex-shrink: 0;
         }
+        .back-btn {
+          width: 38px; height: 38px; border-radius: 10px;
+          border: 1.5px solid rgba(255,255,255,0.60);
+          background: rgba(255,255,255,0.22);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: all .15s; margin-right: 14px;
+          color: white; outline: none;
+        }
+        .back-btn:hover {
+          background: rgba(255,255,255,0.30);
+          border-color: #ffffff;
+        }
         /* mobile */
         @media (max-width: 767px) {
           .clinic-name { font-size: 13px; }
@@ -139,6 +157,12 @@ const AppHeader = () => {
 
           {/* ── DESKTOP ── */}
           <div className="d-none d-md-flex align-items-center w-100" style={{ gap: 0 }}>
+            
+            {!isDashboard && (
+              <button className="back-btn" onClick={() => navigate(-1)} title="Back">
+                <ArrowLeft size={18} />
+              </button>
+            )}
 
             {/* Logo + Clinic Info */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -196,6 +220,11 @@ const AppHeader = () => {
           <div className="d-flex d-md-none align-items-center justify-content-between w-100">
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              {!isDashboard && (
+                <button className="back-btn" style={{ width: 34, height: 34, marginRight: 8 }} onClick={() => navigate(-1)}>
+                  <ArrowLeft size={16} />
+                </button>
+              )}
               <div style={{ minWidth: 0 }}>
                 <div className="clinic-name" style={{
                   display: '-webkit-box', WebkitLineClamp: 1,
