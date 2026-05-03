@@ -547,16 +547,20 @@ const SessionList = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", justifyContent: isMobile ? "flex-start" : "flex-end" }}>
             <span style={{ ...S.metaPill, ...S.metaPillBlue }}><Calendar size={12} /> {ex.frequency}</span>
             {ex.activityDuration && (
-              <span style={{ ...S.metaPill, ...S.metaPillPurple }}><Clock size={12} /> {ex.activityDuration}m</span>
+              <span style={{ ...S.metaPill, ...S.metaPillPurple }}>
+                <Clock size={12} /> {String(ex.activityDuration).toLowerCase().includes('min') ? ex.activityDuration : `${ex.activityDuration} mins`}
+              </span>
             )}
             {/* Removed Sets and Reps from header as per user request */}
-            <span style={{
-              ...S.metaPill,
-              ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
-              ...(completedSessions === totalSessions ? { fontWeight: 700 } : {})
-            }}>
-              <CheckCircle size={12} /> {completedSessions}/{totalSessions}
-            </span>
+            {ex.activityType?.toLowerCase() === "exercise" && (
+              <span style={{
+                ...S.metaPill,
+                ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
+                ...(completedSessions === totalSessions ? { fontWeight: 700 } : {})
+              }}>
+                <CheckCircle size={12} /> {completedSessions}/{totalSessions}
+              </span>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 4 }}>
               <button
                 style={{ background: "none", border: "none", color: T.navy, cursor: "pointer", display: "flex", alignItems: "center", padding: 4 }}
@@ -571,11 +575,11 @@ const SessionList = () => {
         {isOpen && (
           <div style={{ background: "#f8fafd", borderTop: `1px solid ${T.border}` }}>
             {/* Details Bar */}
-            <div style={{ 
-              padding: "0.8rem 1.25rem", 
-              display: "flex", 
-              gap: "1.5rem", 
-              flexWrap: "wrap", 
+            <div style={{
+              padding: "0.8rem 1.25rem",
+              display: "flex",
+              gap: "1.5rem",
+              flexWrap: "wrap",
               background: T.white,
               borderBottom: `1px solid ${T.border}`,
               fontSize: "0.82rem"
@@ -585,16 +589,11 @@ const SessionList = () => {
                 <span style={{ color: T.muted }}>Type:</span>
                 <span style={{ fontWeight: 600, color: T.navy }}>{ex.activityType || "N/A"}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Zap size={14} style={{ color: T.navy }} />
-                <span style={{ color: T.muted }}>Prescription:</span>
-                <span style={{ fontWeight: 600, color: T.navy }}>{ex.sets} Sets x {ex.repetitions} Reps</span>
-              </div>
-              {ex.activityDuration && (
+              {(parseInt(ex.sets) > 0 || parseInt(ex.repetitions) > 0) && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Clock size={14} style={{ color: T.navy }} />
-                  <span style={{ color: T.muted }}>Duration:</span>
-                  <span style={{ fontWeight: 600, color: T.navy }}>{ex.activityDuration} mins</span>
+                  <Zap size={14} style={{ color: T.navy }} />
+                  <span style={{ color: T.muted }}>Prescription:</span>
+                  <span style={{ fontWeight: 600, color: T.navy }}>{ex.sets} Sets x {ex.repetitions} Reps</span>
                 </div>
               )}
             </div>
@@ -611,7 +610,7 @@ const SessionList = () => {
     if (!exercises?.length) return (
       <div style={{ textAlign: "center", padding: "3rem", color: T.muted }}>
         <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📋</div>
-        No exercises available for this service type.
+        No activities available for this service type.
       </div>
     )
     return exercises.map(renderExercise)
@@ -682,7 +681,7 @@ const SessionList = () => {
       {/* Stats row */}
       <div style={S.statsRow}>
         {[
-          { label: "Total Exercises", value: exercises.length, icon: <ClipboardList size={18} /> },
+          { label: "Total Activities", value: exercises.length, icon: <ClipboardList size={18} /> },
           { label: "Total Sessions", value: allSessions.length, icon: <Activity size={18} /> },
           { label: "Completed", value: completedCount, icon: <CheckCircle size={18} />, color: T.success },
           { label: "Pending", value: pendingCount, icon: <Clock size={18} />, color: T.warning },
@@ -742,9 +741,9 @@ const SessionList = () => {
       )}
 
       {/* Exercise Detail Modal */}
-      <CModal visible={!!exDetail} onClose={() => setExDetail(null)} alignment="center" size="lg">
+      <CModal visible={!!exDetail} onClose={() => setExDetail(null)} alignment="center" size="lg" className="custom-modal">
         <CModalHeader style={{ background: T.navy, color: T.white }}>
-          <CModalTitle style={{ color: T.white, fontWeight: 700 }}>Exercise Information</CModalTitle>
+          <CModalTitle style={{ color: T.white, fontWeight: 700 }}>Activity Information</CModalTitle>
         </CModalHeader>
         <CModalBody style={{ padding: "1.5rem" }}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "1.25rem" }}>
@@ -758,7 +757,7 @@ const SessionList = () => {
               .map(([key, val]) => (
                 <div key={key} style={{ borderBottom: `1px solid ${T.bg}`, paddingBottom: 8 }}>
                   <div style={{ fontSize: "0.7rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em", marginBottom: 4 }}>
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                    {key.replace(/([A-Z])/g, ' $1').trim().replace(/Exercise/g, 'Activity')}
                   </div>
                   <div style={{ fontSize: "0.95rem", color: T.navy, fontWeight: 600 }}>
                     {String(val)}
