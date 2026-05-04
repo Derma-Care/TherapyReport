@@ -552,15 +552,13 @@ const SessionList = () => {
               </span>
             )}
             {/* Removed Sets and Reps from header as per user request */}
-            {ex.activityType?.toLowerCase() === "exercise" && (
-              <span style={{
-                ...S.metaPill,
-                ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
-                ...(completedSessions === totalSessions ? { fontWeight: 700 } : {})
-              }}>
-                <CheckCircle size={12} /> {completedSessions}/{totalSessions}
-              </span>
-            )}
+            <span style={{
+              ...S.metaPill,
+              ...(completedSessions === totalSessions ? S.metaPillGreen : S.metaPillPurple),
+              ...(completedSessions === totalSessions ? { fontWeight: 700 } : {})
+            }}>
+              <CheckCircle size={12} /> {completedSessions}/{totalSessions}
+            </span>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 4 }}>
               <button
                 style={{ background: "none", border: "none", color: T.navy, cursor: "pointer", display: "flex", alignItems: "center", padding: 4 }}
