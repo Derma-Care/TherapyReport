@@ -13,7 +13,7 @@ import {
 import {
   User, Phone, Stethoscope, Activity,
   CheckCircle2, Clock, CalendarDays, ArrowRight,
-  ClipboardList, Users, Zap, LogIn, LogOut, ShieldCheck, MapPin, ChevronRight, ListChecks
+  ClipboardList, Users, Zap, LogIn, LogOut, ShieldCheck, MapPin, ChevronRight, ListChecks, Eye
 } from 'lucide-react';
 import { COLORS } from "../../Constant/Themes";
 import ConfirmModal from "../../Utils/ConfirmLogoutModal";
@@ -98,6 +98,12 @@ const AttendanceTracker = () => {
   const storedData = localStorage.getItem('therapistData');
   const therapistData = location.state || (storedData ? JSON.parse(storedData) : {});
   const therapistId = therapistData?.therapistId;
+  const clinicId = therapistData?.clinicId || "0001";
+  const branchId = therapistData?.branchId || "000101";
+
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsData, setDetailsData] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   const getCurrentLocation = () => {
     return new Promise((resolve) => {
@@ -141,6 +147,22 @@ const AttendanceTracker = () => {
       console.error("Error fetching daily data:", err);
     } finally {
       setLoadingDaily(false);
+    }
+  };
+
+  const fetchDailyDetails = async (date) => {
+    try {
+      setLoadingDetails(true);
+      setShowDetailsModal(true);
+      setDetailsData(null);
+      const res = await axios.get(`${BASE_URL}/getDailyReportFormonthly/${clinicId}/${branchId}/${therapistId}/${date}`);
+      if (res.data.success) {
+        setDetailsData(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching daily details:", err);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -780,7 +802,12 @@ const AttendanceTracker = () => {
                   <div key={i} style={styles.mobileCard}>
                     <div style={{ ...styles.mobileCardRow, borderBottom: "1px solid #f3f4f6", pb: 8, mb: 10 }}>
                       <span style={{ ...styles.mobileValue, fontWeight: 700 }}>{item.date}</span>
-                      <ChevronRight size={14} color="#9ca3af" />
+                      <button
+                        style={{ border: 'none', background: 'none', padding: 4, cursor: 'pointer' }}
+                        onClick={() => fetchDailyDetails(item.date)}
+                      >
+                        <Eye size={16} color={COLORS.primary} />
+                      </button>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
                       <div>
@@ -815,6 +842,7 @@ const AttendanceTracker = () => {
                 <table style={styles.table}>
                   <thead>
                     <tr>
+                      {/* {["Date", "Login", "Logout", "Total", "Working", "Idle", "Action"].map((h) => ( */}
                       {["Date", "Login", "Logout", "Total", "Working", "Idle"].map((h) => (
                         <th key={h} style={styles.th}>{h}</th>
                       ))}
@@ -831,6 +859,15 @@ const AttendanceTracker = () => {
                           <span style={styles.badgeGreen}>{item.workingHours}</span>
                         </td>
                         <td style={styles.td}>{item.idleTime}</td>
+                        {/* <td style={styles.td}>
+                          <button 
+                            style={{ ...styles.btnBlue, padding: '4px 8px' }}
+                            onClick={() => fetchDailyDetails(item.date)}
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+                        </td> */}
                       </tr>
                     ))}
                     {monthlyData.length === 0 && (
@@ -932,6 +969,81 @@ const AttendanceTracker = () => {
           </CModalFooter>
         </CModal>
       )}
+
+      {/* Daily Details Modal */}
+      <CModal
+        visible={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        alignment="center"
+        size="lg"
+      >
+        <CModalHeader>
+          <CModalTitle>Daily Report - {detailsData?.date}</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {loadingDetails ? (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <CSpinner color="primary" />
+            </div>
+          ) : detailsData ? (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={styles.infoBox}>
+                  <strong>Therapist ID:</strong> {detailsData.therapistId}
+                </div>
+                <div style={styles.infoBox}>
+                  <strong>Branch ID:</strong> {detailsData.branchId}
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      {["#", "Activity", "Duration", "Location"].map((h) => (
+                        <th key={h} style={styles.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailsData.sessions && detailsData.sessions.length > 0 ? (
+                      detailsData.sessions.map((session, index) => (
+                        <tr key={index}>
+                          <td style={styles.td}>{index + 1}</td>
+                          <td style={styles.td}>
+                            <div style={{ fontWeight: 600, color: COLORS.primary }}>{session.activity}</div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.badgeAmber}>{session.duration}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={{ ...styles.addrCell, maxWidth: '250px' }}>{session.location}</div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                          No sessions found for this day.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
+              Failed to load data.
+            </div>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowDetailsModal(false)}>
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
     </div>
   );
 };
