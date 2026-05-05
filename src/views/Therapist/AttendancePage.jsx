@@ -78,6 +78,8 @@ const AttendanceTracker = () => {
   const [loggedOut, setLoggedOut] = useState(false);
   const [loginTime, setLoginTime] = useState("");
   const [logoutTime, setLogoutTime] = useState("");
+  const [loginLocation, setLoginLocation] = useState("");
+  const [logoutLocation, setLogoutLocation] = useState("");
   const [activeTab, setActiveTab] = useState("daily");
   const [showModal, setShowModal] = useState(false);
   const [activity, setActivity] = useState("");
@@ -127,17 +129,21 @@ const AttendanceTracker = () => {
         setData(result.data.sessions || []);
         if (result.data.login?.time) {
           setLoginTime(result.data.login.time);
+          setLoginLocation(result.data.login.location || "");
           setLoggedIn(true);
         } else {
           setLoginTime("");
+          setLoginLocation("");
           setLoggedIn(false);
         }
         if (result.data.logout?.time) {
           setLogoutTime(result.data.logout.time);
+          setLogoutLocation(result.data.logout.location || "");
           setLoggedOut(true);
           setLoggedIn(false);
         } else {
           setLogoutTime("");
+          setLogoutLocation("");
           setLoggedOut(false);
         }
       } else {
@@ -235,6 +241,7 @@ const AttendanceTracker = () => {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     setLoggedIn(true);
     setLoginTime(time);
+    setLoginLocation(address);
     updateTimes("login", time);
   };
 
@@ -248,6 +255,7 @@ const AttendanceTracker = () => {
     setLoggedIn(false);
     setLoggedOut(true);
     setLogoutTime(time);
+    setLogoutLocation(address);
     updateTimes("logout", time);
     setIsLogoutModalVisible(false);
   };
@@ -671,8 +679,40 @@ const AttendanceTracker = () => {
       {/* Stat cards */}
       <div style={styles.statsGrid}>
         {[
-          { label: "Login", value: loginTime || "—", icon: <LogIn size={14} /> },
-          { label: "Logout", value: logoutTime || "—", icon: <LogOut size={14} /> },
+          {
+            label: "Login",
+            value: (
+              <div>
+                <div>{loginTime || "—"}</div>
+                {loginTime && (
+                  <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 400, marginTop: 4, display: 'flex', alignItems: 'center' }}>
+                    <MapPin size={10} style={{ marginRight: 4 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                      {loginLocation || "Location not recorded"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ),
+            icon: <LogIn size={14} />
+          },
+          {
+            label: "Logout",
+            value: (
+              <div>
+                <div>{logoutTime || "—"}</div>
+                {logoutTime && (
+                  <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 400, marginTop: 4, display: 'flex', alignItems: 'center' }}>
+                    <MapPin size={10} style={{ marginRight: 4 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                      {logoutLocation || "Location not recorded"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ),
+            icon: <LogOut size={14} />
+          },
           { label: "Activities", value: data.length, icon: <Activity size={14} /> },
           { label: "Status", value: <StatusBadge />, icon: <ShieldCheck size={14} /> },
         ].map((s) => (
@@ -842,8 +882,8 @@ const AttendanceTracker = () => {
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      {/* {["Date", "Login", "Logout", "Total", "Working", "Idle", "Action"].map((h) => ( */}
-                      {["Date", "Login", "Logout", "Total", "Working", "Idle"].map((h) => (
+                      {["Date", "Login", "Logout", "Total", "Working", "Idle", "Action"].map((h) => (
+                        // {["Date", "Login", "Logout", "Total", "Working", "Idle"].map((h) => (
                         <th key={h} style={styles.th}>{h}</th>
                       ))}
                     </tr>
@@ -859,15 +899,15 @@ const AttendanceTracker = () => {
                           <span style={styles.badgeGreen}>{item.workingHours}</span>
                         </td>
                         <td style={styles.td}>{item.idleTime}</td>
-                        {/* <td style={styles.td}>
-                          <button 
+                        <td style={styles.td}>
+                          <button
                             style={{ ...styles.btnBlue, padding: '4px 8px' }}
                             onClick={() => fetchDailyDetails(item.date)}
                           >
                             <Eye size={14} />
                             View
                           </button>
-                        </td> */}
+                        </td>
                       </tr>
                     ))}
                     {monthlyData.length === 0 && (
@@ -987,13 +1027,44 @@ const AttendanceTracker = () => {
             </div>
           ) : detailsData ? (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={styles.infoBox}>
-                  <strong>Therapist ID:</strong> {detailsData.therapistId}
-                </div>
-                <div style={styles.infoBox}>
-                  <strong>Branch ID:</strong> {detailsData.branchId}
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: (detailsData.login || detailsData.logout) && !isMobile ? '1fr 1fr' : '1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                {detailsData.login && (
+                  <div style={styles.infoBox}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: COLORS.primary, marginBottom: 4 }}>
+                      <LogIn size={14} />
+                      <strong style={{ fontSize: 13 }}>Login Details</strong>
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <Clock size={12} style={{ marginRight: 6, display: 'inline' }} />
+                      <span style={{ fontWeight: 600 }}>{detailsData.login.time || '—'}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'flex-start' }}>
+                      <MapPin size={12} style={{ marginRight: 6, marginTop: 2, flexShrink: 0 }} />
+                      <span>{detailsData.login.location || 'Location not recorded'}</span>
+                    </div>
+                  </div>
+                )}
+
+                {detailsData.logout && (
+                  <div style={styles.infoBox}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#A32D2D', marginBottom: 4 }}>
+                      <LogOut size={14} />
+                      <strong style={{ fontSize: 13 }}>Logout Details</strong>
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <Clock size={12} style={{ marginRight: 6, display: 'inline' }} />
+                      <span style={{ fontWeight: 600 }}>{detailsData.logout.time || '—'}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'flex-start' }}>
+                      <MapPin size={12} style={{ marginRight: 6, marginTop: 2, flexShrink: 0 }} />
+                      <span>{detailsData.logout.location || 'Location not recorded'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: '1rem', fontWeight: 600, fontSize: 14, color: COLORS.primary, borderBottom: `2px solid ${COLORS.primary}`, paddingBottom: 4, display: 'inline-block' }}>
+                Activity Log
               </div>
 
               <div style={{ overflowX: "auto" }}>
