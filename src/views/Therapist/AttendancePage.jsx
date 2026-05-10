@@ -626,6 +626,10 @@ const AttendanceTracker = () => {
 
   // ─── Action button ─────────────────────────────────────────────────────────
   const ActionButton = () => {
+    if (loadingDaily)
+      return (
+        <div className="at-skel" style={{ width: 90, height: 34, borderRadius: 8 }} />
+      );
     if (isUpdatingStatus)
       return (
         <button style={{ ...styles.btn, color: "#9ca3af" }} disabled>
@@ -681,7 +685,13 @@ const AttendanceTracker = () => {
         {[
           {
             label: "Login",
-            value: (
+            icon: <LogIn size={14} />,
+            value: loadingDaily ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                <div className="at-skel" style={{ height: 18, width: '70%', borderRadius: 4 }} />
+                <div className="at-skel" style={{ height: 10, width: '90%', borderRadius: 4 }} />
+              </div>
+            ) : (
               <div>
                 <div>{loginTime || "—"}</div>
                 {loginTime && (
@@ -694,11 +704,16 @@ const AttendanceTracker = () => {
                 )}
               </div>
             ),
-            icon: <LogIn size={14} />
           },
           {
             label: "Logout",
-            value: (
+            icon: <LogOut size={14} />,
+            value: loadingDaily ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                <div className="at-skel" style={{ height: 18, width: '70%', borderRadius: 4 }} />
+                <div className="at-skel" style={{ height: 10, width: '90%', borderRadius: 4 }} />
+              </div>
+            ) : (
               <div>
                 <div>{logoutTime || "—"}</div>
                 {logoutTime && (
@@ -711,10 +726,21 @@ const AttendanceTracker = () => {
                 )}
               </div>
             ),
-            icon: <LogOut size={14} />
           },
-          { label: "Activities", value: data.length, icon: <Activity size={14} /> },
-          { label: "Status", value: <StatusBadge />, icon: <ShieldCheck size={14} /> },
+          {
+            label: "Activities",
+            icon: <Activity size={14} />,
+            value: loadingDaily
+              ? <div className="at-skel" style={{ height: 22, width: 36, borderRadius: 4, marginTop: 4 }} />
+              : data.length,
+          },
+          {
+            label: "Status",
+            icon: <ShieldCheck size={14} />,
+            value: loadingDaily
+              ? <div className="at-skel" style={{ height: 22, width: 70, borderRadius: 20, marginTop: 4 }} />
+              : <StatusBadge />,
+          },
         ].map((s) => (
           <div key={s.label} style={styles.statCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -755,8 +781,19 @@ const AttendanceTracker = () => {
           </div>
           <div style={{ padding: isMobile ? "0 4px" : 0 }}>
             {loadingDaily ? (
-              <div style={{ padding: "40px", textAlign: "center" }}>
-                <CSpinner color="primary" />
+              <div style={{ padding: isMobile ? '1rem' : '0' }}>
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 12, padding: isMobile ? '12px 0' : '14px 18px',
+                    borderBottom: '0.5px solid #f3f4f6', alignItems: 'center'
+                  }}>
+                    <div className="at-skel" style={{ width: 20, height: 14, borderRadius: 4, flexShrink: 0 }} />
+                    <div className="at-skel" style={{ flex: 2, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ flex: 1, height: 22, borderRadius: 20 }} />
+                    <div className="at-skel" style={{ flex: 2, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ width: 70, height: 14, borderRadius: 4 }} />
+                  </div>
+                ))}
               </div>
             ) : isMobile ? (
               /* Mobile Daily View */
@@ -832,8 +869,21 @@ const AttendanceTracker = () => {
           </div>
           <div style={{ padding: isMobile ? "0 4px" : 0 }}>
             {loadingMonthly ? (
-              <div style={{ padding: "40px", textAlign: "center" }}>
-                <CSpinner color="primary" />
+              <div style={{ padding: isMobile ? '1rem' : '0' }}>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 12, padding: isMobile ? '12px 0' : '14px 18px',
+                    borderBottom: '0.5px solid #f3f4f6', alignItems: 'center'
+                  }}>
+                    <div className="at-skel" style={{ flex: 1.2, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ flex: 1, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ flex: 1, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ flex: 1, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ flex: 1, height: 22, borderRadius: 20 }} />
+                    <div className="at-skel" style={{ flex: 0.8, height: 14, borderRadius: 4 }} />
+                    <div className="at-skel" style={{ width: 56, height: 26, borderRadius: 7 }} />
+                  </div>
+                ))}
               </div>
             ) : isMobile ? (
               /* Mobile Monthly View */
@@ -1115,6 +1165,18 @@ const AttendanceTracker = () => {
           </CButton>
         </CModalFooter>
       </CModal>
+      {/* Skeleton shimmer styles */}
+      <style>{`
+        @keyframes at-shimmer {
+          0%   { background-position: -400px 0; }
+          100% { background-position: 400px 0; }
+        }
+        .at-skel {
+          background: linear-gradient(90deg, #f0f4f8 25%, #e2eaf2 50%, #f0f4f8 75%);
+          background-size: 800px 100%;
+          animation: at-shimmer 1.4s infinite linear;
+        }
+      `}</style>
     </div>
   );
 };

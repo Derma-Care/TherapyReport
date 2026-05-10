@@ -21,8 +21,8 @@ import { COLORS } from '../../Constant/Themes'
 // ─── Status config ────────────────────────────────────────
 const STATUS_CONFIG = {
   completed: { bg: '#E1F5EE', color: '#085041', border: '#9FE1CB', dot: '#1D9E75' },
-  active:    { bg: '#FAEEDA', color: '#633806', border: '#FAC775', dot: '#BA7517' },
-  default:   { bg: '#f1efe8', color: '#5f5e5a', border: '#d3d1c7', dot: '#888780' },
+  active: { bg: '#FAEEDA', color: '#633806', border: '#FAC775', dot: '#BA7517' },
+  default: { bg: '#f1efe8', color: '#5f5e5a', border: '#d3d1c7', dot: '#888780' },
 }
 const getStatus = (s) => STATUS_CONFIG[s?.toLowerCase()] || STATUS_CONFIG.default
 
@@ -30,10 +30,10 @@ const getStatus = (s) => STATUS_CONFIG[s?.toLowerCase()] || STATUS_CONFIG.defaul
 const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) => {
   const [detailLoading, setDetailLoading] = useState(false)
 
-  const bookingId        = p.bookingId
-  const patientId        = p.patientId
+  const bookingId = p.bookingId
+  const patientId = p.patientId
   const therapistRecordId = p.therapistRecordId
-  const status           = getStatus(p.overallStatus)
+  const status = getStatus(p.overallStatus)
 
   const initials = (name) => {
     if (!name) return 'P'
@@ -121,22 +121,22 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
 
 // ─── Main Component ───────────────────────────────────────
 const TherapyDashboard = () => {
-  const [tab, setTab]               = useState(1)
+  const [tab, setTab] = useState(1)
   const [therapyData, setTherapyData] = useState([])
-  const [loading, setLoading]       = useState(true)
+  const [loading, setLoading] = useState(true)
   const [dashboardLoading, setDashboardLoading] = useState(false)
   const [patientList, setPatientList] = useState([])
-  const [dashboard, setDashboard]   = useState(null)
-  const [selected, setSelected]     = useState(null)
+  const [dashboard, setDashboard] = useState(null)
+  const [selected, setSelected] = useState(null)
 
-  const location  = useLocation()
-  const navigate  = useNavigate()
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const storedData   = localStorage.getItem('therapistData')
-  const routeData    = location.state || (storedData ? JSON.parse(storedData) : {})
-  const clinicId     = routeData?.clinicId
-  const branchId     = routeData?.branchId
-  const therapistId  = routeData?.therapistId
+  const storedData = localStorage.getItem('therapistData')
+  const routeData = location.state || (storedData ? JSON.parse(storedData) : {})
+  const clinicId = routeData?.clinicId
+  const branchId = routeData?.branchId
+  const therapistId = routeData?.therapistId
 
   const fetchClinicData = async () => {
     try {
@@ -173,15 +173,15 @@ const TherapyDashboard = () => {
   const stats = getStats(dashboard)
 
   const TABS = [
-    { id: 1, label: 'New Sessions',       icon: Zap,           accent: '#185fa5' },
-    { id: 2, label: 'Active Sessions',    icon: Activity,      accent: '#BA7517' },
-    { id: 3, label: 'Completed Sessions', icon: CheckCircle2,  accent: '#1D9E75' },
+    { id: 1, label: 'New Sessions', icon: Zap, accent: '#185fa5' },
+    { id: 2, label: 'Active Sessions', icon: Activity, accent: '#BA7517' },
+    { id: 3, label: 'Completed Sessions', icon: CheckCircle2, accent: '#1D9E75' },
   ]
 
   const STATS = [
-    { label: "Today's Appointments", value: stats?.todayCount || 0,  sub: `${stats?.todayTime || 0} min`,  icon: CalendarDays, accent: '#185fa5', bg: '#e6f1fb', border: '#b5d4f4' },
-    { label: 'Weekly Appointments',  value: stats?.weekCount  || 0,  sub: `${stats?.weekTime  || 0} min`,  icon: Clock,        accent: '#BA7517', bg: '#FAEEDA',  border: '#FAC775' },
-    { label: 'Monthly Appointments', value: stats?.monthCount || 0,  sub: `${stats?.monthTime || 0} min`,  icon: Users,        accent: '#1D9E75', bg: '#E1F5EE',  border: '#9FE1CB' },
+    { label: "Today's Appointments", value: stats?.todayCount || 0, sub: `${stats?.todayTime || 0} min`, icon: CalendarDays, accent: '#185fa5', bg: '#e6f1fb', border: '#b5d4f4' },
+    { label: 'Weekly Appointments', value: stats?.weekCount || 0, sub: `${stats?.weekTime || 0} min`, icon: Clock, accent: '#BA7517', bg: '#FAEEDA', border: '#FAC775' },
+    { label: 'Monthly Appointments', value: stats?.monthCount || 0, sub: `${stats?.monthTime || 0} min`, icon: Users, accent: '#1D9E75', bg: '#E1F5EE', border: '#9FE1CB' },
   ]
 
   if (loading) return (
@@ -216,12 +216,12 @@ const TherapyDashboard = () => {
         {/* ── Page header ───────────────────────── */}
         <div className="td-page-header">
           <div>
-            <h1 className="td-page-title">Therapy Dashboard</h1>
+            <h1 className="td-page-title">Therapist Dashboard</h1>
             <p className="td-page-sub">Manage your patient sessions and appointments</p>
           </div>
 
-          <CButton 
-            style={{ backgroundColor: COLORS.primary, color: "white", display: "flex", alignItems: "center", gap: 8 }} 
+          <CButton
+            style={{ backgroundColor: COLORS.primary, color: "white", display: "flex", alignItems: "center", gap: 8 }}
             onClick={() => navigate('/therapist/attendance', { state: { clinicId, branchId, therapistId } })}
           >
             <Clock size={16} /> Duty Logs

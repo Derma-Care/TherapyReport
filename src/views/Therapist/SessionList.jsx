@@ -343,6 +343,7 @@ const SessionList = () => {
       patientId: patientDataSource?.patientId, serviceType: patientDataSource?.serviceType,
       sets: ex?.sets, repetitions: ex?.repetitions, disease: patient.disease,
       therapistRecordId: patient.therapistRecordId, voiceRecordUrl: s.voiceRecordUrl || "",
+      activityType: ex?.activityType,
     })
   }
 

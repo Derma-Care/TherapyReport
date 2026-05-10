@@ -127,7 +127,7 @@ const InfoChip = ({ label, value }) => (
 )
 
 /* ─── File upload field ─── */
-const FileField = ({ label, required, error, accept, onChange, preview }) => (
+const FileField = ({ label, required, error, accept, onChange, preview, isVideo }) => (
   <div>
     <FieldLabel required={required}>{label}</FieldLabel>
     <label style={{
@@ -140,7 +140,11 @@ const FileField = ({ label, required, error, accept, onChange, preview }) => (
       <input type="file" accept={accept} style={{ display: 'none' }} onChange={e => onChange(e.target.files[0])} />
     </label>
     {preview && (
-      <img src={preview} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+      isVideo ? (
+        <video src={preview} controls style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+      ) : (
+        <img src={preview} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+      )
     )}
     <FieldError msg={error} />
   </div>
@@ -169,7 +173,9 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const [afterPreview, setAfterPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [beforeVideo, setBeforeVideo] = useState(null)
+  const [beforeVideoPreview, setBeforeVideoPreview] = useState(null)
   const [afterVideo, setAfterVideo] = useState(null)
+  const [afterVideoPreview, setAfterVideoPreview] = useState(null)
   const [painBefore, setPainBefore] = useState('')
   const [painAfter, setPainAfter] = useState('')
   const [result, setResult] = useState('')
@@ -206,7 +212,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     if (!file) return
     if (!file.type.startsWith('video/')) { err.beforeVideo = 'Only video files allowed' }
     else if (file.size > 2 * 1024 * 1024) { err.beforeVideo = 'Video must be < 2 MB' }
-    else { delete err.beforeVideo; setBeforeVideo(file) }
+    else { delete err.beforeVideo; setBeforeVideo(file); setBeforeVideoPreview(URL.createObjectURL(file)) }
     setErrors(err)
   }
 
@@ -215,7 +221,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     if (!file) return
     if (!file.type.startsWith('video/')) { err.afterVideo = 'Only video files allowed' }
     else if (file.size > 2 * 1024 * 1024) { err.afterVideo = 'Video must be < 2 MB' }
-    else { delete err.afterVideo; setAfterVideo(file) }
+    else { delete err.afterVideo; setAfterVideo(file); setAfterVideoPreview(URL.createObjectURL(file)) }
     setErrors(err)
   }
 
@@ -236,8 +242,6 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const save = async () => {
     let err = {}
     if (!notes) err.notes = 'Notes required'
-    if (!before) err.before = 'Before image required'
-    if (!after) err.after = 'After image required'
     if (!painBefore) err.painBefore = 'Select pain before'
     if (!painAfter) err.painAfter = 'Select pain after'
     if (!result) err.result = 'Select result'
@@ -247,8 +251,8 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     try {
       setLoading(true)
       const loc = await getCurrentLocation();
-      const beforeBase64 = await convertToBase64(before)
-      const afterBase64 = await convertToBase64(after)
+      const beforeBase64 = before ? await convertToBase64(before) : ''
+      const afterBase64 = after ? await convertToBase64(after) : ''
       const beforeVideoBase64 = beforeVideo ? await convertToBase64(beforeVideo) : ''
       const afterVideoBase64 = afterVideo ? await convertToBase64(afterVideo) : ''
       const now = new Date()
@@ -322,17 +326,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           <InfoChip label="Time" value={new Date().toLocaleTimeString()} />
         </div>
 
-        {/* ── Doctor Notes ── */}
-        <SectionHeading title="Doctor Notes" />
-        <div style={{
-          backgroundColor: '#fff', borderRadius: t.radiusSm,
-          border: `1px solid ${t.border}`, padding: '12px 14px',
-          fontSize: '13px', color: data.doctorNotes ? t.text : t.textMuted,
-          fontStyle: data.doctorNotes ? 'normal' : 'italic',
-          lineHeight: '1.6',
-        }}>
-          {data.doctorNotes || 'No notes available.'}
-        </div>
+
 
         {/* ── Therapist Notes ── */}
         <SectionHeading title="Therapist Notes" />
@@ -372,39 +366,43 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         </div>
 
         {/* ── Sets & Reps ── */}
-        <SectionHeading title="Exercise Completion" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          {/* Sets */}
-          <div>
-            <FieldLabel>Completed Sets</FieldLabel>
-            <div style={{ display: 'flex', gap: '0', border: `1px solid ${t.border}`, borderRadius: t.radiusSm, overflow: 'hidden', backgroundColor: '#fff' }}>
-              <Inp
-                type="number" min="0" max={data?.sets || 0} placeholder="e.g. 3"
-                value={completedSets}
-                onChange={e => setCompletedSets(e.target.value)}
-                style={{ border: 'none', borderRadius: 0, flex: 1 }}
-              />
-              <span style={{ padding: '7px 12px', fontSize: '12px', color: t.textMuted, backgroundColor: t.surface, borderLeft: `1px solid ${t.border}`, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                of {data?.sets || 0}
-              </span>
+        {data.activityType?.toLowerCase() === 'exercise' && (
+          <>
+            <SectionHeading title="Exercise Completion" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              {/* Sets */}
+              <div>
+                <FieldLabel>Completed Sets</FieldLabel>
+                <div style={{ display: 'flex', gap: '0', border: `1px solid ${t.border}`, borderRadius: t.radiusSm, overflow: 'hidden', backgroundColor: '#fff' }}>
+                  <Inp
+                    type="number" min="0" max={data?.sets || 0} placeholder="e.g. 3"
+                    value={completedSets}
+                    onChange={e => setCompletedSets(e.target.value)}
+                    style={{ border: 'none', borderRadius: 0, flex: 1 }}
+                  />
+                  <span style={{ padding: '7px 12px', fontSize: '12px', color: t.textMuted, backgroundColor: t.surface, borderLeft: `1px solid ${t.border}`, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                    of {data?.sets || 0}
+                  </span>
+                </div>
+              </div>
+              {/* Reps */}
+              <div>
+                <FieldLabel>Completed Repetitions</FieldLabel>
+                <div style={{ display: 'flex', gap: '0', border: `1px solid ${t.border}`, borderRadius: t.radiusSm, overflow: 'hidden', backgroundColor: '#fff' }}>
+                  <Inp
+                    type="number" min="0" max={data?.repetitions || 0} placeholder="e.g. 15"
+                    value={completedRepitations}
+                    onChange={e => { const v = Number(e.target.value); if (v <= (data?.repetitions || 0)) setCompletedRepitations(e.target.value) }}
+                    style={{ border: 'none', borderRadius: 0, flex: 1 }}
+                  />
+                  <span style={{ padding: '7px 12px', fontSize: '12px', color: t.textMuted, backgroundColor: t.surface, borderLeft: `1px solid ${t.border}`, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                    of {data?.repetitions || 0}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-          {/* Reps */}
-          <div>
-            <FieldLabel>Completed Repetitions</FieldLabel>
-            <div style={{ display: 'flex', gap: '0', border: `1px solid ${t.border}`, borderRadius: t.radiusSm, overflow: 'hidden', backgroundColor: '#fff' }}>
-              <Inp
-                type="number" min="0" max={data?.repetitions || 0} placeholder="e.g. 15"
-                value={completedRepitations}
-                onChange={e => { const v = Number(e.target.value); if (v <= (data?.repetitions || 0)) setCompletedRepitations(e.target.value) }}
-                style={{ border: 'none', borderRadius: 0, flex: 1 }}
-              />
-              <span style={{ padding: '7px 12px', fontSize: '12px', color: t.textMuted, backgroundColor: t.surface, borderLeft: `1px solid ${t.border}`, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                of {data?.repetitions || 0}
-              </span>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* ── Next Plan ── */}
         <SectionHeading title="Next Session Plan" />
@@ -412,19 +410,21 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           onChange={e => setNextPlan(e.target.value)} />
 
         {/* ── Images ── */}
-        <SectionHeading title="Before & After Images" />
+        <SectionHeading title="Before & After Images (Optional)" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          <FileField label="Before Image" required accept="image/*" error={error.before}
+          <FileField label="Before Image" accept="image/*" error={error.before}
             preview={beforePreview} onChange={handleBeforeImage} />
-          <FileField label="After Image" required accept="image/*" error={error.after}
+          <FileField label="After Image" accept="image/*" error={error.after}
             preview={afterPreview} onChange={handleAfterImage} />
         </div>
 
         {/* ── Videos ── */}
         <SectionHeading title="Before & After Videos (Optional)" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          <FileField label="Before Video" accept="video/*" error={errors.beforeVideo} onChange={handleBeforeVideo} />
-          <FileField label="After Video" accept="video/*" error={errors.afterVideo} onChange={handleAfterVideo} />
+          <FileField label="Before Video" accept="video/*" error={errors.beforeVideo}
+            preview={beforeVideoPreview} isVideo onChange={handleBeforeVideo} />
+          <FileField label="After Video" accept="video/*" error={errors.afterVideo}
+            preview={afterVideoPreview} isVideo onChange={handleAfterVideo} />
         </div>
 
         <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '4px' }}>
