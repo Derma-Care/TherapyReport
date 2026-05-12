@@ -23,10 +23,10 @@ import axios from "axios";
 
 const ScrollPicker = ({ items, selected, onChange, label }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '70px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '85px' }}>
       <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
       <div style={{
-        height: '120px',
+        height: '110px',
         overflowY: 'auto',
         border: '1px solid #d1d5db',
         borderRadius: 8,
@@ -90,7 +90,8 @@ const AttendanceTracker = () => {
 
   const [data, setData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
-
+  const [activityType, setActivityType] = useState("Training");
+  const [description, setDescription] = useState("");
   const [loadingDaily, setLoadingDaily] = useState(true);
   const [loadingMonthly, setLoadingMonthly] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,8 +264,8 @@ const AttendanceTracker = () => {
   const handleAdd = async () => {
     let newErrors = {};
 
-    if (!activity.trim()) {
-      newErrors.activity = "Activity is required";
+    if (!activityType.trim()) {
+      newErrors.activityType = "Activity is required";
     }
 
     if (durationHours === 0 && durationMinutes === 0) {
@@ -286,7 +287,7 @@ const AttendanceTracker = () => {
       const loc = await getCurrentLocation();
       const payload = {
         completedDate: dateStr,
-        activity,
+        activity: activityType, description,
         duration: durationStr,
         location: address
       };
@@ -988,44 +989,197 @@ const AttendanceTracker = () => {
 
           <CModalBody>
             {/* Activity */}
-            <div style={{ marginBottom: 12 }}>
-              <CFormLabel>Activity Name</CFormLabel>
-              <CFormInput
-                placeholder="Enter Activity Name"
-                value={activity}
-                onChange={(e) => {
-                  setActivity(e.target.value);
-                  setErrors({ ...errors, activity: "" });
+            {/* Activity Type */}
+            <div style={{ marginBottom: 14 }}>
+              <CFormLabel
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: COLORS.primary,
+                  marginBottom: 6,
                 }}
-                invalid={!!errors.activity}
+              >
+                Activity Name
+              </CFormLabel>
+
+              <select
+                value={activityType}
+                onChange={(e) => setActivityType(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  fontSize: 13,
+                  outline: "none",
+                  background: "#fff",
+                }}
+              >
+                <option value="Training">Training</option>
+                <option value="Other Activity">Other Activity</option>
+              </select>
+            </div>
+
+
+
+            {/* Description */}
+            <div style={{ marginBottom: 14 }}>
+              <CFormLabel
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: COLORS.primary,
+                  marginBottom: 6,
+                }}
+              >
+                Description
+              </CFormLabel>
+
+              <textarea
+                rows={3}
+                placeholder="Enter activity description..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{
+                  width: "100%",
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                  padding: "10px 12px",
+                  fontSize: 13,
+                  resize: "none",
+                  outline: "none",
+                }}
               />
-              {errors.activity && (
-                <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-                  {errors.activity}
-                </div>
-              )}
             </div>
 
             {/* Duration */}
-            <div style={{ marginBottom: 12 }}>
-              <CFormLabel>Duration</CFormLabel>
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <ScrollPicker
-                  items={Array.from({ length: 13 }, (_, i) => i)}
-                  selected={durationHours}
-                  onChange={(val) => { setDurationHours(val); setErrors({ ...errors, duration: "" }); }}
-                  label="Hours"
-                />
-                <div style={{ fontSize: 20, fontWeight: 'bold', color: '#6b7280', marginTop: 15 }}>:</div>
-                <ScrollPicker
-                  items={Array.from({ length: 60 }, (_, i) => i)}
-                  selected={durationMinutes}
-                  onChange={(val) => { setDurationMinutes(val); setErrors({ ...errors, duration: "" }); }}
-                  label="Minutes"
-                />
+            {/* Duration */}
+            <div style={{ marginBottom: 16 }}>
+              <CFormLabel
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: COLORS.primary,
+                  marginBottom: 8,
+                  display: "block",
+                }}
+              >
+                Duration
+              </CFormLabel>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "12px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "14px",
+                  padding: "16px",
+                }}
+              >
+                {/* Hours */}
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#64748b",
+                      marginBottom: 6,
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Hours
+                  </div>
+
+                  <CFormInput
+                    type="number"
+                    min={0}
+                    max={12}
+                    value={durationHours}
+                    onChange={(e) => {
+                      let value = Number(e.target.value)
+
+                      if (value > 12) value = 12
+                      if (value < 0) value = 0
+
+                      setDurationHours(value)
+                      setErrors({ ...errors, duration: "" })
+                    }}
+                    style={{
+                      textAlign: "center",
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      borderRadius: "12px",
+                      border: "1px solid #dbe2ea",
+                      color: COLORS.primary,
+                      height: "58px",
+                    }}
+                  />
+                </div>
+
+                {/* Colon */}
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 700,
+                    color: "#94a3b8",
+                    marginTop: "24px",
+                  }}
+                >
+                  :
+                </div>
+
+                {/* Minutes */}
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#64748b",
+                      marginBottom: 6,
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Minutes
+                  </div>
+
+                  <CFormInput
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={durationMinutes}
+                    onChange={(e) => {
+                      let value = Number(e.target.value)
+
+                      if (value > 59) value = 59
+                      if (value < 0) value = 0
+
+                      setDurationMinutes(value)
+                      setErrors({ ...errors, duration: "" })
+                    }}
+                    style={{
+                      textAlign: "center",
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      borderRadius: "12px",
+                      border: "1px solid #dbe2ea",
+                      color: COLORS.primary,
+                      height: "58px",
+                    }}
+                  />
+                </div>
               </div>
+
               {errors.duration && (
-                <div style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+                <div
+                  style={{
+                    color: "#dc2626",
+                    fontSize: 11,
+                    marginTop: 6,
+                  }}
+                >
                   {errors.duration}
                 </div>
               )}
