@@ -70,7 +70,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
           <div className="td-patient-meta">
             <span><Stethoscope size={11} /> {p.doctorName || 'N/A'}</span>
             <span><Activity size={11} /> {p.serivceType || 'N/A'}</span>
-            <span><Phone size={11} /> {p.mobileNumber || 'N/A'}</span>
+            <span><Phone size={11} /> {p.mobileNumber || p.patientMobileNumber || 'N/A'}</span>
           </div>
         </div>
       </div>

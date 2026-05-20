@@ -27,20 +27,20 @@ const SessionViewModal = ({ visible, data, onClose }) => {
     return URL.createObjectURL(blob)
   }
   const audioSrc =
-  data?.voiceRecord ||
-  data?.voiceRecordUrl ||
-  "";
+    data?.voiceRecord ||
+    data?.voiceRecordUrl ||
+    "";
   return (
     <>
-      <CModal visible={visible}  onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
-        <CModalHeader closeButton  style={{backgroundColor: COLORS.primary,color:"white"}} className="text-white">Session Details</CModalHeader>
+      <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
+        <CModalHeader closeButton style={{ backgroundColor: COLORS.primary, color: "white" }} className="text-white">Session Details</CModalHeader>
 
         <CModalBody>
 
           {/* 🔷 HEADER */}
-          <h6 className="section-title" style={{color: COLORS.primary}}>Session Information</h6>
+          <h6 className="section-title" style={{ color: COLORS.primary }}>Session Information</h6>
 
-          <CRow className="mb-3" style={{color: COLORS.primary}}>
+          <CRow className="mb-3" style={{ color: COLORS.primary }}>
             {[
               { label: "Patient", value: data.patientName },
               { label: "Therapy", value: data.therapy },
@@ -53,15 +53,15 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             ].map((item, i) => (
               <CCol md={6} key={i}>
                 <div className="info-box">
-                  <span className="label" style={{color: COLORS.primary}}>{item.label}</span>
-                  <span className="value" style={{color: COLORS.primary}}>{item.value || "-"}</span>
+                  <span className="label" style={{ color: COLORS.primary }}>{item.label}</span>
+                  <span className="value" style={{ color: COLORS.primary }}>{item.value || "-"}</span>
                 </div>
               </CCol>
             ))}
           </CRow>
 
           {/* 🔷 NOTES */}
-          <h6 className="section-title" style={{color: COLORS.primary}}>Notes</h6>
+          <h6 className="section-title" style={{ color: COLORS.primary }}>Notes</h6>
 
           {/* <div className="note-box">
     <b>Doctor Notes</b>
@@ -70,177 +70,177 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 
           <div className="note-box mb-4">
             <b>Therapist Notes</b>
-            <p style={{color: COLORS.primary}}>{data.therapistNotes || "-"}</p>
+            <p style={{ color: COLORS.primary }}>{data.therapistNotes || "-"}</p>
           </div>
 
           {/* 🔷 SESSION DETAILS */}
-          <h6 className="section-title" style={{color: COLORS.primary}}>Session Details</h6>
+          <h6 className="section-title" style={{ color: COLORS.primary }}>Session Details</h6>
 
-       <CRow className="g-3 mt-1">
-  <CCol md={6}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "10px",
-        padding: "12px",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          
-          fontWeight: "600",
-          marginBottom: "4px",
-        }}
-      >
-        Pain Before
-      </div>
-      <div style={{ fontSize: "15px", fontWeight: "500" }}>
-        {data.painBefore || "-"}
-      </div>
-    </div>
-  </CCol>
+          <CRow className="g-3 mt-1">
+            <CCol md={6}>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  height: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
 
-  <CCol md={6}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "10px",
-        padding: "12px",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-     
-          fontWeight: "600",
-          marginBottom: "4px",
-        }}
-      >
-        Pain After
-      </div>
-      <div style={{ fontSize: "15px", fontWeight: "500" }}>
-        {data.painAfter || "-"}
-      </div>
-    </div>
-  </CCol>
+                    fontWeight: "600",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Pain Before
+                </div>
+                <div style={{ fontSize: "15px", fontWeight: "500" }}>
+                  {data.painBefore || "-"}
+                </div>
+              </div>
+            </CCol>
 
-  <CCol md={6}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        
-        borderRadius: "10px",
-        padding: "12px",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
- color: COLORS.primary,
-          fontWeight: "600",
-          marginBottom: "4px",
-        }}
-      >
-        Result
-      </div>
-      <div style={{ fontSize: "15px", fontWeight: "500" }}>
-        {data.result || "-"}
-      </div>
-    </div>
-  </CCol>
+            <CCol md={6}>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  height: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
 
-  <CCol md={6}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "10px",
-         color: COLORS.primary,
-        padding: "12px",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          color: COLORS.primary,
-          fontWeight: "600",
-          marginBottom: "4px",
-        }}
-      >
-        Duration
-      </div>
-      <div style={{ fontSize: "15px", fontWeight: "500" }}>
-        {data.duration || "-"}
-      </div>
-    </div>
-  </CCol>
+                    fontWeight: "600",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Pain After
+                </div>
+                <div style={{ fontSize: "15px", fontWeight: "500" }}>
+                  {data.painAfter || "-"}
+                </div>
+              </div>
+            </CCol>
 
-  <CCol md={12}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "10px",
-        padding: "12px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#64748b",
-          fontWeight: "600",
-          marginBottom: "4px",
-        }}
-      >
-        Next Plan
-      </div>
-      <div style={{ fontSize: "15px", fontWeight: "500" ,color: COLORS.primary}}>
-        {data.nextPlan || "-"}
-      </div>
-    </div>
-  </CCol>
-</CRow>
+            <CCol md={6}>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+
+                  borderRadius: "10px",
+                  padding: "12px",
+                  height: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: COLORS.primary,
+                    fontWeight: "600",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Result
+                </div>
+                <div style={{ fontSize: "15px", fontWeight: "500" }}>
+                  {data.result || "-"}
+                </div>
+              </div>
+            </CCol>
+
+            <CCol md={6}>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
+                  color: COLORS.primary,
+                  padding: "12px",
+                  height: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: COLORS.primary,
+                    fontWeight: "600",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Duration
+                </div>
+                <div style={{ fontSize: "15px", fontWeight: "500" }}>
+                  {data.duration || "-"}
+                </div>
+              </div>
+            </CCol>
+
+            <CCol md={12}>
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "10px",
+                  padding: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#64748b",
+                    fontWeight: "600",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Next Plan
+                </div>
+                <div style={{ fontSize: "15px", fontWeight: "500", color: COLORS.primary }}>
+                  {data.nextPlan || "-"}
+                </div>
+              </div>
+            </CCol>
+          </CRow>
 
           {/* 🔷 MEDIA */}
-          <h6 className="section-title mt-4" style={{color: COLORS.primary}}>Media</h6>
+          <h6 className="section-title mt-4" style={{ color: COLORS.primary }}>Media</h6>
 
           <CRow>
             <CRow className="g-3">
 
-  {/* No Sets Completed */}
-  <CCol md={6}>
-    <strong>No Sets Completed:</strong>
-    <div>{data?.noSetsCompleted || "-"}</div>
-  </CCol>
+              {/* No Sets Completed */}
+              <CCol md={6}>
+                <strong>No Sets Completed:</strong>
+                <div>{data?.setsDone || "-"}</div>
+              </CCol>
 
-  {/* Repetition Done */}
-  <CCol md={6}>
-    <strong>Repetition Done:</strong>
-    <div>{data?.repetitionDone || "-"}</div>
-  </CCol>
+              {/* Repetition Done */}
+              <CCol md={6}>
+                <strong>Repetition Done:</strong>
+                <div>{data?.repetationDone || "-"}</div>
+              </CCol>
 
-  {/* Audio */}
-<CCol md={12} className='mt-5'>
-  <strong>Audio Record:</strong>
+              {/* Audio */}
+              <CCol md={12} className='mt-5'>
+                <strong>Audio Record:</strong>
 
-  <div className="mt-2">
-    {audioSrc ? (
-      <audio controls src={audioSrc} style={{ width: "100%" }} />
-    ) : (
-      <span>No Audio</span>
-    )}
-  </div>
-</CCol>
+                <div className="mt-2">
+                  {audioSrc ? (
+                    <audio controls src={audioSrc} style={{ width: "100%" }} />
+                  ) : (
+                    <span>No Audio</span>
+                  )}
+                </div>
+              </CCol>
 
-</CRow>
+            </CRow>
 
             {/* Images */}
             <CCol md={6} className="mt-3">
