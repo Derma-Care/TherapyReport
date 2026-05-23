@@ -43,7 +43,6 @@ const Login = () => {
     }
 
     useEffect(() => {
-        localStorage.clear()
         // Stagger-in feature pills after panel lands
         FEATURES.forEach((_, i) => {
             setTimeout(() => setVisiblePills(prev => [...prev, i]), 700 + i * 130)

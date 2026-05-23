@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   CModal,
   CModalHeader,
@@ -13,6 +13,7 @@ import { createTherapyNotes } from './TheraphyApi'
 import { useNavigate } from 'react-router-dom'
 import { convertToBase64 } from '../../Utils/Base64Convert'
 import { showCustomToast } from '../../Utils/Toaster'
+import ConsentFormModal from './ConsentFormModal'
 
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
@@ -185,44 +186,89 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const [error, setError] = useState({})
   const [errors, setErrors] = useState({})
 
+  // Consent flow state
+  const [showConsent, setShowConsent] = useState(false)
+  const [pendingFile, setPendingFile] = useState(null)
+  const [localConsentPdf, setLocalConsentPdf] = useState(data.consentPdfUrl || null)
+
+  // Initialize previews with data captured from dashboard if present
+  useEffect(() => {
+    if (data.beforeMediaUrl) {
+      if (data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl.includes("video")) {
+        setBeforeVideoPreview(data.beforeMediaUrl)
+      } else {
+        setBeforePreview(data.beforeMediaUrl)
+      }
+    }
+    if (data.afterMediaUrl) {
+      if (data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl.includes("video")) {
+        setAfterVideoPreview(data.afterMediaUrl)
+      } else {
+        setAfterPreview(data.afterMediaUrl)
+      }
+    }
+  }, [data])
+
   const storedData = localStorage.getItem('therapistData')
   const theraphydata = location.state || (storedData ? JSON.parse(storedData) : {})
 
   /* ── file handlers ── */
-  const handleBeforeImage = (file) => {
+  const processBeforeImage = (file) => {
     let err = { ...error }
-    if (!file) return
     if (!file.type.startsWith('image/')) { err.before = 'Only image files allowed' }
     else if (file.size > 1 * 1024 * 1024) { err.before = 'Image must be < 1 MB' }
     else { delete err.before; setBefore(file); setBeforePreview(URL.createObjectURL(file)) }
     setError(err)
   }
 
-  const handleAfterImage = (file) => {
+  const processAfterImage = (file) => {
     let err = { ...error }
-    if (!file) return
     if (!file.type.startsWith('image/')) { err.after = 'Only image files allowed' }
     else if (file.size > 1 * 1024 * 1024) { err.after = 'Image must be < 1 MB' }
     else { delete err.after; setAfter(file); setAfterPreview(URL.createObjectURL(file)) }
     setError(err)
   }
 
-  const handleBeforeVideo = (file) => {
+  const processBeforeVideo = (file) => {
     let err = { ...errors }
-    if (!file) return
     if (!file.type.startsWith('video/')) { err.beforeVideo = 'Only video files allowed' }
     else if (file.size > 2 * 1024 * 1024) { err.beforeVideo = 'Video must be < 2 MB' }
     else { delete err.beforeVideo; setBeforeVideo(file); setBeforeVideoPreview(URL.createObjectURL(file)) }
     setErrors(err)
   }
 
-  const handleAfterVideo = (file) => {
+  const processAfterVideo = (file) => {
     let err = { ...errors }
-    if (!file) return
     if (!file.type.startsWith('video/')) { err.afterVideo = 'Only video files allowed' }
     else if (file.size > 2 * 1024 * 1024) { err.afterVideo = 'Video must be < 2 MB' }
     else { delete err.afterVideo; setAfterVideo(file); setAfterVideoPreview(URL.createObjectURL(file)) }
     setErrors(err)
+  }
+
+  const handleFileSelect = (file, type) => {
+    if (!file) return;
+    if (!localConsentPdf) {
+      setPendingFile({ file, type });
+      setShowConsent(true);
+      return;
+    }
+    // If consent already granted, process immediately
+    if (type === 'beforeImage') processBeforeImage(file);
+    if (type === 'afterImage') processAfterImage(file);
+    if (type === 'beforeVideo') processBeforeVideo(file);
+    if (type === 'afterVideo') processAfterVideo(file);
+  }
+
+  const handleConsentGranted = (pdfUrl) => {
+    setLocalConsentPdf(pdfUrl);
+    setShowConsent(false);
+    if (pendingFile) {
+      if (pendingFile.type === 'beforeImage') processBeforeImage(pendingFile.file);
+      if (pendingFile.type === 'afterImage') processAfterImage(pendingFile.file);
+      if (pendingFile.type === 'beforeVideo') processBeforeVideo(pendingFile.file);
+      if (pendingFile.type === 'afterVideo') processAfterVideo(pendingFile.file);
+      setPendingFile(null);
+    }
   }
 
   const getCurrentLocation = () => {
@@ -280,9 +326,12 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         therapistNotes: notes,
         patientResponse: data.patientResponse || 'Good',
         result, mode: 'complete', nextPlan,
-        beforeImage: beforeBase64, afterImage: afterBase64,
-        beforeVideo: beforeVideoBase64, afterVideo: afterVideoBase64,
+        beforeImage: beforeBase64 || data.beforeMediaUrl || '',
+        afterImage: afterBase64 || data.afterMediaUrl || '',
+        beforeVideo: beforeVideoBase64 || (data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : ''),
+        afterVideo: afterVideoBase64 || (data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : ''),
         latitude: loc.latitude, longitude: loc.longitude,
+        consentPdfUrl: localConsentPdf || data.consentPdfUrl || '',
       }
 
       const res = await createTherapyNotes(payload)
@@ -409,27 +458,58 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         <Textarea rows={2} placeholder="Describe the plan for the next session…" value={nextPlan}
           onChange={e => setNextPlan(e.target.value)} />
 
+        {/* ── Consent Status ── */}
+        <SectionHeading title="Media Consent" />
+        {localConsentPdf ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 12px', borderRadius: t.radiusSm,
+            background: '#f0fdf4', border: '1px solid #bbf7d0',
+            fontSize: '12px', color: '#16a34a', fontWeight: 600,
+          }}>
+            ✅ Patient consent has been recorded
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 12px', borderRadius: t.radiusSm,
+            background: '#fffbeb', border: '1px solid #fde68a',
+            fontSize: '12px', color: '#b45309', fontWeight: 500,
+          }}>
+            ⚠️ Consent required — you will be asked to sign before uploading media
+          </div>
+        )}
+
         {/* ── Images ── */}
-        <SectionHeading title="Before & After Images (Optional)" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          <FileField label="Before Image" accept="image/*" error={error.before}
-            preview={beforePreview} onChange={handleBeforeImage} />
-          <FileField label="After Image" accept="image/*" error={error.after}
-            preview={afterPreview} onChange={handleAfterImage} />
-        </div>
+        {
+          localConsentPdf &&
+          (
+            <>
 
-        {/* ── Videos ── */}
-        <SectionHeading title="Before & After Videos (Optional)" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-          <FileField label="Before Video" accept="video/*" error={errors.beforeVideo}
-            preview={beforeVideoPreview} isVideo onChange={handleBeforeVideo} />
-          <FileField label="After Video" accept="video/*" error={errors.afterVideo}
-            preview={afterVideoPreview} isVideo onChange={handleAfterVideo} />
-        </div>
+              <SectionHeading title="Before & After Images (Optional)" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <FileField label="Before Image" accept="image/*" error={error.before}
+                  preview={beforePreview} onChange={file => handleFileSelect(file, 'beforeImage')} />
+                <FileField label="After Image" accept="image/*" error={error.after}
+                  preview={afterPreview} onChange={file => handleFileSelect(file, 'afterImage')} />
+              </div>
 
-        <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '4px' }}>
-          Images: max 1 MB &nbsp;·&nbsp; Videos: max 2 MB
-        </div>
+              {/* ── Videos ── */}
+              <SectionHeading title="Before & After Videos (Optional)" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <FileField label="Before Video" accept="video/*" error={errors.beforeVideo}
+                  preview={beforeVideoPreview} isVideo onChange={file => handleFileSelect(file, 'beforeVideo')} />
+                <FileField label="After Video" accept="video/*" error={errors.afterVideo}
+                  preview={afterVideoPreview} isVideo onChange={file => handleFileSelect(file, 'afterVideo')} />
+              </div>
+
+              <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '4px' }}>
+                Images: max 1 MB &nbsp;·&nbsp; Videos: max 2 MB
+              </div>
+            </>
+          )
+        }
+
 
 
       </CModalBody>
@@ -446,6 +526,16 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           </Btn>
         </div>
       </CModalFooter>
+
+      <ConsentFormModal
+        visible={showConsent}
+        onClose={() => {
+          setShowConsent(false);
+          setPendingFile(null);
+        }}
+        patientName={data?.patientName}
+        onConsentGranted={handleConsentGranted}
+      />
     </CModal>
   )
 }

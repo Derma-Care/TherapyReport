@@ -111,7 +111,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
               },
             })}
           >
-            Sessions <ArrowRight size={12} />
+            Sessions <ArrowRight size={12} color="#fff" />
           </button>
         </div>
       </div>
@@ -128,6 +128,8 @@ const TherapyDashboard = () => {
   const [patientList, setPatientList] = useState([])
   const [dashboard, setDashboard] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -167,7 +169,10 @@ const TherapyDashboard = () => {
   }, [clinicId, branchId, therapistId])
 
   useEffect(() => {
-    if (clinicId && branchId && therapistId) fetchDashboardData(tab)
+    if (clinicId && branchId && therapistId) {
+      fetchDashboardData(tab)
+      setCurrentPage(1)
+    }
   }, [tab])
 
   const stats = getStats(dashboard)
@@ -240,7 +245,7 @@ const TherapyDashboard = () => {
                 style={tab === id ? { background: accent, borderColor: accent, color: '#fff' } : {}}
                 onClick={() => setTab(id)}
               >
-                <Icon size={13} />
+                <Icon size={13} color={tab === id ? '#fff' : 'currentColor'} />
                 {label}
               </button>
             ))}
@@ -264,7 +269,7 @@ const TherapyDashboard = () => {
                     <Users size={13} /> {patientList.length} Patient{patientList.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                {patientList.map((p, index) => (
+                {patientList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p, index) => (
                   <PatientRow
                     key={p.patientId || index}
                     p={p}
@@ -275,6 +280,27 @@ const TherapyDashboard = () => {
                     navigate={navigate}
                   />
                 ))}
+                {patientList.length > itemsPerPage && (
+                  <div className="td-pagination">
+                    <button
+                      className="td-page-btn"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                    >
+                      Prev
+                    </button>
+                    <span className="td-page-info">
+                      Page {currentPage} of {Math.ceil(patientList.length / itemsPerPage)}
+                    </span>
+                    <button
+                      className="td-page-btn"
+                      disabled={currentPage === Math.ceil(patientList.length / itemsPerPage)}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -678,6 +704,40 @@ const TherapyDashboard = () => {
           font-size: 13px;
         }
         .td-empty p { margin: 0; }
+
+        /* Pagination */
+        .td-pagination {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 16px;
+          border-top: 0.5px solid #d0dce9;
+          margin-top: 16px;
+        }
+        .td-page-btn {
+          padding: 6px 12px;
+          border: 0.5px solid #d0dce9;
+          background: #fff;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 500;
+          color: #185fa5;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .td-page-btn:hover:not(:disabled) {
+          background: #e6f1fb;
+          border-color: #b5d4f4;
+        }
+        .td-page-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          color: #888780;
+        }
+        .td-page-info {
+          font-size: 12px;
+          color: #5f5e5a;
+        }
       `}</style>
     </>
   )

@@ -1017,6 +1017,9 @@ const AttendanceTracker = () => {
               >
                 <option value="Training">Training</option>
                 <option value="Other Activity">Other Activity</option>
+                <option value="Paid Leave">Paid Leave</option>
+                <option value="Loss of Pay">Loss of Pay</option>
+
               </select>
             </div>
 

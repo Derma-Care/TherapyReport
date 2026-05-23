@@ -1,7 +1,7 @@
 export const convertToBase64 = async (image) => {
     try {
         // ✅ already base64
-        if (typeof image === "string" && image.startsWith("data:image")) {
+        if (typeof image === "string" && image.startsWith("data:")) {
             return image.split(",")[1]
         }
 

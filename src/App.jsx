@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import DefaultLayout from './layout/DefaultLayout'
 import routes from './routes'
 import ProtectedRoute from './Routes/ProtectedRoute'
+import PublicRoute from './Routes/PublicRoute'
 import Login from './views/login/Login'
 import './App.css'
 import { useHospital } from './Context/HospitalContext'
@@ -61,7 +62,7 @@ function App() {
       <Routes>
 
         {/* Public Route */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
         {/* Protected Layout */}
         <Route

@@ -7,10 +7,13 @@ import SessionFormModal from "./SessionFormModal"
 import { getSessionDetails, getPaidSessions } from "./TheraphyApi"
 import SessionViewModal from "./SessionViewModal"
 import LoadingIndicator from "../../Utils/loader"
+import ConsentFormModal from "./ConsentFormModal"
+import MediaCaptureModal from "./MediaCaptureModal"
 import {
   User, Calendar, ClipboardList, X, ChevronDown, Eye,
-  Play, Mic, Activity, Clock, CheckCircle, Zap
+  Play, Mic, Activity, Clock, CheckCircle, Zap, Camera
 } from "lucide-react"
+import { COLORS } from "../../Constant/Themes"
 
 /* ─── THEME ─────────────────────────────────────────────────────────────── */
 const T = {
@@ -283,6 +286,8 @@ const SessionList = () => {
   const [exDetail, setExDetail] = useState(null)
   const [voiceRecordSession, setVoiceRecordSession] = useState(null)
   const [audioPlaybackSession, setAudioPlaybackSession] = useState(null)
+  const [consentSession, setConsentSession] = useState(null)
+  const [mediaSession, setMediaSession] = useState(null)
   const [activeSessions, setActiveSessions] = useState({})
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
@@ -363,6 +368,23 @@ const SessionList = () => {
     setVoiceRecordSession(null)
   }
 
+  const handleConsentGranted = (pdfUrl) => {
+    if (!consentSession) return
+    const updatedSession = { ...consentSession.session, consentPdfUrl: pdfUrl }
+    handleUpdate(updatedSession)
+    setMediaSession({ session: updatedSession, type: consentSession.type })
+    setConsentSession(null)
+  }
+
+  const handleMediaSaved = (mediaUrl) => {
+    if (!mediaSession) return
+    const updatedSession = { ...mediaSession.session }
+    if (mediaSession.type === "before") updatedSession.beforeMediaUrl = mediaUrl
+    if (mediaSession.type === "after") updatedSession.afterMediaUrl = mediaUrl
+    handleUpdate(updatedSession)
+    setMediaSession(null)
+  }
+
   /* ── stats ── */
   const exercises = treeData ? extractExercises(treeData) : []
   const allSessions = exercises.flatMap(e => e.sessions || [])
@@ -426,12 +448,38 @@ const SessionList = () => {
                       <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
                     </td>
                     <td style={{ ...S.td, textAlign: "center" }}>
+                      {!completed && (
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 6 }}>
+                          <button
+                            style={S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm")}
+                            onClick={() => {
+                              if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                              else setMediaSession({ session: s, type: "before" })
+                            }}
+                          >
+                            <Camera size={14} /> Before
+                          </button>
+                          <button
+                            style={S.btn(s.afterMediaUrl ? "success" : "secondary", "sm")}
+                            onClick={() => {
+                              if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                              else setMediaSession({ session: s, type: "after" })
+                            }}
+                          >
+                            <Camera size={14} /> After
+                          </button>
+                        </div>
+                      )}
                       <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
                         {s.voiceRecordUrl
                           ? <button style={S.btn("info", "sm")} onClick={() => setAudioPlaybackSession(s)}>▶️ Play</button>
                           : (!completed && <button style={S.btn("secondary", "sm")} onClick={() => setVoiceRecordSession(s)}>🎤 Record</button>)}
                         {!completed
-                          ? <button style={S.btn("primary", "sm")} onClick={() => handleManualCompleteFallback(s, ex)}>Complete Form</button>
+                          ? <button
+                            style={{ ...S.btn(s.startTime && s.endTime ? "primary" : "secondary", "sm"), opacity: (s.startTime && s.endTime) ? 1 : 0.5 }}
+                            disabled={!(s.startTime && s.endTime)}
+                            onClick={() => handleManualCompleteFallback(s, ex)}
+                          >Complete Form</button>
                           : <button style={S.btn("ghost", "sm")} disabled={loadingId === s.sessionId} onClick={() => handleView(s)}>
                             {loadingId === s.sessionId ? <span className="spinner-border spinner-border-sm" /> : "View"}
                           </button>}
@@ -469,8 +517,15 @@ const SessionList = () => {
                 </div>
 
                 {!completed && (
-                  <div>
-                    {!isRunning ? (
+                  <div style={{ marginBottom: 8 }}>
+                    {s.startTime && s.endTime ? (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "0.6rem 0.75rem", display: "flex", alignItems: "center", gap: 6 }}>
+                        <Clock size={14} style={{ color: T.navy }} />
+                        <span style={{ color: T.text, fontSize: "0.82rem", fontWeight: 500 }}>
+                          Tracked: <strong>{s.startTime}</strong> → <strong>{s.endTime}</strong>
+                        </span>
+                      </div>
+                    ) : !isRunning ? (
                       <button style={{ ...S.btn("outline", "sm"), width: "100%", justifyContent: "center", padding: "0.6rem" }} onClick={() => handleStartSession(s.sessionId)}>
                         <Play size={14} fill={T.navy} /> Start Tracker
                       </button>
@@ -489,6 +544,28 @@ const SessionList = () => {
                   </div>
                 )}
 
+                {!completed && (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <button
+                      style={{ ...S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
+                      onClick={() => {
+                        if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                        else setMediaSession({ session: s, type: "before" })
+                      }}
+                    >
+                      <Camera size={14} /> Before Media
+                    </button>
+                    <button
+                      style={{ ...S.btn(s.afterMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
+                      onClick={() => {
+                        if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                        else setMediaSession({ session: s, type: "after" })
+                      }}
+                    >
+                      <Camera size={14} /> After Media
+                    </button>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 8 }}>
                   {s.voiceRecordUrl ? (
                     <button style={{ ...S.btn("info", "sm"), flex: 1, justifyContent: "center" }} onClick={() => setAudioPlaybackSession(s)}>
@@ -502,8 +579,12 @@ const SessionList = () => {
                     )
                   )}
                   {!completed ? (
-                    <button style={{ ...S.btn("primary", "sm"), flex: 1, justifyContent: "center" }} onClick={() => handleManualCompleteFallback(s, ex)}>
-                      <CheckCircle size={14} /> Complete
+                    <button
+                      style={{ ...S.btn(s.startTime && s.endTime ? "primary" : "secondary", "sm"), flex: 1, justifyContent: "center", opacity: (s.startTime && s.endTime) ? 1 : 0.5 }}
+                      disabled={!(s.startTime && s.endTime)}
+                      onClick={() => handleManualCompleteFallback(s, ex)}
+                    >
+                      <CheckCircle size={14} color="white" /> Complete
                     </button>
                   ) : (
                     <button style={{ ...S.btn("ghost", "sm"), flex: 1, justifyContent: "center" }} disabled={loadingId === s.sessionId} onClick={() => handleView(s)}>
@@ -738,6 +819,20 @@ const SessionList = () => {
       {selectedSession && (
         <SessionViewModal visible data={selectedSession} onClose={() => { setSelected(null); setSelectedSession(null) }} />
       )}
+
+      <ConsentFormModal
+        visible={!!consentSession}
+        onClose={() => setConsentSession(null)}
+        patientName={patient?.name}
+        onConsentGranted={handleConsentGranted}
+      />
+
+      <MediaCaptureModal
+        visible={!!mediaSession}
+        onClose={() => setMediaSession(null)}
+        type={mediaSession?.type}
+        onMediaSaved={handleMediaSaved}
+      />
 
       {/* Exercise Detail Modal */}
       <CModal visible={!!exDetail} onClose={() => setExDetail(null)} alignment="center" size="lg" className="custom-modal">

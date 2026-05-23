@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 
 import React, { useState } from 'react'
-import { CModal, CModalHeader, CModalBody, CCol, CRow } from '@coreui/react'
+import { CModal, CModalHeader, CModalBody, CCol, CRow, CButton } from '@coreui/react'
 import { COLORS } from '../../Constant/Themes'
 
 const SessionViewModal = ({ visible, data, onClose }) => {
@@ -11,25 +11,43 @@ const SessionViewModal = ({ visible, data, onClose }) => {
   if (!data) return null
 
   const base64ToBlob = (base64, mime) => {
-    const byteChars = atob(base64)
-    const byteNumbers = new Array(byteChars.length)
-
-    for (let i = 0; i < byteChars.length; i++) {
-      byteNumbers[i] = byteChars.charCodeAt(i)
+    try {
+      const byteChars = atob(base64)
+      const byteNumbers = new Array(byteChars.length)
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      return new Blob([byteArray], { type: mime })
+    } catch (e) {
+      console.error("Invalid base64", e)
+      return new Blob([], { type: mime })
     }
-
-    const byteArray = new Uint8Array(byteNumbers)
-    return new Blob([byteArray], { type: mime })
   }
   const getVideoUrl = (base64) => {
     if (!base64) return null
+    if (base64.startsWith("http") || base64.startsWith("blob:")) return base64;
     const blob = base64ToBlob(base64, "video/mp4")
     return URL.createObjectURL(blob)
+  }
+
+  const getImageSrc = (val) => {
+    if (!val) return null;
+    if (val.startsWith("http") || val.startsWith("blob:")) return val;
+    return `data:image/jpeg;base64,${val}`;
   }
   const audioSrc =
     data?.voiceRecord ||
     data?.voiceRecordUrl ||
     "";
+
+  // Helper variables for fallback checking
+  const beforeImgData = data.beforeMediaUrl && !data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeImage;
+  const afterImgData = data.afterMediaUrl && !data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterImage;
+
+  const beforeVidData = data.beforeMediaUrl && data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeVideo;
+  const afterVidData = data.afterMediaUrl && data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterVideo;
+
   return (
     <>
       <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
@@ -246,12 +264,12 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-3">
               <b>Before Image</b>
               <div  >
-                {data.beforeImage ? (
+                {beforeImgData ? (
                   <img
-                    src={`data:image/jpeg;base64,${data.beforeImage}`}
+                    src={getImageSrc(beforeImgData)}
                     className="img-fluid rounded border"
                     style={{ cursor: "pointer", maxHeight: 120 }}
-                    onClick={() => setPreview(`data:image/jpeg;base64,${data.beforeImage}`)}
+                    onClick={() => setPreview(getImageSrc(beforeImgData))}
                   />
                 ) : <span>No Image</span>}
               </div>
@@ -260,12 +278,12 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-3">
               <b>After Image</b>
               <div  >
-                {data.afterImage ? (
+                {afterImgData ? (
                   <img
-                    src={`data:image/jpeg;base64,${data.afterImage}`}
+                    src={getImageSrc(afterImgData)}
                     className="img-fluid rounded border"
                     style={{ cursor: "pointer", maxHeight: 120 }}
-                    onClick={() => setPreview(`data:image/jpeg;base64,${data.afterImage}`)}
+                    onClick={() => setPreview(getImageSrc(afterImgData))}
                   />
                 ) : <span>No Image</span>}
               </div>
@@ -275,9 +293,9 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-4">
               <b>Before Video</b>
               <div className="media-box">
-                {data.beforeVideo ? (
+                {beforeVidData ? (
                   <video
-                    src={getVideoUrl(data.beforeVideo)}
+                    src={getVideoUrl(beforeVidData)}
                     controls
                     style={{ maxHeight: 150 }}
                   />
@@ -288,17 +306,90 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-4">
               <b>After Video</b>
               <div className="media-box">
-                {data.afterVideo ? (
+                {afterVidData ? (
                   <video
-                    src={`data:video/mp4;base64,${data.afterVideo}`}
+                    src={getVideoUrl(afterVidData)}
                     controls
-                    onClick={() => setPreview(`data:video/mp4;base64,${data.afterVideo}`)}
+                    onClick={() => setPreview(getVideoUrl(afterVidData))}
                   />
                 ) : <span>No Video</span>}
               </div>
             </CCol>
 
           </CRow>
+
+
+          {data.consentPdfUrl && (
+
+            <div
+              style={{
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "12px",
+                marginTop: "10px",
+                background: "#f8fafc",
+              }}
+            >
+              <hr />
+
+              Consent Form PDF
+
+              <br />
+
+              {/* PDF Preview */}
+              {/* <iframe
+                src={data.consentPdfUrl}
+                title="Consent PDF"
+                width="100%"
+                height="400px"
+                style={{
+                  border: "none",
+                  borderRadius: "10px",
+                  marginBottom: "12px",
+                }}
+              /> */}
+
+              <embed
+                src={data.consentPdfUrl}
+                type="application/pdf"
+                width="100%"
+                height="400px"
+              />
+
+              {/* Actions */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
+                  flexWrap: "wrap",
+                }}
+              >
+
+                <CButton
+                  color="primary"
+                  variant="outline"
+                  onClick={() =>
+                    window.open(data.consentPdfUrl, "_blank")
+                  }
+                >
+                  View PDF
+                </CButton>
+
+                <a
+                  href={data.consentPdfUrl}
+                  download="consent-form.pdf"
+                  style={{ textDecoration: "none" }}
+                >
+                  <CButton color="success">
+                    Download PDF
+                  </CButton>
+                </a>
+
+              </div>
+
+            </div>
+          )}
 
         </CModalBody>
       </CModal>
@@ -341,7 +432,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
               ×
             </button>
 
-            {preview.startsWith("data:video") ? (
+            {preview.startsWith("data:video") || preview.startsWith("blob:") || preview.match(/\.(mp4|webm|mov|ogg)$/i) ? (
               <video src={preview} controls autoPlay />
             ) : (
               <img src={preview} alt="Preview" />
