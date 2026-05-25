@@ -1,6 +1,6 @@
 
-export let wifiUrl = 'http://3.111.28.174:9090'
-// export let wifiUrl = 'http://3.7.165.97:9090'
+// export let wifiUrl = 'http://3.111.28.174:9090'
+export let wifiUrl = 'http://3.7.216.95:9090'
 
 export let splrUrl = 'http:/localhost:8801'
 

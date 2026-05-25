@@ -128,28 +128,36 @@ const InfoChip = ({ label, value }) => (
 )
 
 /* ─── File upload field ─── */
-const FileField = ({ label, required, error, accept, onChange, preview, isVideo }) => (
-  <div>
-    <FieldLabel required={required}>{label}</FieldLabel>
-    <label style={{
-      display: 'flex', alignItems: 'center', gap: '8px',
-      padding: '7px 12px', borderRadius: t.radiusSm,
-      border: `1px dashed ${error ? t.danger : t.border}`,
-      backgroundColor: t.surface, cursor: 'pointer', fontSize: '12px', color: t.textMuted,
-    }}>
-      📎 Choose file
-      <input type="file" accept={accept} style={{ display: 'none' }} onChange={e => onChange(e.target.files[0])} />
-    </label>
-    {preview && (
-      isVideo ? (
-        <video src={preview} controls style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
-      ) : (
-        <img src={preview} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
-      )
-    )}
-    <FieldError msg={error} />
-  </div>
-)
+const FileField = ({ label, required, error, accept, onChange, preview, isVideo }) => {
+  const getMediaSrc = (val) => {
+    if (!val) return null;
+    if (val.startsWith("http") || val.startsWith("blob:") || val.startsWith("data:")) return val;
+    return `data:${isVideo ? "video/mp4" : "image/jpeg"};base64,${val}`;
+  };
+
+  return (
+    <div>
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '7px 12px', borderRadius: t.radiusSm,
+        border: `1px dashed ${error ? t.danger : t.border}`,
+        backgroundColor: t.surface, cursor: 'pointer', fontSize: '12px', color: t.textMuted,
+      }}>
+        📎 Choose file
+        <input type="file" accept={accept} style={{ display: 'none' }} onChange={e => onChange(e.target.files[0])} />
+      </label>
+      {preview && (
+        isVideo ? (
+          <video src={getMediaSrc(preview)} controls style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+        ) : (
+          <img src={getMediaSrc(preview)} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+        )
+      )}
+      <FieldError msg={error} />
+    </div>
+  )
+}
 
 /* ─── Pain scale selector ─── */
 const PainSelect = ({ label, value, onChange, error }) => (

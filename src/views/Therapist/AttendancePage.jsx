@@ -18,7 +18,7 @@ import {
 import { COLORS } from "../../Constant/Themes";
 import ConfirmModal from "../../Utils/ConfirmLogoutModal";
 import { BASE_URL } from "../../API/BaseUrl";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const ScrollPicker = ({ items, selected, onChange, label }) => {
@@ -102,8 +102,8 @@ const AttendanceTracker = () => {
   const therapistData = location.state || (storedData ? JSON.parse(storedData) : {});
   const therapistId = therapistData?.therapistId;
   const clinicId = therapistData?.clinicId || "0001";
-  const branchId = therapistData?.branchId || "000101";
-
+  const branchId = therapistData?.branchId || "NA";
+  const navigate = useNavigate()
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsData, setDetailsData] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -268,6 +268,10 @@ const AttendanceTracker = () => {
       newErrors.activityType = "Activity is required";
     }
 
+    if (activityType === "Other Activity" && !description.trim()) {
+      newErrors.description = "Description is required for Other Activity";
+    }
+
     if (durationHours === 0 && durationMinutes === 0) {
       newErrors.duration = "Please select a valid duration";
     }
@@ -328,7 +332,7 @@ const AttendanceTracker = () => {
       alignItems: "center",
       justifyContent: "space-between",
       gap: 10,
-      marginBottom: "1.5rem",
+
       padding: "12px 16px",
       borderRadius: 10,
       color: "#fff",
@@ -577,10 +581,11 @@ const AttendanceTracker = () => {
     addrCell: {
       fontSize: 11,
       color: "#6b7280",
-      maxWidth: isMobile ? 120 : 180,
+      maxWidth: 180,
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
+      cursor: "pointer",
     },
     // Mobile specific
     mobileCard: {
@@ -629,30 +634,30 @@ const AttendanceTracker = () => {
   const ActionButton = () => {
     if (loadingDaily)
       return (
-        <div className="at-skel" style={{ width: 90, height: 34, borderRadius: 8 }} />
+        <div className="at-skel" style={{ width: "100%", height: 34, borderRadius: 8 }} />
       );
     if (isUpdatingStatus)
       return (
-        <button style={{ ...styles.btn, color: "#9ca3af" }} disabled>
+        <button style={{ ...styles.btn, color: "#9ca3af", width: "100%", justifyContent: "center" }} disabled>
           <CSpinner size="sm" style={{ width: '1rem', height: '1rem', marginRight: '6px' }} />
           Updating...
         </button>
       );
     if (loggedOut)
       return (
-        <span style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0" }}>
+        <span style={{ fontSize: 12, color: "#9ca3af", padding: "8px 0", width: "100%", textAlign: "center" }}>
           Session ended
         </span>
       );
     if (loggedIn)
       return (
-        <button style={styles.btnRed} onClick={handleLogout}>
+        <button style={{ ...styles.btnRed, width: "100%", justifyContent: "center" }} onClick={handleLogout}>
           <span style={styles.dot("#E24B4A")} />
           Logout
         </button>
       );
     return (
-      <button style={styles.btnGreen} onClick={handleLogin}>
+      <button style={{ ...styles.btnGreen, width: "100%", justifyContent: "center" }} onClick={handleLogin}>
         <span style={styles.dot("#888780")} />
         Login
       </button>
@@ -663,13 +668,48 @@ const AttendanceTracker = () => {
   return (
     <div style={styles.wrap}>
       {/* Header */}
-      <div style={styles.header}>
+      <div style={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "space-between",
+        gap: "12px",
+        marginBottom: "1.5rem"
+      }}>
         <div>
           <h2 style={styles.h2}>Daily Duty Log</h2>
           <p style={styles.subtext}>{dateDisplay}</p>
         </div>
-        <ActionButton />
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          justifyContent: isMobile ? "space-between" : "flex-end",
+          flexWrap: "wrap",
+          width: isMobile ? "100%" : "auto"
+        }}>
+          <CButton
+            style={{
+              backgroundColor: COLORS.primary,
+              color: "white",
+              padding: "7px 16px",
+              fontSize: 13,
+              borderRadius: 8,
+              border: "none",
+              fontWeight: 600,
+              flex: isMobile ? 1 : "initial",
+              textAlign: "center"
+            }}
+            onClick={() => navigate("/therapist-certification")}
+          >
+            Certification
+          </CButton>
+          <div style={{ flex: isMobile ? 1 : "initial", display: "flex", justifyContent: isMobile ? "stretch" : "flex-end", width: isMobile ? "100%" : "auto" }}>
+            <ActionButton />
+          </div>
+        </div>
       </div>
+
 
       <ConfirmModal
         visible={isLogoutModalVisible}
@@ -771,14 +811,17 @@ const AttendanceTracker = () => {
         <div style={styles.card} >
           <div style={styles.cardHeader}>
             <span style={styles.cardTitle}>Today's activities</span>
-            {!loggedOut && (
-              <button
-                style={styles.btnBlue}
-                onClick={() => setShowModal(true)}
-              >
-                + Add activity
-              </button>
-            )}
+            <button
+              style={{
+                ...styles.btnBlue,
+                opacity: loggedIn ? 1 : 0.5,
+                cursor: loggedIn ? "pointer" : "not-allowed"
+              }}
+              disabled={!loggedIn}
+              onClick={() => setShowModal(true)}
+            >
+              + Add activity
+            </button>
           </div>
           <div style={{ padding: isMobile ? "0 4px" : 0 }}>
             {loadingDaily ? (
@@ -805,13 +848,24 @@ const AttendanceTracker = () => {
                       <span style={styles.mobileLabel}>Activity</span>
                       <span style={{ ...styles.mobileValue, fontWeight: 700, color: "#1B4F8A" }}>{item.activity}</span>
                     </div>
+                    {item.description && (
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={styles.mobileLabel}>Description</span>
+                        <div style={{ fontSize: 12, color: "#374151", marginTop: 2, lineHeight: 1.4 }}>{item.description}</div>
+                      </div>
+                    )}
                     <div style={styles.mobileCardRow}>
                       <span style={styles.mobileLabel}>Duration</span>
                       <span style={styles.badgeAmber}>{item.duration}</span>
                     </div>
-                    <div style={{ ...styles.mobileCardRow, marginBottom: 0, paddingTop: 8, borderTop: "0.5px solid #f3f4f6" }}>
+                    <div style={{ marginBottom: 0, paddingTop: 8, borderTop: "0.5px solid #f3f4f6" }}>
                       <span style={styles.mobileLabel}><MapPin size={11} style={{ marginRight: 4 }} /> Location</span>
-                      <span style={{ ...styles.mobileValue, fontSize: 11, maxWidth: "60%", textAlign: "right" }}>{item.location}</span>
+                      <div
+                        title={item.location || ""}
+                        style={styles.addrCell}
+                      >
+                        {item.location || "—"}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -828,7 +882,7 @@ const AttendanceTracker = () => {
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      {["#", "Activity", "Duration", "Location", "Date"].map((h) => (
+                      {["#", "Activity", "Description", "Duration", "Location"].map((h) => (
                         <th key={h} style={styles.th}>{h}</th>
                       ))}
                     </tr>
@@ -837,14 +891,31 @@ const AttendanceTracker = () => {
                     {data.map((item, i) => (
                       <tr key={item.sessionId || i}>
                         <td style={styles.td}>{i + 1}</td>
-                        <td style={styles.td}>{item.activity}</td>
+                        <td style={styles.td}>
+                          <div
+                            title={item.location || ""}
+                            style={{
+                              maxWidth: "180px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              fontSize: 11,
+                              color: "#6b7280",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {item.location || "—"}
+                          </div>
+                        </td>
+                        <td style={{ ...styles.td, color: "#374151", fontSize: 12 }}>
+                          {item.description || <span style={{ color: "#d1d5db" }}>—</span>}
+                        </td>
                         <td style={styles.td}>
                           <span style={styles.badgeAmber}>{item.duration}</span>
                         </td>
-                        <td style={styles.td}>
-                          <div style={styles.addrCell}>{item.location}</div>
+                        <td style={{ ...styles.td, fontSize: 11, color: "#6b7280", minWidth: 140 }}>
+                          {item.location || "—"}
                         </td>
-                        <td style={styles.td}>{dateStr}</td>
                       </tr>
                     ))}
                     {data.length === 0 && (
@@ -1033,26 +1104,40 @@ const AttendanceTracker = () => {
                   fontWeight: 600,
                   color: COLORS.primary,
                   marginBottom: 6,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center"
                 }}
               >
                 Description
+                {activityType === "Other Activity" && (
+                  <span style={{ color: "#dc2626", fontSize: 12 }}>*</span>
+                )}
               </CFormLabel>
 
               <textarea
                 rows={3}
-                placeholder="Enter activity description..."
+                placeholder={activityType === "Other Activity" ? "Required — describe the other activity..." : "Enter activity description (optional)..."}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (errors.description) setErrors({ ...errors, description: "" });
+                }}
                 style={{
                   width: "100%",
                   borderRadius: 10,
-                  border: "1px solid #d1d5db",
+                  border: errors.description ? "1px solid #dc2626" : "1px solid #d1d5db",
                   padding: "10px 12px",
                   fontSize: 13,
                   resize: "none",
                   outline: "none",
                 }}
               />
+              {errors.description && (
+                <div style={{ color: "#dc2626", fontSize: 11, marginTop: 4 }}>
+                  {errors.description}
+                </div>
+              )}
             </div>
 
             {/* Duration */}
@@ -1188,7 +1273,7 @@ const AttendanceTracker = () => {
               )}
             </div>
 
-            {/* Info Box */}
+            {/* Info Box – date only; location is captured per-activity from device GPS */}
             <div
               style={{
                 background: "#f9fafb",
@@ -1197,11 +1282,8 @@ const AttendanceTracker = () => {
                 fontSize: 12,
               }}
             >
-              <div className="mb-4">
-                <strong>Date:</strong> {dateStr}
-              </div>
               <div>
-                <strong>Location:</strong> {address}
+                <strong>Date:</strong> {dateStr}
               </div>
             </div>
           </CModalBody>
@@ -1278,7 +1360,7 @@ const AttendanceTracker = () => {
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      {["#", "Activity", "Duration", "Location"].map((h) => (
+                      {["#", "Activity", "Description", "Duration", "Location"].map((h) => (
                         <th key={h} style={styles.th}>{h}</th>
                       ))}
                     </tr>
@@ -1288,20 +1370,23 @@ const AttendanceTracker = () => {
                       detailsData.sessions.map((session, index) => (
                         <tr key={index}>
                           <td style={styles.td}>{index + 1}</td>
-                          <td style={styles.td}>
-                            <div style={{ fontWeight: 600, color: COLORS.primary }}>{session.activity}</div>
+                          <td style={{ ...styles.td, fontWeight: 600, color: COLORS.primary, whiteSpace: "nowrap" }}>
+                            {session.activity}
+                          </td>
+                          <td style={{ ...styles.td, fontSize: 12, color: "#374151" }}>
+                            {session.description || <span style={{ color: "#d1d5db" }}>—</span>}
                           </td>
                           <td style={styles.td}>
                             <span style={styles.badgeAmber}>{session.duration}</span>
                           </td>
-                          <td style={styles.td}>
-                            <div style={{ ...styles.addrCell, maxWidth: '250px' }}>{session.location}</div>
+                          <td style={{ ...styles.td, fontSize: 11, color: "#6b7280", minWidth: 140, wordBreak: "break-word" }}>
+                            {session.location || "—"}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                        <td colSpan="5" style={{ ...styles.td, textAlign: "center", color: "#9ca3af", padding: "20px" }}>
                           No sessions found for this day.
                         </td>
                       </tr>

@@ -290,6 +290,7 @@ const SessionList = () => {
   const [mediaSession, setMediaSession] = useState(null)
   const [activeSessions, setActiveSessions] = useState({})
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [mediaPreview, setMediaPreview] = useState(null)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -450,24 +451,45 @@ const SessionList = () => {
                     <td style={{ ...S.td, textAlign: "center" }}>
                       {!completed && (
                         <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginBottom: 6 }}>
-                          <button
-                            style={S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm")}
-                            onClick={() => {
-                              if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
-                              else setMediaSession({ session: s, type: "before" })
-                            }}
-                          >
-                            <Camera size={14} /> Before
-                          </button>
-                          <button
-                            style={S.btn(s.afterMediaUrl ? "success" : "secondary", "sm")}
-                            onClick={() => {
-                              if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
-                              else setMediaSession({ session: s, type: "after" })
-                            }}
-                          >
-                            <Camera size={14} /> After
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <button
+                              style={S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm")}
+                              onClick={() => {
+                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                                else setMediaSession({ session: s, type: "before" })
+                              }}
+                            >
+                              <Camera size={14} /> Before
+                            </button>
+                            {s.beforeMediaUrl && (
+                              <button
+                                style={{ ...S.btn("info", "sm"), padding: "4px 8px" }}
+                                onClick={() => setMediaPreview(s.beforeMediaUrl)}
+                              >
+                                <Eye size={12} />
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <button
+                              style={S.btn(s.afterMediaUrl ? "success" : "secondary", "sm")}
+                              onClick={() => {
+                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                                else setMediaSession({ session: s, type: "after" })
+                              }}
+                            >
+                              <Camera size={14} /> After
+                            </button>
+                            {s.afterMediaUrl && (
+                              <button
+                                style={{ ...S.btn("info", "sm"), padding: "4px 8px" }}
+                                onClick={() => setMediaPreview(s.afterMediaUrl)}
+                              >
+                                <Eye size={12} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                       <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
@@ -546,24 +568,44 @@ const SessionList = () => {
 
                 {!completed && (
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                    <button
-                      style={{ ...S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
-                      onClick={() => {
-                        if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
-                        else setMediaSession({ session: s, type: "before" })
-                      }}
-                    >
-                      <Camera size={14} /> Before Media
-                    </button>
-                    <button
-                      style={{ ...S.btn(s.afterMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
-                      onClick={() => {
-                        if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
-                        else setMediaSession({ session: s, type: "after" })
-                      }}
-                    >
-                      <Camera size={14} /> After Media
-                    </button>
+                    <div style={{ flex: 1, display: "flex", gap: 4 }}>
+                      <button
+                        style={{ ...S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
+                        onClick={() => {
+                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                          else setMediaSession({ session: s, type: "before" })
+                        }}
+                      >
+                        <Camera size={14} /> Before
+                      </button>
+                      {s.beforeMediaUrl && (
+                        <button
+                          style={{ ...S.btn("info", "sm"), padding: "6px 10px" }}
+                          onClick={() => setMediaPreview(s.beforeMediaUrl)}
+                        >
+                          <Eye size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, display: "flex", gap: 4 }}>
+                      <button
+                        style={{ ...S.btn(s.afterMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
+                        onClick={() => {
+                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                          else setMediaSession({ session: s, type: "after" })
+                        }}
+                      >
+                        <Camera size={14} /> After
+                      </button>
+                      {s.afterMediaUrl && (
+                        <button
+                          style={{ ...S.btn("info", "sm"), padding: "6px 10px" }}
+                          onClick={() => setMediaPreview(s.afterMediaUrl)}
+                        >
+                          <Eye size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 8 }}>
@@ -848,20 +890,79 @@ const SessionList = () => {
                 if (val === null || val === "" || val === undefined) return false
                 return true
               })
-              .map(([key, val]) => (
-                <div key={key} style={{ borderBottom: `1px solid ${T.bg}`, paddingBottom: 8 }}>
-                  <div style={{ fontSize: "0.7rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em", marginBottom: 4 }}>
-                    {key.replace(/([A-Z])/g, ' $1').trim().replace(/Exercise/g, 'Activity')}
+              .map(([key, val]) => {
+                const isVideo = key.toLowerCase().includes("video") || (typeof val === "string" && (val.match(/\.(mp4|webm|mov|ogg)$/i) || val.startsWith("data:video")));
+                const isImage = key.toLowerCase().includes("image") || (typeof val === "string" && (val.match(/\.(jpeg|jpg|png|gif|webp|svg)$/i) || val.startsWith("data:image")));
+
+                return (
+                  <div key={key} style={{ borderBottom: `1px solid ${T.bg}`, paddingBottom: 8, gridColumn: (isVideo || isImage) ? "1 / -1" : "auto" }}>
+                    <div style={{ fontSize: "0.7rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em", marginBottom: 4 }}>
+                      {key.replace(/([A-Z])/g, ' $1').trim().replace(/Exercise/g, 'Activity')}
+                    </div>
+                    <div style={{ fontSize: "0.95rem", color: T.navy, fontWeight: 600 }}>
+                      {isVideo ? (
+                        <video 
+                          key={String(val)}
+                          src={String(val)} 
+                          controls 
+                          playsInline 
+                          style={{ width: "100%", borderRadius: 8, marginTop: 8, maxHeight: 240, background: "#000" }} 
+                        />
+                      ) : isImage ? (
+                        <img 
+                          src={String(val)} 
+                          alt={key} 
+                          style={{ width: "100%", borderRadius: 8, marginTop: 8, objectFit: "contain", maxHeight: 240, background: "#fafafa", border: "1px solid #e2e8f0" }} 
+                        />
+                      ) : (
+                        String(val)
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontSize: "0.95rem", color: T.navy, fontWeight: 600 }}>
-                    {String(val)}
-                  </div>
-                </div>
-              ))
+                )
+              })
             }
           </div>
         </CModalBody>
       </CModal>
+
+      {/* General Media Preview Modal */}
+      {mediaPreview && (
+        <CModal
+          visible
+          size="xl"
+          onClose={() => setMediaPreview(null)}
+          className="preview-modal"
+        >
+          <CModalBody style={{ position: "relative", textAlign: "center", background: "#000", padding: "40px 15px 15px" }}>
+            <button
+              onClick={() => setMediaPreview(null)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                background: "rgba(255,255,255,0.9)",
+                color: "#000",
+                border: "none",
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                fontSize: "20px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                zIndex: 1000
+              }}
+            >
+              ×
+            </button>
+            {mediaPreview.startsWith("data:video") || mediaPreview.startsWith("blob:") || mediaPreview.match(/\.(mp4|webm|mov|ogg)$/i) ? (
+              <video key={mediaPreview} src={mediaPreview} controls autoPlay style={{ maxWidth: "100%", maxHeight: "80vh" }} />
+            ) : (
+              <img src={mediaPreview} alt="Preview" style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain" }} />
+            )}
+          </CModalBody>
+        </CModal>
+      )}
     </div>
   )
 }

@@ -1,18 +1,24 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable react/prop-types */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CModal, CModalHeader, CModalBody, CCol, CRow, CButton } from '@coreui/react'
 import { COLORS } from '../../Constant/Themes'
 
 const SessionViewModal = ({ visible, data, onClose }) => {
   const [preview, setPreview] = useState(null)
+  const [beforeVideoUrl, setBeforeVideoUrl] = useState(null)
+  const [afterVideoUrl, setAfterVideoUrl] = useState(null)
+  const [beforeImageUrl, setBeforeImageUrl] = useState(null)
+  const [afterImageUrl, setAfterImageUrl] = useState(null)
+  const [consentPdfBlobUrl, setConsentPdfBlobUrl] = useState(null)
 
   if (!data) return null
 
   const base64ToBlob = (base64, mime) => {
     try {
-      const byteChars = atob(base64)
+      const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64
+      const byteChars = atob(cleanBase64)
       const byteNumbers = new Array(byteChars.length)
       for (let i = 0; i < byteChars.length; i++) {
         byteNumbers[i] = byteChars.charCodeAt(i)
@@ -24,29 +30,81 @@ const SessionViewModal = ({ visible, data, onClose }) => {
       return new Blob([], { type: mime })
     }
   }
-  const getVideoUrl = (base64) => {
-    if (!base64) return null
-    if (base64.startsWith("http") || base64.startsWith("blob:")) return base64;
-    const blob = base64ToBlob(base64, "video/mp4")
-    return URL.createObjectURL(blob)
-  }
 
-  const getImageSrc = (val) => {
-    if (!val) return null;
-    if (val.startsWith("http") || val.startsWith("blob:")) return val;
-    return `data:image/jpeg;base64,${val}`;
-  }
+  useEffect(() => {
+    if (!data || !visible) {
+      return
+    }
+
+    const activeUrls = []
+
+    const resolveMediaUrl = (mediaPath, rawBase64, isVideo = false) => {
+      if (mediaPath) {
+        if (mediaPath.startsWith("http") || mediaPath.startsWith("blob:") || mediaPath.startsWith("data:")) {
+          return mediaPath
+        }
+      }
+      const source = rawBase64 || mediaPath
+      if (source) {
+        if (source.startsWith("http") || source.startsWith("blob:") || source.startsWith("data:")) {
+          return source
+        }
+        try {
+          const mimeType = isVideo ? "video/mp4" : "image/jpeg"
+          const blob = base64ToBlob(source, mimeType)
+          const url = URL.createObjectURL(blob)
+          activeUrls.push(url)
+          return url
+        } catch (e) {
+          console.error("Error creating blob URL", e)
+        }
+      }
+      return null
+    }
+
+    const beforeImg = data.beforeMediaUrl && !data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeImage;
+    const afterImg = data.afterMediaUrl && !data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterImage;
+    const beforeVid = data.beforeMediaUrl && data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeVideo;
+    const afterVid = data.afterMediaUrl && data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterVideo;
+
+    setBeforeImageUrl(resolveMediaUrl(beforeImg, data.beforeImage, false))
+    setAfterImageUrl(resolveMediaUrl(afterImg, data.afterImage, false))
+    setBeforeVideoUrl(resolveMediaUrl(beforeVid, data.beforeVideo, true))
+    setAfterVideoUrl(resolveMediaUrl(afterVid, data.afterVideo, true))
+
+    if (data.consentPdfUrl) {
+      if (data.consentPdfUrl.startsWith("data:application/pdf;base64,") || !data.consentPdfUrl.startsWith("http")) {
+        try {
+          const blob = base64ToBlob(data.consentPdfUrl, "application/pdf")
+          const url = URL.createObjectURL(blob)
+          activeUrls.push(url)
+          setConsentPdfBlobUrl(url)
+        } catch (err) {
+          console.error("Failed to parse PDF base64", err)
+          setConsentPdfBlobUrl(data.consentPdfUrl)
+        }
+      } else {
+        setConsentPdfBlobUrl(data.consentPdfUrl)
+      }
+    } else {
+      setConsentPdfBlobUrl(null)
+    }
+
+    return () => {
+      activeUrls.forEach(url => {
+        try {
+          URL.revokeObjectURL(url)
+        } catch (e) {
+          console.error("Failed to revoke URL", url, e)
+        }
+      })
+    }
+  }, [data, visible])
+
   const audioSrc =
     data?.voiceRecord ||
     data?.voiceRecordUrl ||
     "";
-
-  // Helper variables for fallback checking
-  const beforeImgData = data.beforeMediaUrl && !data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeImage;
-  const afterImgData = data.afterMediaUrl && !data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterImage;
-
-  const beforeVidData = data.beforeMediaUrl && data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.beforeMediaUrl : data.beforeVideo;
-  const afterVidData = data.afterMediaUrl && data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) ? data.afterMediaUrl : data.afterVideo;
 
   return (
     <>
@@ -81,11 +139,6 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           {/* 🔷 NOTES */}
           <h6 className="section-title" style={{ color: COLORS.primary }}>Notes</h6>
 
-          {/* <div className="note-box">
-    <b>Doctor Notes</b>
-    <p>{data.doctorNotes || "-"}</p>
-  </div> */}
-
           <div className="note-box mb-4">
             <b>Therapist Notes</b>
             <p style={{ color: COLORS.primary }}>{data.therapistNotes || "-"}</p>
@@ -108,7 +161,6 @@ const SessionViewModal = ({ visible, data, onClose }) => {
                 <div
                   style={{
                     fontSize: "13px",
-
                     fontWeight: "600",
                     marginBottom: "4px",
                   }}
@@ -134,7 +186,6 @@ const SessionViewModal = ({ visible, data, onClose }) => {
                 <div
                   style={{
                     fontSize: "13px",
-
                     fontWeight: "600",
                     marginBottom: "4px",
                   }}
@@ -152,7 +203,6 @@ const SessionViewModal = ({ visible, data, onClose }) => {
                 style={{
                   background: "#fff",
                   border: "1px solid #e5e7eb",
-
                   borderRadius: "10px",
                   padding: "12px",
                   height: "100%",
@@ -263,13 +313,13 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             {/* Images */}
             <CCol md={6} className="mt-3">
               <b>Before Image</b>
-              <div  >
-                {beforeImgData ? (
+              <div>
+                {beforeImageUrl ? (
                   <img
-                    src={getImageSrc(beforeImgData)}
+                    src={beforeImageUrl}
                     className="img-fluid rounded border"
                     style={{ cursor: "pointer", maxHeight: 120 }}
-                    onClick={() => setPreview(getImageSrc(beforeImgData))}
+                    onClick={() => setPreview(beforeImageUrl)}
                   />
                 ) : <span>No Image</span>}
               </div>
@@ -277,13 +327,13 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 
             <CCol md={6} className="mt-3">
               <b>After Image</b>
-              <div  >
-                {afterImgData ? (
+              <div>
+                {afterImageUrl ? (
                   <img
-                    src={getImageSrc(afterImgData)}
+                    src={afterImageUrl}
                     className="img-fluid rounded border"
                     style={{ cursor: "pointer", maxHeight: 120 }}
-                    onClick={() => setPreview(getImageSrc(afterImgData))}
+                    onClick={() => setPreview(afterImageUrl)}
                   />
                 ) : <span>No Image</span>}
               </div>
@@ -293,11 +343,13 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-4">
               <b>Before Video</b>
               <div className="media-box">
-                {beforeVidData ? (
+                {beforeVideoUrl ? (
                   <video
-                    src={getVideoUrl(beforeVidData)}
+                    src={beforeVideoUrl}
                     controls
-                    style={{ maxHeight: 150 }}
+                    playsInline
+                    preload="auto"
+                    style={{ maxHeight: 150, width: '100%' }}
                   />
                 ) : <span>No Video</span>}
               </div>
@@ -306,11 +358,14 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             <CCol md={6} className="mt-4">
               <b>After Video</b>
               <div className="media-box">
-                {afterVidData ? (
+                {afterVideoUrl ? (
                   <video
-                    src={getVideoUrl(afterVidData)}
+                    src={afterVideoUrl}
                     controls
-                    onClick={() => setPreview(getVideoUrl(afterVidData))}
+                    playsInline
+                    preload="auto"
+                    style={{ maxHeight: 150, width: '100%' }}
+                    onClick={() => setPreview(afterVideoUrl)}
                   />
                 ) : <span>No Video</span>}
               </div>
@@ -319,7 +374,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           </CRow>
 
 
-          {data.consentPdfUrl && (
+          {consentPdfBlobUrl && (
 
             <div
               style={{
@@ -337,20 +392,8 @@ const SessionViewModal = ({ visible, data, onClose }) => {
               <br />
 
               {/* PDF Preview */}
-              {/* <iframe
-                src={data.consentPdfUrl}
-                title="Consent PDF"
-                width="100%"
-                height="400px"
-                style={{
-                  border: "none",
-                  borderRadius: "10px",
-                  marginBottom: "12px",
-                }}
-              /> */}
-
               <embed
-                src={data.consentPdfUrl}
+                src={consentPdfBlobUrl}
                 type="application/pdf"
                 width="100%"
                 height="400px"
@@ -370,14 +413,14 @@ const SessionViewModal = ({ visible, data, onClose }) => {
                   color="primary"
                   variant="outline"
                   onClick={() =>
-                    window.open(data.consentPdfUrl, "_blank")
+                    window.open(consentPdfBlobUrl, "_blank")
                   }
                 >
                   View PDF
                 </CButton>
 
                 <a
-                  href={data.consentPdfUrl}
+                  href={consentPdfBlobUrl}
                   download="consent-form.pdf"
                   style={{ textDecoration: "none" }}
                 >
@@ -395,28 +438,6 @@ const SessionViewModal = ({ visible, data, onClose }) => {
       </CModal>
 
       {/* Full screen preview */}
-
-      {/* {preview && (
-  <CModal visible size="xl" onClose={() => setPreview(null)}>
-    <CModalBody style={{ textAlign: "center" }}>
-      {preview.endsWith(".mp4") ||
-      preview.startsWith("blob:")
-        ? (
-          <video
-            src={preview}
-            controls
-            style={{ width: "100%" }}
-          />
-        )
-        : (
-          <img
-            src={preview}
-            style={{ width: "100%" }}
-          />
-        )}
-    </CModalBody>
-  </CModal>
-)} */}
       {preview && (
         <CModal
           visible
@@ -433,214 +454,213 @@ const SessionViewModal = ({ visible, data, onClose }) => {
             </button>
 
             {preview.startsWith("data:video") || preview.startsWith("blob:") || preview.match(/\.(mp4|webm|mov|ogg)$/i) ? (
-              <video src={preview} controls autoPlay />
+              <video src={preview} controls autoPlay style={{ width: '100%' }} />
             ) : (
-              <img src={preview} alt="Preview" />
+              <img src={preview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             )}
           </CModalBody>
         </CModal>
       )}
 
       <style>
-        {
-          `
-    .info-box {
-  background: #f8f9fa;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #eee;
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-}
+        {`
+          .info-box {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+          }
 
-.label {
-  font-size: 12px;
-  color: #6c757d;
-}
+          .label {
+            font-size: 12px;
+            color: #6c757d;
+          }
 
-.value {
-  font-weight: 600;
-  font-size: 14px;
-  color: #212529;
-}.custom-modal .btn-close {
-  filter: brightness(0) invert(1);
-  opacity: 1;
-}
- 
-            /* Main Modal */
-            .custom - modal.modal - dialog {
-          max - width: 95%;
-}
+          .value {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212529;
+          }
+          
+          .custom-modal .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 1;
+          }
+           
+          /* Main Modal */
+          .custom-modal .modal-dialog {
+            max-width: 95%;
+          }
 
-        .custom-modal .modal-content {
-          border - radius: 14px;
-        overflow: hidden;
-}
+          .custom-modal .modal-content {
+            border-radius: 14px;
+            overflow: hidden;
+          }
 
-        /* Section Title */
-        .section-title {
-          font - size: 18px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        color: #222;
-        border-bottom: 2px solid #f1f1f1;
-        padding-bottom: 6px;
-}
+          /* Section Title */
+          .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #222;
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 6px;
+          }
 
-        /* Info Box */
-        .info-box {
-          background: #f8f9fa;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1px solid #e9ecef;
-        margin-bottom: 12px;
-        min-height: 72px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-}
+          /* Info Box */
+          .info-box {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 12px;
+            min-height: 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
 
-        .label {
-          font - size: 12px;
-        color: #6c757d;
-        margin-bottom: 4px;
-}
+          .label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+          }
 
-        .value {
-          font - weight: 600;
-        font-size: 14px;
-        color: #212529;
-        word-break: break-word;
-}
+          .value {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212529;
+            word-break: break-word;
+          }
 
-        /* Notes */
-        .note-box {
-          background: #fff;
-        border: 1px solid #eee;
-        border-left: 4px solid #0d6efd;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-}
+          /* Notes */
+          .note-box {
+            background: #fff;
+            border: 1px solid #eee;
+            border-left: 4px solid #0d6efd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+          }
 
-        .note-box p {
-          margin: 6px 0 0;
-        font-size: 14px;
-        color: #444;
-}
+          .note-box p {
+            margin: 6px 0 0;
+            font-size: 14px;
+            color: #444;
+          }
 
-        /* Media */
-        .media-box {
-          border: 1px solid #eee;
-        border-radius: 10px;
-        padding: 10px;
-        background: #fafafa;
-        text-align: center;
-        min-height: 160px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-}
+          /* Media */
+          .media-box {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+            background: #fafafa;
+            text-align: center;
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
 
-        .media-box img,
-        .media-box video {
-          width: 100%;
-        max-height: 180px;
-        object-fit: cover;
-        border-radius: 8px;
-        cursor: pointer;
-}
+          .media-box img,
+          .media-box video {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+          }
 
-        /* Full Preview Modal */
-        .preview-modal .modal-dialog {
-          max - width: 95vw;
-        margin: auto;
-}
+          /* Full Preview Modal */
+          .preview-modal .modal-dialog {
+            max-width: 95vw;
+            margin: auto;
+          }
 
-        .preview-modal .modal-content {
-          background: #000;
-        border-radius: 14px;
-        overflow: hidden;
-}
+          .preview-modal .modal-content {
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+          }
 
-        .preview-body {
-          padding: 15px;
-        text-align: center;
-        position: relative;
-}
+          .preview-body {
+            padding: 15px;
+            text-align: center;
+            position: relative;
+          }
 
-        .preview-body img,
-        .preview-body video {
-          max - width: 100%;
-        max-height: 85vh;
-        border-radius: 10px;
-        object-fit: contain;
-}
+          .preview-body img,
+          .preview-body video {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: 10px;
+            object-fit: contain;
+          }
 
-        /* Close Button */
-        .preview-close {
-          position: absolute;
-        top: 12px;
-        right: 12px;
-        background: rgba(255,255,255,0.9);
-        color: #000;
-        border: none;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        font-size: 22px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 1000;
-        transition: 0.2s;
-}
+          /* Close Button */
+          .preview-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.9);
+            color: #000;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            transition: 0.2s;
+          }
 
-        .preview-close:hover {
-          background: #fff;
-        transform: scale(1.08);
-}
+          .preview-close:hover {
+            background: #fff;
+            transform: scale(1.08);
+          }
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-  .section - title {
-          font - size: 16px;
-  }
+          /* Mobile Responsive */
+          @media (max-width: 768px) {
+            .section-title {
+              font-size: 16px;
+            }
 
-        .info-box {
-          min - height: auto;
-        padding: 10px;
-  }
+            .info-box {
+              min-height: auto;
+              padding: 10px;
+            }
 
-        .label {
-          font - size: 11px;
-  }
+            .label {
+              font-size: 11px;
+            }
 
-        .value {
-          font - size: 13px;
-  }
+            .value {
+              font-size: 13px;
+            }
 
-        .media-box {
-          min - height: 140px;
-  }
+            .media-box {
+              min-height: 140px;
+            }
 
-        .media-box img,
-        .media-box video {
-          max - height: 150px;
-  }
+            .media-box img,
+            .media-box video {
+              max-height: 150px;
+            }
 
-        .preview-close {
-          width: 34px;
-        height: 34px;
-        font-size: 20px;
-        top: 8px;
-        right: 8px;
-  }
-}
- 
-      `
-        }
-      </style >
+            .preview-close {
+              width: 34px;
+              height: 34px;
+              font-size: 20px;
+              top: 8px;
+              right: 8px;
+            }
+          }
+        `}
+      </style>
     </>
   )
 }

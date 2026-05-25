@@ -18,6 +18,13 @@ const TherapistDetails = React.lazy(() =>
 const AttendancePage = React.lazy(() =>
   import('./views/Therapist/AttendancePage.jsx')
 )
+
+const TherapistCertification = React.lazy(() =>
+  import('./views/Therapist/TherapistCertification.jsx')
+)
+
+
+
 // const Login = React.lazy(() =>
 //   import('./views/login/login.jsx')
 // )
@@ -34,6 +41,7 @@ const routes = [
 
   { path: "/therapist-details", element: TherapistDetails },
   { path: "/therapist/attendance", element: AttendancePage },
+  { path: "/therapist-certification", element: TherapistCertification },
 
 
 
