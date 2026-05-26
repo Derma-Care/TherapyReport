@@ -31,6 +31,8 @@ import {
     cilDescription,
 } from "@coreui/icons"
 import { COLORS } from "../../Constant/Themes"
+import { uploadFile } from "../../Utils/S3UploadService"
+import { BASE_URL } from "../../API/BaseUrl"
 
 // ─── Inline styles ────────────────────────────────────────────────────────────
 
@@ -350,6 +352,26 @@ function StatCard({ label, value }) {
     )
 }
 
+// ─── Date formatter ──────────────────────────────────────────────────────────
+
+function formatDateTime(raw) {
+    if (!raw) return '—'
+    try {
+        const d = new Date(raw)
+        if (isNaN(d.getTime())) return raw
+        return d.toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        })
+    } catch {
+        return raw
+    }
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TherapistCertification() {
@@ -364,6 +386,7 @@ export default function TherapistCertification() {
     const [search, setSearch] = useState("")
     const [previewModal, setPreviewModal] = useState(false)
     const [selectedCert, setSelectedCert] = useState(null)
+    const [previewLoading, setPreviewLoading] = useState(false)
     const [toast, setToast] = useState({ visible: false, message: "", isError: false })
     const [submitting, setSubmitting] = useState(false)
     const [fileActive, setFileActive] = useState(false)
@@ -391,13 +414,14 @@ export default function TherapistCertification() {
     const handleFile = (e) => {
         const file = e.target.files[0]
         if (!file) return
-        if (file.type !== "application/pdf") {
-            showToast("Only PDF files are allowed", true)
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"]
+        if (!allowedTypes.includes(file.type)) {
+            showToast("Only PDF, JPEG, and PNG files are allowed", true)
             fileRef.current.value = ""
             return
         }
         if (file.size > 200 * 1024) {
-            showToast("PDF size must be below 200 KB", true)
+            showToast("File size must be below 200 KB", true)
             fileRef.current.value = ""
             return
         }
@@ -429,26 +453,35 @@ export default function TherapistCertification() {
         }
         setSubmitting(true)
         try {
-            const uploadedUrl = await uploadCertificate(certificateFile)
+            const fileKey = await uploadFile("certificate", certificateFile)
+
+            const td = JSON.parse(localStorage.getItem('therapistData') || '{}')
+            const clinicId = td?.clinicId || td?.data?.clinicId || '0001'
+            const branchId = td?.branchId || td?.data?.branchId || '000101'
+            const therapistId = td?.therapistId || td?.data?.therapistId || 'THER-DD0F6A'
+
             const payload = {
-                certificationName,
-                issuingAuthority,
-                certificateUrl: uploadedUrl,
-                fileName: certificateFile.name,
-                uploadedDate: new Date().toLocaleDateString("en-GB", {
-                    day: "2-digit", month: "short", year: "numeric",
-                }),
-                status: "pending",
+                clinicId,
+                branchId,
+                therapistId,
+                certificateName: certificationName,
+                issueAuthority: issuingAuthority,
+                upload: fileKey,
             }
-            const response = await fetch("https://yourdomain.com/api/therapist-certification", {
+
+            const response = await fetch(`${BASE_URL}/createTherapistCertificate`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             })
             const data = await response.json()
-            setCertifications(prev => [...prev, data])
-            clearForm()
-            showToast("Certification uploaded successfully")
+            if (response.ok || data.success) {
+                clearForm()
+                showToast("Certification uploaded successfully")
+                fetchCertifications()
+            } else {
+                showToast(data.message || "Upload failed. Please try again.", true)
+            }
         } catch (error) {
             console.error(error)
             showToast("Upload failed. Please try again.", true)
@@ -459,21 +492,34 @@ export default function TherapistCertification() {
 
     const fetchCertifications = async () => {
         try {
-            const response = await fetch("https://yourdomain.com/api/therapist-certification")
-            const data = await response.json()
-            setCertifications(data)
+            const td = JSON.parse(localStorage.getItem('therapistData') || '{}')
+            const clinicId = td?.clinicId || td?.data?.clinicId || '0001'
+            const branchId = td?.branchId || td?.data?.branchId || '000101'
+
+            const response = await fetch(`${BASE_URL}/getTherapistCertificatesByClinicIdAndBranchId/${clinicId}/${branchId}`)
+            const result = await response.json()
+            if (result.success && result.data) {
+                const certs = Array.isArray(result.data) ? result.data : [result.data]
+                console.log("Certifications", certs)
+                setCertifications(certs)
+            } else {
+                setCertifications([])
+            }
         } catch (error) {
-            console.error(error)
+            console.error("Error fetching certifications:", error)
+            setCertifications([])
         }
     }
 
-    const filtered = certifications.filter(c =>
-        c.certificationName?.toLowerCase().includes(search.toLowerCase()) ||
-        c.issuingAuthority?.toLowerCase().includes(search.toLowerCase())
-    )
+    const filtered = certifications.filter(c => {
+        const name = (c.certificateName || c.certificationName || '').toLowerCase()
+        const authority = (c.issueAuthority || c.issuingAuthority || '').toLowerCase()
+        const q = search.toLowerCase()
+        return name.includes(q) || authority.includes(q)
+    })
 
-    const verifiedCount = certifications.filter(c => c.status === "verified").length
-    const pendingCount = certifications.filter(c => c.status === "pending").length
+    const verifiedCount = certifications.filter(c => (c.status || 'pending') === "verified").length
+    const pendingCount = certifications.filter(c => (c.status || 'pending') === "pending").length
 
     return (
         <div style={styles.page}>
@@ -544,7 +590,7 @@ export default function TherapistCertification() {
                                     </div>
                                     <input
                                         type="file"
-                                        accept="application/pdf"
+                                        accept="application/pdf,image/jpeg,image/png"
                                         ref={fileRef}
                                         onChange={handleFile}
                                         style={{ display: "none" }}
@@ -612,7 +658,7 @@ export default function TherapistCertification() {
                                 <th style={styles.th}>Certification name</th>
                                 <th style={styles.th}>Issuing authority</th>
                                 <th style={{ ...styles.th, width: 120 }}>Upload date</th>
-                                <th style={{ ...styles.th, width: 100 }}>Status</th>
+                                {/* <th style={{ ...styles.th, width: 100 }}>Status</th> */}
                                 <th style={{ ...styles.th, width: 80 }}>File</th>
                             </tr>
                         </thead>
@@ -636,12 +682,14 @@ export default function TherapistCertification() {
                                     >
                                         <td style={{ ...styles.tdMuted, width: 48 }}>{index + 1}</td>
                                         <td style={{ ...styles.td, fontWeight: 500 }}>
-                                            {item.certificationName}
+                                            {item.certificateName || item.certificationName}
                                         </td>
-                                        <td style={styles.tdMuted}>{item.issuingAuthority}</td>
-                                        <td style={styles.tdMuted}>{item.uploadedDate}</td>
-                                        <td style={styles.td}>
-                                            {item.status === "verified" ? (
+                                        <td style={styles.tdMuted}>{item.issueAuthority || item.issuingAuthority}</td>
+                                        <td style={styles.tdMuted}>
+                                            {formatDateTime(item.uploadDateTime || item.createdAt)}
+                                        </td>
+                                        {/* <td style={styles.td}>
+                                            {(item.status || 'pending') === "verified" ? (
                                                 <span style={styles.badgeVerified}>
                                                     <CIcon icon={cilCheckCircle} size="sm" />
                                                     Verified
@@ -652,12 +700,13 @@ export default function TherapistCertification() {
                                                     Pending
                                                 </span>
                                             )}
-                                        </td>
+                                        </td> */}
                                         <td style={styles.td}>
                                             <button
                                                 style={styles.btnView}
                                                 onClick={() => {
                                                     setSelectedCert(item)
+                                                    setPreviewLoading(true)
                                                     setPreviewModal(true)
                                                 }}
                                             >
@@ -675,24 +724,61 @@ export default function TherapistCertification() {
             {/* PDF Preview Modal */}
             <CModal
                 visible={previewModal}
-                onClose={() => setPreviewModal(false)}
+                onClose={() => { setPreviewModal(false); setPreviewLoading(false) }}
                 size="lg"
             >
                 <CModalHeader style={{ borderBottom: "0.5px solid #e4e6ea" }}>
                     <CModalTitle style={{ fontSize: 15, fontWeight: 600 }}>
-                        {selectedCert?.certificationName ?? "Certificate preview"}
+                        {selectedCert?.certificateName || selectedCert?.certificationName || "Certificate preview"}
                     </CModalTitle>
                 </CModalHeader>
                 <CModalBody style={{ padding: 20 }}>
-                    <div style={styles.pdfFrame}>
-                        {selectedCert?.certificateUrl ? (
-                            <iframe
-                                src={selectedCert.certificateUrl}
-                                title="PDF Preview"
-                                width="100%"
-                                height="100%"
-                                style={{ border: "none", borderRadius: 8 }}
-                            />
+                    <div style={{ ...styles.pdfFrame, position: 'relative', minHeight: 320 }}>
+                        {/* Loading spinner overlay */}
+                        {previewLoading && (
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                display: 'flex', flexDirection: 'column',
+                                alignItems: 'center', justifyContent: 'center',
+                                background: '#f8f9fa', borderRadius: 8, zIndex: 2,
+                                gap: 12,
+                            }}>
+                                <div style={{
+                                    width: 36, height: 36,
+                                    border: '3px solid #e4e6ea',
+                                    borderTop: `3px solid ${COLORS.primary}`,
+                                    borderRadius: '50%',
+                                    animation: 'spin 0.8s linear infinite',
+                                }} />
+                                <span style={{ fontSize: 12, color: '#8b929a', fontWeight: 500 }}>Loading preview…</span>
+                                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                            </div>
+                        )}
+                        {(selectedCert?.upload || selectedCert?.certificateUrl) ? (
+                            (selectedCert.upload || selectedCert.certificateUrl).match(/\.(jpeg|jpg|png|webp|gif)/i) ||
+                                !(selectedCert.upload || selectedCert.certificateUrl).includes(".pdf") ? (
+                                <img
+                                    src={selectedCert.upload || selectedCert.certificateUrl}
+                                    alt="Certificate Preview"
+                                    onLoad={() => setPreviewLoading(false)}
+                                    onError={() => setPreviewLoading(false)}
+                                    style={{
+                                        maxWidth: "100%", maxHeight: "100%",
+                                        objectFit: "contain", borderRadius: 8,
+                                        opacity: previewLoading ? 0 : 1,
+                                        transition: 'opacity 0.3s',
+                                    }}
+                                />
+                            ) : (
+                                <iframe
+                                    src={selectedCert.upload || selectedCert.certificateUrl}
+                                    title="PDF Preview"
+                                    width="100%"
+                                    height="100%"
+                                    onLoad={() => setPreviewLoading(false)}
+                                    style={{ border: "none", borderRadius: 8 }}
+                                />
+                            )
                         ) : (
                             <>
                                 <CIcon icon={cilFile} size="3xl" style={{ color: "#d1d5db" }} />
@@ -700,10 +786,10 @@ export default function TherapistCertification() {
                             </>
                         )}
                     </div>
-                    {selectedCert?.certificateUrl && (
+                    {(selectedCert?.upload || selectedCert?.certificateUrl) && (
                         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                             <a
-                                href={selectedCert.certificateUrl}
+                                href={selectedCert.upload || selectedCert.certificateUrl}
                                 download
                                 style={{ textDecoration: "none" }}
                             >

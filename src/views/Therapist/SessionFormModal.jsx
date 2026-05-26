@@ -128,7 +128,7 @@ const InfoChip = ({ label, value }) => (
 )
 
 /* ─── File upload field ─── */
-const FileField = ({ label, required, error, accept, onChange, preview, isVideo }) => {
+const FileField = ({ label, required, error, accept, onChange, onClear, preview, isVideo }) => {
   const getMediaSrc = (val) => {
     if (!val) return null;
     if (val.startsWith("http") || val.startsWith("blob:") || val.startsWith("data:")) return val;
@@ -138,21 +138,51 @@ const FileField = ({ label, required, error, accept, onChange, preview, isVideo 
   return (
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
-      <label style={{
-        display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '7px 12px', borderRadius: t.radiusSm,
-        border: `1px dashed ${error ? t.danger : t.border}`,
-        backgroundColor: t.surface, cursor: 'pointer', fontSize: '12px', color: t.textMuted,
-      }}>
-        📎 Choose file
-        <input type="file" accept={accept} style={{ display: 'none' }} onChange={e => onChange(e.target.files[0])} />
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <label style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '7px 12px', borderRadius: t.radiusSm,
+          border: `1px dashed ${error ? t.danger : t.border}`,
+          backgroundColor: t.surface, cursor: 'pointer', fontSize: '12px', color: t.textMuted,
+          flex: 1,
+        }}>
+          📎 Choose file
+          <input type="file" accept={accept} style={{ display: 'none' }} onChange={e => {
+            if (e.target.files?.[0]) {
+              onChange(e.target.files[0]);
+            }
+          }} />
+        </label>
+        {preview && onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            style={{
+              padding: '7px 12px',
+              borderRadius: t.radiusSm,
+              border: `1px solid ${t.danger}`,
+              backgroundColor: '#fff',
+              color: t.danger,
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            🗑️ Clear
+          </button>
+        )}
+      </div>
       {preview && (
-        isVideo ? (
-          <video src={getMediaSrc(preview)} controls style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
-        ) : (
-          <img src={getMediaSrc(preview)} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
-        )
+        <div style={{ position: 'relative', display: 'inline-block', marginTop: '6px' }}>
+          {isVideo ? (
+            <video src={getMediaSrc(preview)} controls style={{ width: '100%', maxHeight: '100px', objectFit: 'contain', marginTop: '6px', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+          ) : (
+            <img src={getMediaSrc(preview)} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: t.radiusSm, border: `1px solid ${t.border}` }} />
+          )}
+        </div>
       )}
       <FieldError msg={error} />
     </div>
@@ -176,6 +206,7 @@ const PainSelect = ({ label, value, onChange, error }) => (
 export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const navigate = useNavigate()
   const [notes, setNotes] = useState('')
+  const [patientResponse, setPatientResponse] = useState(data?.patientResponse || 'Good')
   const [before, setBefore] = useState(null)
   const [beforePreview, setBeforePreview] = useState(null)
   const [after, setAfter] = useState(null)
@@ -193,6 +224,26 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const [completedRepitations, setCompletedRepitations] = useState('')
   const [error, setError] = useState({})
   const [errors, setErrors] = useState({})
+
+  const clearBeforeImage = () => {
+    setBefore(null)
+    setBeforePreview(null)
+  }
+
+  const clearAfterImage = () => {
+    setAfter(null)
+    setAfterPreview(null)
+  }
+
+  const clearBeforeVideo = () => {
+    setBeforeVideo(null)
+    setBeforeVideoPreview(null)
+  }
+
+  const clearAfterVideo = () => {
+    setAfterVideo(null)
+    setAfterVideoPreview(null)
+  }
 
   // Consent flow state
   const [showConsent, setShowConsent] = useState(false)
@@ -332,12 +383,12 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         setsDone: `${completedSets || 0}/${data?.sets || 0}`,
         repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
         therapistNotes: notes,
-        patientResponse: data.patientResponse || 'Good',
+        patientResponse: patientResponse || 'Good',
         result, mode: 'complete', nextPlan,
-        beforeImage: beforeBase64 || data.beforeMediaUrl || '',
-        afterImage: afterBase64 || data.afterMediaUrl || '',
-        beforeVideo: beforeVideoBase64 || (data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : ''),
-        afterVideo: afterVideoBase64 || (data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : ''),
+        beforeImage: beforeBase64 || (beforePreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes("video") ? '' : data.beforeMediaUrl) : ''),
+        afterImage: afterBase64 || (afterPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes("video") ? '' : data.afterMediaUrl) : ''),
+        beforeVideo: beforeVideoBase64 || (beforeVideoPreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : '') : ''),
+        afterVideo: afterVideoBase64 || (afterVideoPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : '') : ''),
         latitude: loc.latitude, longitude: loc.longitude,
         consentPdfUrl: localConsentPdf || data.consentPdfUrl || '',
       }
@@ -357,7 +408,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
 
   /* ─── render ─── */
   return (
-    <CModal visible={visible} onClose={onClose} backdrop="static" size="lg" className='custom-modal'>
+    <CModal visible={visible} onClose={onClose} backdrop="static" size="lg" className='custom-modal' scrollable={true}>
 
       {/* ── Header ── */}
       <CModalHeader style={{ backgroundColor: PRIMARY, padding: '14px 20px', borderBottom: 'none' }}>
@@ -383,8 +434,6 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           <InfoChip label="Time" value={new Date().toLocaleTimeString()} />
         </div>
 
-
-
         {/* ── Therapist Notes ── */}
         <SectionHeading title="Therapist Notes" />
         <div>
@@ -398,9 +447,20 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           <FieldError msg={error.notes} />
         </div>
 
+        {/* ── Patient Response ── */}
+        <SectionHeading title="Patient Response" />
+        <div>
+          <Textarea
+            rows={2}
+            placeholder="Enter patient feedback or response…"
+            value={patientResponse}
+            onChange={e => setPatientResponse(e.target.value)}
+          />
+        </div>
+
         {/* ── Pain Scale ── */}
         <SectionHeading title="Pain Scale" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div className="responsive-grid">
           <PainSelect label="Pain Before" value={painBefore} error={error.painBefore}
             onChange={v => { setPainBefore(v); setError(p => ({ ...p, painBefore: '' })) }} />
           <PainSelect label="Pain After" value={painAfter} error={error.painAfter}
@@ -426,7 +486,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         {data.activityType?.toLowerCase() === 'exercise' && (
           <>
             <SectionHeading title="Exercise Completion" />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div className="responsive-grid">
               {/* Sets */}
               <div>
                 <FieldLabel>Completed Sets</FieldLabel>
@@ -495,20 +555,20 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
             <>
 
               <SectionHeading title="Before & After Images (Optional)" />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="responsive-grid">
                 <FileField label="Before Image" accept="image/*" error={error.before}
-                  preview={beforePreview} onChange={file => handleFileSelect(file, 'beforeImage')} />
+                  preview={beforePreview} onChange={file => handleFileSelect(file, 'beforeImage')} onClear={clearBeforeImage} />
                 <FileField label="After Image" accept="image/*" error={error.after}
-                  preview={afterPreview} onChange={file => handleFileSelect(file, 'afterImage')} />
+                  preview={afterPreview} onChange={file => handleFileSelect(file, 'afterImage')} onClear={clearAfterImage} />
               </div>
 
               {/* ── Videos ── */}
               <SectionHeading title="Before & After Videos (Optional)" />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="responsive-grid">
                 <FileField label="Before Video" accept="video/*" error={errors.beforeVideo}
-                  preview={beforeVideoPreview} isVideo onChange={file => handleFileSelect(file, 'beforeVideo')} />
+                  preview={beforeVideoPreview} isVideo onChange={file => handleFileSelect(file, 'beforeVideo')} onClear={clearBeforeVideo} />
                 <FileField label="After Video" accept="video/*" error={errors.afterVideo}
-                  preview={afterVideoPreview} isVideo onChange={file => handleFileSelect(file, 'afterVideo')} />
+                  preview={afterVideoPreview} isVideo onChange={file => handleFileSelect(file, 'afterVideo')} onClear={clearAfterVideo} />
               </div>
 
               <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '4px' }}>
@@ -517,8 +577,6 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
             </>
           )
         }
-
-
 
       </CModalBody>
       <CModalFooter>
@@ -544,6 +602,30 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         patientName={data?.patientName}
         onConsentGranted={handleConsentGranted}
       />
+      <style>
+        {`
+          .custom-modal .modal-dialog {
+            max-width: 95%;
+            margin: 1.75rem auto;
+          }
+          @media (min-width: 768px) {
+            .custom-modal .modal-dialog {
+              max-width: 700px;
+            }
+          }
+          .responsive-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+          }
+          @media (max-width: 768px) {
+            .responsive-grid {
+              grid-template-columns: 1fr;
+              gap: 10px;
+            }
+          }
+        `}
+      </style>
     </CModal>
   )
 }

@@ -108,7 +108,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 
   return (
     <>
-      <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal'>
+      <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal' scrollable={true}>
         <CModalHeader closeButton style={{ backgroundColor: COLORS.primary, color: "white" }} className="text-white">Session Details</CModalHeader>
 
         <CModalBody>
@@ -142,6 +142,11 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           <div className="note-box mb-4">
             <b>Therapist Notes</b>
             <p style={{ color: COLORS.primary }}>{data.therapistNotes || "-"}</p>
+          </div>
+
+          <div className="note-box mb-4" style={{ borderLeftColor: '#16a34a' }}>
+            <b>Patient Response</b>
+            <p style={{ color: COLORS.primary }}>{data.patientResponse || "-"}</p>
           </div>
 
           {/* 🔷 SESSION DETAILS */}
