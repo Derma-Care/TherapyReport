@@ -12,6 +12,7 @@ import { wifiUrl } from "../../API/BaseUrl";
 import { showCustomToast } from "../../Utils/Toaster";
 import { Camera, Video } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { uploadFile } from "../../Utils/S3UploadService";
 
 const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
   const [file, setFile] = useState(null);
@@ -56,6 +57,9 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       setIsRecording(false);
       setRecordingSeconds(0);
     } else {
+      // Always reset loading when modal is hidden to avoid stuck spinner
+      setIsLoading(false);
+      setIsRecording(false);
       stopStreamAndTimer();
     }
     return () => {
@@ -98,8 +102,19 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       // 20 Seconds limit
       const video = document.createElement("video");
       video.preload = "metadata";
+      const objectUrl = URL.createObjectURL(selectedFile);
+
+      // Safety timeout: if metadata never loads within 10s, unblock the UI
+      const metaTimeout = setTimeout(() => {
+        window.URL.revokeObjectURL(objectUrl);
+        showCustomToast("Could not read video metadata. Please try a different file.", "error");
+        setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }, 10000);
+
       video.onloadedmetadata = function () {
-        window.URL.revokeObjectURL(video.src);
+        clearTimeout(metaTimeout);
+        window.URL.revokeObjectURL(objectUrl);
         if (video.duration > 20) {
           showCustomToast("Video duration must be 20 seconds or less.", "error");
           setIsLoading(false);
@@ -112,12 +127,13 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         if (fileInputRef.current) fileInputRef.current.value = "";
       };
       video.onerror = function () {
-        window.URL.revokeObjectURL(video.src);
+        clearTimeout(metaTimeout);
+        window.URL.revokeObjectURL(objectUrl);
         showCustomToast("Failed to load video file. Make sure it is a valid, playable format.", "error");
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       };
-      video.src = URL.createObjectURL(selectedFile);
+      video.src = objectUrl;
     }
   };
 
@@ -248,18 +264,20 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
     if (!file) return;
     setIsLoading(true);
     try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onMediaSaved(reader.result);
-        onClose();
-        showCustomToast("Media saved successfully.", "success");
-        setIsLoading(false);
-      };
-      reader.onerror = () => {
-        showCustomToast("Failed to read media.", "error");
-        setIsLoading(false);
-      };
-      reader.readAsDataURL(file);
+      const fieldName = `${type}${captureMode.charAt(0).toUpperCase() + captureMode.slice(1)}`;
+      
+      let fileToUpload = file;
+      if (file instanceof Blob && !(file instanceof File)) {
+        const extension = captureMode === "image" ? "jpg" : "mp4";
+        fileToUpload = new File([file], `${fieldName}.${extension}`, { type: file.type });
+      }
+
+      const fileKey = await uploadFile(fieldName, fileToUpload);
+      
+      setIsLoading(false);
+      onMediaSaved(fileKey);
+      onClose();
+      showCustomToast("Media saved successfully.", "success");
     } catch (error) {
       console.error(error);
       showCustomToast("Failed to save media.", "error");

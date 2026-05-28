@@ -458,7 +458,7 @@ export default function TherapistCertification() {
             const td = JSON.parse(localStorage.getItem('therapistData') || '{}')
             const clinicId = td?.clinicId || td?.data?.clinicId || '0001'
             const branchId = td?.branchId || td?.data?.branchId || '000101'
-            const therapistId = td?.therapistId || td?.data?.therapistId || 'THER-DD0F6A'
+            const therapistId = td?.therapistId || td?.data?.therapistId
 
             const payload = {
                 clinicId,
@@ -495,8 +495,8 @@ export default function TherapistCertification() {
             const td = JSON.parse(localStorage.getItem('therapistData') || '{}')
             const clinicId = td?.clinicId || td?.data?.clinicId || '0001'
             const branchId = td?.branchId || td?.data?.branchId || '000101'
-
-            const response = await fetch(`${BASE_URL}/getTherapistCertificatesByClinicIdAndBranchId/${clinicId}/${branchId}`)
+            const therapistId = td?.therapistId || td?.data?.therapistId
+            const response = await fetch(`${BASE_URL}/getTherapistCertificatesByClinicIdBranchIdAndTherapistId/${clinicId}/${branchId}/${therapistId}`)
             const result = await response.json()
             if (result.success && result.data) {
                 const certs = Array.isArray(result.data) ? result.data : [result.data]

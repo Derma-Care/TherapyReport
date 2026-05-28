@@ -9,6 +9,8 @@ import SessionViewModal from "./SessionViewModal"
 import LoadingIndicator from "../../Utils/loader"
 import ConsentFormModal from "./ConsentFormModal"
 import MediaCaptureModal from "./MediaCaptureModal"
+import { BASE_URL } from "../../API/BaseUrl"
+import { uploadFile } from "../../Utils/S3UploadService"
 import {
   User, Calendar, ClipboardList, X, ChevronDown, Eye,
   Play, Mic, Activity, Clock, CheckCircle, Zap, Camera
@@ -137,6 +139,31 @@ const S = {
 
 
 /* ─── HELPERS ────────────────────────────────────────────────────────────── */
+
+/**
+ * Removes any stale Bootstrap modal backdrops and the modal-open class from
+ * <body>. This prevents leftover overlays from blocking UI interaction after
+ * sequentially opened modals (consent → media capture → voice record) close.
+ */
+const cleanupModalArtifacts = () => {
+  // IMPORTANT: Do NOT call removeChild / remove() on .modal-backdrop elements.
+  // CoreUI owns these through React's lifecycle and will call removeChild() itself
+  // during its Transition exit phase. Removing them manually causes a race that
+  // throws: "NotFoundError: Failed to execute 'removeChild' on 'Node'".
+  //
+  // Strategy: hide any stale backdrops with display:none (stops them blocking UI)
+  // and clean up the body class that prevents scrolling/interaction.
+  // CoreUI can still removeChild() the element safely on its own schedule.
+  setTimeout(() => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => {
+      el.style.display = 'none'
+    })
+    document.body.classList.remove('modal-open')
+    document.body.style.overflow = ''
+    document.body.style.paddingRight = ''
+  }, 600)
+}
+
 const cleanHierarchy = (node) => {
   if (!node) return null
   return node
@@ -226,17 +253,28 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
   }
 
   const send = async () => {
+    if (!chunksRef.current.length) {
+      onClose()
+      return
+    }
     setStatus("STOPPED")
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" })
-    const reader = new FileReader()
-    reader.readAsDataURL(blob)
-    reader.onloadend = () => { setTimeout(() => { onSave(reader.result); onClose() }, 1200) }
+    try {
+      const blob = new Blob(chunksRef.current, { type: "audio/mp3" })
+      const file = new File([blob], "voiceRecord.mp3", { type: "audio/mp3" })
+      const fileKey = await uploadFile("voiceRecord", file)
+      onSave(fileKey)
+      onClose()
+    } catch (e) {
+      console.error("Audio upload failed", e)
+      setStatus("PREVIEW")
+      alert("Failed to save audio recording.")
+    }
   }
 
   const timeStr = new Date(timer * 1000).toISOString().substr(14, 5)
 
   return (
-    <CModal visible={visible} onClose={() => status !== "STOPPED" && onClose()} alignment="center" size="sm" backdrop="static">
+    <CModal visible={visible} onClose={() => (status !== "RECORDING" && status !== "PAUSED") && onClose()} alignment="center" size="sm" backdrop="static">
       <CModalHeader style={{ background: T.navy, color: T.white }}>
         <CModalTitle style={{ color: T.white, fontWeight: 700 }}>🎤 Voice Record</CModalTitle>
       </CModalHeader>
@@ -262,7 +300,7 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
             </div>
           </div>
         )}
-        {status === "STOPPED" && <div style={{ color: T.success, fontWeight: 600 }}>✅ Storing and sending...</div>}
+        {status === "STOPPED" && <div style={{ color: T.success, fontWeight: 600 }}>✅ Recording saved!</div>}
       </CModalBody>
     </CModal>
   )
@@ -367,14 +405,19 @@ const SessionList = () => {
   const handleVoiceRecordSaved = url => {
     if (voiceRecordSession && url) handleUpdate({ ...voiceRecordSession, voiceRecordUrl: url })
     setVoiceRecordSession(null)
+    cleanupModalArtifacts()
   }
 
   const handleConsentGranted = (pdfUrl) => {
     if (!consentSession) return
     const updatedSession = { ...consentSession.session, consentPdfUrl: pdfUrl }
     handleUpdate(updatedSession)
-    setMediaSession({ session: updatedSession, type: consentSession.type })
     setConsentSession(null)
+    // Small delay before opening media modal so backdrop cleanup runs first
+    setTimeout(() => {
+      cleanupModalArtifacts()
+      setMediaSession({ session: updatedSession, type: consentSession.type })
+    }, 400)
   }
 
   const handleMediaSaved = (mediaUrl) => {
@@ -384,6 +427,7 @@ const SessionList = () => {
     if (mediaSession.type === "after") updatedSession.afterMediaUrl = mediaUrl
     handleUpdate(updatedSession)
     setMediaSession(null)
+    cleanupModalArtifacts()
   }
 
   /* ── stats ── */
@@ -845,14 +889,28 @@ const SessionList = () => {
       {/* Modals */}
       <VoiceRecordModal visible={!!voiceRecordSession} onClose={() => setVoiceRecordSession(null)} onSave={handleVoiceRecordSaved} />
 
-      {audioPlaybackSession && (
-        <CModal visible onClose={() => setAudioPlaybackSession(null)} alignment="center" size="sm">
-          <CModalHeader style={{ background: T.navy }}><CModalTitle style={{ color: T.white }}>▶️ Playback Recording</CModalTitle></CModalHeader>
-          <CModalBody className="text-center py-4">
-            <audio controls autoPlay src={audioPlaybackSession.voiceRecordUrl} style={{ width: "100%" }} />
-          </CModalBody>
-        </CModal>
-      )}
+      {audioPlaybackSession && (() => {
+        const getFileUrl = (str) => {
+          if (!str) return ''
+          if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('/') || str.startsWith('blob:') || str.startsWith('data:')) {
+            return str
+          }
+          const isBase64 = str.includes(';base64,') || (str.length > 100 && !str.includes('/') && !str.includes('.'));
+          if (!isBase64) {
+            return `${BASE_URL}/viewFile/${str}`
+          }
+          return ''
+        }
+        const audioSrc = getFileUrl(audioPlaybackSession.voiceRecordUrl || audioPlaybackSession.voiceRecord)
+        return (
+          <CModal visible onClose={() => setAudioPlaybackSession(null)} alignment="center" size="sm">
+            <CModalHeader style={{ background: T.navy }}><CModalTitle style={{ color: T.white }}>▶️ Playback Recording</CModalTitle></CModalHeader>
+            <CModalBody className="text-center py-4">
+              <audio controls autoPlay src={audioSrc} style={{ width: "100%" }} />
+            </CModalBody>
+          </CModal>
+        )
+      })()}
 
       {selected?.mode === "complete" && (
         <SessionFormModal visible data={selected} onClose={() => setSelected(null)} onSave={handleUpdate} />
@@ -927,42 +985,58 @@ const SessionList = () => {
       </CModal>
 
       {/* General Media Preview Modal */}
-      {mediaPreview && (
-        <CModal
-          visible
-          size="xl"
-          onClose={() => setMediaPreview(null)}
-          className="preview-modal"
-        >
-          <CModalBody style={{ position: "relative", textAlign: "center", background: "#000", padding: "40px 15px 15px" }}>
-            <button
-              onClick={() => setMediaPreview(null)}
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                background: "rgba(255,255,255,0.9)",
-                color: "#000",
-                border: "none",
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                fontSize: "20px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                zIndex: 1000
-              }}
-            >
-              ×
-            </button>
-            {mediaPreview.startsWith("data:video") || mediaPreview.startsWith("blob:") || mediaPreview.match(/\.(mp4|webm|mov|ogg)$/i) ? (
-              <video key={mediaPreview} src={mediaPreview} controls autoPlay style={{ maxWidth: "100%", maxHeight: "80vh" }} />
-            ) : (
-              <img src={mediaPreview} alt="Preview" style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain" }} />
-            )}
-          </CModalBody>
-        </CModal>
-      )}
+      {mediaPreview && (() => {
+        const getFileUrl = (str) => {
+          if (!str) return ''
+          if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('/') || str.startsWith('blob:') || str.startsWith('data:')) {
+            return str
+          }
+          const isBase64 = str.includes(';base64,') || (str.length > 100 && !str.includes('/') && !str.includes('.'));
+          if (!isBase64) {
+            return `${BASE_URL}/viewFile/${str}`
+          }
+          return ''
+        }
+        const previewUrl = getFileUrl(mediaPreview)
+        const isVideo = mediaPreview.startsWith("data:video") || mediaPreview.startsWith("blob:") || mediaPreview.match(/\.(mp4|webm|mov|ogg)$/i) || mediaPreview.toLowerCase().includes("video");
+
+        return (
+          <CModal
+            visible
+            size="xl"
+            onClose={() => setMediaPreview(null)}
+            className="preview-modal"
+          >
+            <CModalBody style={{ position: "relative", textAlign: "center", background: "#000", padding: "40px 15px 15px" }}>
+              <button
+                onClick={() => setMediaPreview(null)}
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  background: "rgba(255,255,255,0.9)",
+                  color: "#000",
+                  border: "none",
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  zIndex: 1000
+                }}
+              >
+                ×
+              </button>
+              {isVideo ? (
+                <video key={previewUrl} src={previewUrl} controls autoPlay style={{ maxWidth: "100%", maxHeight: "80vh" }} />
+              ) : (
+                <img src={previewUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain" }} />
+              )}
+            </CModalBody>
+          </CModal>
+        )
+      })()}
     </div>
   )
 }

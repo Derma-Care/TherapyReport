@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom'
 import { convertToBase64 } from '../../Utils/Base64Convert'
 import { showCustomToast } from '../../Utils/Toaster'
 import ConsentFormModal from './ConsentFormModal'
+import { BASE_URL } from '../../API/BaseUrl'
+import { uploadFile } from '../../Utils/S3UploadService'
 
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
@@ -132,6 +134,10 @@ const FileField = ({ label, required, error, accept, onChange, onClear, preview,
   const getMediaSrc = (val) => {
     if (!val) return null;
     if (val.startsWith("http") || val.startsWith("blob:") || val.startsWith("data:")) return val;
+    const isBase64 = val.includes(';base64,') || (val.length > 100 && !val.includes('/') && !val.includes('.'));
+    if (!isBase64) {
+      return `${BASE_URL}/viewFile/${val}`;
+    }
     return `data:${isVideo ? "video/mp4" : "image/jpeg"};base64,${val}`;
   };
 
@@ -318,9 +324,21 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     if (type === 'afterVideo') processAfterVideo(file);
   }
 
+  const cleanupModalArtifacts = () => {
+    setTimeout(() => {
+      document.querySelectorAll('.modal-backdrop').forEach(el => {
+        el.style.display = 'none'
+      })
+      document.body.classList.remove('modal-open')
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }, 600)
+  }
+
   const handleConsentGranted = (pdfUrl) => {
     setLocalConsentPdf(pdfUrl);
     setShowConsent(false);
+    cleanupModalArtifacts();
     if (pendingFile) {
       if (pendingFile.type === 'beforeImage') processBeforeImage(pendingFile.file);
       if (pendingFile.type === 'afterImage') processAfterImage(pendingFile.file);
@@ -356,10 +374,10 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     try {
       setLoading(true)
       const loc = await getCurrentLocation();
-      const beforeBase64 = before ? await convertToBase64(before) : ''
-      const afterBase64 = after ? await convertToBase64(after) : ''
-      const beforeVideoBase64 = beforeVideo ? await convertToBase64(beforeVideo) : ''
-      const afterVideoBase64 = afterVideo ? await convertToBase64(afterVideo) : ''
+      const beforeKey = before ? await uploadFile('beforeImage', before) : ''
+      const afterKey = after ? await uploadFile('afterImage', after) : ''
+      const beforeVideoKey = beforeVideo ? await uploadFile('beforeVideo', beforeVideo) : ''
+      const afterVideoKey = afterVideo ? await uploadFile('afterVideo', afterVideo) : ''
       const now = new Date()
       const td = JSON.parse(localStorage.getItem('therapistData'))
       const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -385,10 +403,10 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         therapistNotes: notes,
         patientResponse: patientResponse || 'Good',
         result, mode: 'complete', nextPlan,
-        beforeImage: beforeBase64 || (beforePreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes("video") ? '' : data.beforeMediaUrl) : ''),
-        afterImage: afterBase64 || (afterPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes("video") ? '' : data.afterMediaUrl) : ''),
-        beforeVideo: beforeVideoBase64 || (beforeVideoPreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : '') : ''),
-        afterVideo: afterVideoBase64 || (afterVideoPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : '') : ''),
+        beforeImage: beforeKey || (beforePreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes("video") ? '' : data.beforeMediaUrl) : ''),
+        afterImage: afterKey || (afterPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes("video") ? '' : data.afterMediaUrl) : ''),
+        beforeVideo: beforeVideoKey || (beforeVideoPreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : '') : ''),
+        afterVideo: afterVideoKey || (afterVideoPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : '') : ''),
         latitude: loc.latitude, longitude: loc.longitude,
         consentPdfUrl: localConsentPdf || data.consentPdfUrl || '',
       }
@@ -593,15 +611,19 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         </div>
       </CModalFooter>
 
-      <ConsentFormModal
-        visible={showConsent}
-        onClose={() => {
-          setShowConsent(false);
-          setPendingFile(null);
-        }}
-        patientName={data?.patientName}
-        onConsentGranted={handleConsentGranted}
-      />
+      {/* Only mount ConsentFormModal when actively needed — avoids DOM/backdrop interference */}
+      {showConsent && (
+        <ConsentFormModal
+          visible={showConsent}
+          onClose={() => {
+            setShowConsent(false);
+            setPendingFile(null);
+            cleanupModalArtifacts();
+          }}
+          patientName={data?.patientName}
+          onConsentGranted={handleConsentGranted}
+        />
+      )}
       <style>
         {`
           .custom-modal .modal-dialog {

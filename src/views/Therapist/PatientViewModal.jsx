@@ -9,6 +9,7 @@ import {
 } from "@coreui/react"
 import { useState } from "react"
 import { FileText, X, ZoomIn, ExternalLink, ChevronDown, ChevronUp } from "lucide-react"
+import { BASE_URL } from "../../API/BaseUrl"
 
 /* ─── Design tokens — matches AppointmentDetails / DoctorDetailsPage ─── */
 const PRIMARY      = '#1B4F8A'
@@ -47,12 +48,74 @@ const isImgString = (str) =>
   (str.startsWith("/9j/") || str.startsWith("iVBOR") ||
    str.startsWith("R0lGOD") || str.startsWith("data:image"))
 
+const isImgField = (key, val) => {
+  if (typeof val !== "string" || !val) return false;
+  if (isImgString(val)) return true;
+  const k = key.toLowerCase();
+  if (k.includes("image") || k.includes("photo") || k === "partimage" || val.match(/\.(jpeg|jpg|png|gif|webp|svg)$/i)) {
+    return true;
+  }
+  return false;
+}
+
 const resolveImg = (img) => {
   if (!img) return null
-  if (img.startsWith("data:image")) return img
-  if (img.startsWith("iVBOR")) return `data:image/png;base64,${img}`
-  return `data:image/jpeg;base64,${img}`
+  if (img.startsWith("http") || img.startsWith("blob:") || img.startsWith("data:")) return img
+  const isBase64 = img.startsWith("/9j/") || img.startsWith("iVBOR") || img.startsWith("R0lGOD") || img.startsWith("data:image");
+  if (isBase64) {
+    if (img.startsWith("iVBOR")) return `data:image/png;base64,${img}`
+    return `data:image/jpeg;base64,${img}`
+  }
+  return `${BASE_URL}/viewFile/${img}`
 }
+
+const getPreviewType = (url) => {
+  if (!url) return null;
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.match(/\.(mp4|webm|mov|ogg)$/i) || lowerUrl.includes("video") || lowerUrl.includes("voice") || lowerUrl.includes("record")) return "video";
+  if (lowerUrl.includes("youtube.com") || lowerUrl.includes("youtu.be")) return "youtube";
+  return "image";
+};
+
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return "";
+  let videoId = "";
+  try {
+    if (url.includes("youtube.com/watch")) {
+      const urlParams = new URLSearchParams(new URL(url).search);
+      videoId = urlParams.get("v") || "";
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0] || "";
+    } else if (url.includes("youtube.com/embed/")) {
+      videoId = url.split("youtube.com/embed/")[1]?.split("?")[0] || "";
+    } else if (url.includes("youtube.com/shorts/")) {
+      videoId = url.split("youtube.com/shorts/")[1]?.split("?")[0] || "";
+    }
+  } catch (e) {
+    console.error("Error parsing youtube embed url", e);
+  }
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+};
+
+const getYouTubeThumbnail = (url) => {
+  if (!url) return "";
+  let videoId = "";
+  try {
+    if (url.includes("youtube.com/watch")) {
+      const urlParams = new URLSearchParams(new URL(url).search);
+      videoId = urlParams.get("v") || "";
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0] || "";
+    } else if (url.includes("youtube.com/embed/")) {
+      videoId = url.split("youtube.com/embed/")[1]?.split("?")[0] || "";
+    } else if (url.includes("youtube.com/shorts/")) {
+      videoId = url.split("youtube.com/shorts/")[1]?.split("?")[0] || "";
+    }
+  } catch (e) {
+    console.error("Error parsing youtube thumbnail url", e);
+  }
+  return videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : "";
+};
 
 const HIDDEN = ["payment","paymentinfo","amount","paidamount","balanceamount",
   "totalamount","discount","price","fee","cost"]
@@ -180,6 +243,7 @@ const SectionCard = ({ title, children }) => {
 
 export default function PatientViewModal({ visible, data, onClose }) {
   const [preview, setPreview] = useState(null)
+  const [mediaPreview, setMediaPreview] = useState(null) // { url, type: 'image'|'video'|'youtube' }
   const record = data
   if (!record) return null
 
@@ -189,7 +253,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
     if (val === null || val === undefined || val === "") return null
 
     // IMAGE
-    if (isImgString(val)) {
+    if (isImgField(key, val)) {
       const src = resolveImg(val)
       return (
         <CCol md={4} key={i} className="mb-3">
@@ -218,6 +282,123 @@ export default function PatientViewModal({ visible, data, onClose }) {
     // ARRAY
     if (Array.isArray(val)) {
       if (!val.length) return null
+
+      // Check if items are URL strings (images / PDFs / videos)
+      const allStrings = val.every(item => typeof item === 'string')
+      const hasUrls = allStrings && val.some(item =>
+        item.startsWith('http://') || item.startsWith('https://')
+      )
+
+      if (hasUrls) {
+        return (
+          <CCol md={12} key={i} className="mb-3">
+            <div style={{ backgroundColor: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, padding: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+                {labelify(key)}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                {val.map((url, idx) => {
+                  if (typeof url !== 'string') return null
+                  const isPdf = /\.pdf(\?|$)/i.test(url)
+                  const isVid = /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url)
+                  const isImg = !isPdf && !isVid && /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url)
+                  // fallback: if none matched but it's a URL, treat as image
+                  const treatAsImg = isImg || (!isPdf && !isVid)
+
+                  const type = isPdf ? 'pdf' : isVid ? 'video' : 'image'
+                  const typeLabel = isPdf ? '📄 PDF' : isVid ? '🎬 Video' : '🖼 Image'
+                  const typeColor = isPdf ? '#dc2626' : isVid ? '#7c3aed' : '#0ea5e9'
+                  const typeBg = isPdf ? '#fee2e2' : isVid ? '#f3f0ff' : '#e0f2fe'
+
+                  const handleClick = () => {
+                    if (isPdf) {
+                      window.open(url, '_blank')
+                    } else {
+                      setMediaPreview({ url, type })
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={handleClick}
+                      style={{
+                        borderRadius: 10, overflow: 'hidden',
+                        border: `1px solid ${t.border}`,
+                        backgroundColor: '#fff',
+                        boxShadow: t.shadow,
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s, box-shadow 0.15s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = t.shadowMd }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = t.shadow }}
+                    >
+                      {/* Thumbnail area */}
+                      <div style={{
+                        width: '100%', height: 100,
+                        backgroundColor: isPdf ? '#fff1f2' : '#f1f5f9',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative', overflow: 'hidden',
+                      }}>
+                        {treatAsImg && !isPdf ? (
+                          <img
+                            src={url}
+                            alt={`${key}-${idx}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={e => {
+                              e.target.style.display = 'none'
+                              e.target.parentNode.querySelector('.fallback-icon').style.display = 'flex'
+                            }}
+                          />
+                        ) : null}
+                        <div className="fallback-icon" style={{
+                          display: isPdf || isVid ? 'flex' : 'none',
+                          alignItems: 'center', justifyContent: 'center',
+                          fontSize: 36, width: '100%', height: '100%',
+                          position: isPdf || isVid ? 'relative' : 'absolute',
+                        }}>
+                          {isPdf ? '📄' : '🎬'}
+                        </div>
+                        {isVid && (
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'rgba(0,0,0,0.35)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: '50%',
+                              background: 'rgba(255,255,255,0.9)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <span style={{ fontSize: 14, marginLeft: 3 }}>▶</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                          fontSize: 10, fontWeight: 700, color: typeColor,
+                          backgroundColor: typeBg, borderRadius: 20,
+                          padding: '2px 8px', border: `1px solid ${typeColor}30`,
+                        }}>{typeLabel}</span>
+                        <ExternalLink
+                          size={11} color={t.textMuted}
+                          onClick={e => { e.stopPropagation(); window.open(url, '_blank') }}
+                          style={{ cursor: 'pointer', opacity: 0.6 }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </CCol>
+        )
+      }
+
       return (
         <CCol md={12} key={i} className="mb-3">
           <Tile label={labelify(key)}>
@@ -303,46 +484,182 @@ export default function PatientViewModal({ visible, data, onClose }) {
     )
   }
 
-  /* ── Exercise item ── */
+  /* ── Exercise item (rich media-aware cards) ── */
   const renderExerciseItem = (item, index) => {
     const cfg = SECTION_CFG['Home Exercise']
+
+    // Separate media fields from regular scalar fields
+    const mediaFields = []
+    const scalarFields = []
+
+    Object.entries(item).forEach(([k, v]) => {
+      const field = k.toLowerCase()
+      if (!k || shouldHide(k) || v === null || v === undefined || v === '') return
+      if (field === 'exercisename' || field === 'name') return // shown in accordion header
+      if (typeof v !== 'string') {
+        scalarFields.push([k, v])
+        return
+      }
+
+      // Attempt base64-encoded URL decode
+      let resolved = v
+      try {
+        if (!resolved.startsWith('http') && !resolved.startsWith('data:') && !resolved.startsWith('/')) {
+          const dec = atob(resolved)
+          if (dec.startsWith('http://') || dec.startsWith('https://')) resolved = dec
+        }
+      } catch {}
+
+      const isUrl = resolved.startsWith('http://') || resolved.startsWith('https://') || resolved.startsWith('www.')
+      const isBase64Img = isImgString(resolved)
+
+      // Detect if this field is a known media/file field by key name
+      const fieldLower = k.toLowerCase()
+      const isMediaKey = fieldLower.includes('image') || fieldLower.includes('video') ||
+        fieldLower.includes('photo') || fieldLower.includes('media') ||
+        fieldLower.includes('url') || fieldLower.includes('link') ||
+        fieldLower.includes('file') || fieldLower.includes('pdf') ||
+        fieldLower.includes('thumbnail') || fieldLower.includes('attachment') ||
+        fieldLower.includes('record') || fieldLower.includes('audio')
+
+      // S3 key: no space, looks like a file path with a known extension, or is a media field name
+      const hasKnownExt = /\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mov|ogg|mp3|wav|pdf)$/i.test(resolved)
+      const isS3Key = !isUrl && !isBase64Img && resolved.length > 8 &&
+        !resolved.includes(' ') && (isMediaKey || hasKnownExt)
+
+      if (isUrl || isBase64Img || isS3Key) {
+        mediaFields.push({ key: k, resolved, isUrl, isBase64Img, isS3Key })
+      } else {
+        scalarFields.push([k, v])
+      }
+    })
+
     return (
       <Accordion key={index} title={item?.exerciseName || item?.name || `Exercise ${index + 1}`} index={index} accentColor={cfg.color}>
-        <CRow className="g-2">
-          {Object.entries(item).map(([k, v], i) => {
-            const field = k.toLowerCase()
-            if (field.includes('thumbnail') || field.includes('photo')) return null
-            let resolved = v
-            try {
-              if (typeof resolved === 'string' && !resolved.startsWith('http') && !resolved.startsWith('data:')) {
-                const dec = atob(resolved)
-                if (dec.startsWith('http://') || dec.startsWith('https://') || dec.startsWith('www.')) resolved = dec
-              }
-            } catch {}
-            const isUrl = typeof resolved === 'string' && (resolved.startsWith('http://') || resolved.startsWith('https://') || resolved.startsWith('www.'))
-            const isImg = typeof resolved === 'string' && resolved.startsWith('data:image')
-            if (isUrl || isImg) {
-              let displayLabel = labelify(k)
-              try { displayLabel = labelify(atob(k)) } catch {}
-              return (
-                <CCol md={4} key={`${index}-${i}`} className="mb-2">
-                  <Tile label={displayLabel}>
-                    {isImg && <img src={resolved} alt="preview" style={{ width: '100%', maxHeight: 120, objectFit: 'contain', borderRadius: t.radiusSm, marginBottom: 8 }} />}
-                    <button onClick={() => window.open(resolved, '_blank')}
-                      style={{
-                        backgroundColor: PRIMARY, color: '#fff', border: 'none',
-                        borderRadius: t.radiusSm, padding: '6px 14px', cursor: 'pointer',
-                        fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
-                      }}>
-                      <ExternalLink size={12} /> {isUrl ? 'Open Link' : 'View Image'}
-                    </button>
-                  </Tile>
-                </CCol>
-              )
-            }
-            return renderField(k, resolved, `${index}-${i}`)
-          })}
-        </CRow>
+        {/* ── Media Gallery ── */}
+        {mediaFields.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase',
+              letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ width: 3, height: 14, background: cfg.color, borderRadius: 2, display: 'inline-block' }} />
+              Media & Resources
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+              {mediaFields.map(({ key: k, resolved, isUrl, isBase64Img, isS3Key }, mi) => {
+                let label = labelify(k)
+                try { label = labelify(atob(k)) } catch {}
+
+                // Resolve final URL
+                let finalUrl = resolved
+                if (isBase64Img) finalUrl = resolveImg(resolved)
+                else if (isS3Key && !isUrl) finalUrl = `${BASE_URL}/viewFile/${resolved}`
+
+                const type = getPreviewType(finalUrl)
+                const isYT = type === 'youtube'
+                const isVid = type === 'video'
+                const isImg2 = type === 'image' || isBase64Img
+
+                const thumbnail = isYT
+                  ? getYouTubeThumbnail(finalUrl)
+                  : isImg2 ? finalUrl : null
+
+                const typeColor = isYT ? '#ff0000' : isVid ? '#7c3aed' : isUrl ? '#0ea5e9' : '#16a34a'
+                const typeBg = isYT ? '#fee2e2' : isVid ? '#f3f0ff' : isUrl ? '#e0f2fe' : '#dcfce7'
+                const typeLabel = isYT ? '▶ YouTube' : isVid ? '🎬 Video' : isImg2 ? '🖼 Image' : '🔗 Link'
+
+                return (
+                  <div key={`media-${index}-${mi}`} style={{
+                    borderRadius: 10, overflow: 'hidden',
+                    border: `1px solid ${t.border}`,
+                    backgroundColor: '#fff',
+                    boxShadow: t.shadow,
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                  }}
+                    onClick={() => setMediaPreview({ url: finalUrl, type })}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = t.shadowMd }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = t.shadow }}
+                  >
+                    {/* Thumbnail / Placeholder */}
+                    <div style={{
+                      width: '100%', height: 100, backgroundColor: '#f1f5f9',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      {thumbnail ? (
+                        <img src={thumbnail} alt={label}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={e => { e.target.style.display = 'none' }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: 32, opacity: 0.4 }}>
+                          {isVid ? '🎬' : '🔗'}
+                        </div>
+                      )}
+                      {/* Play overlay for videos/youtube */}
+                      {(isVid || isYT) && (
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'rgba(0,0,0,0.35)',
+                        }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.9)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <span style={{ fontSize: 16, marginLeft: 3 }}>▶</span>
+                          </div>
+                        </div>
+                      )}
+                      {/* Image zoom overlay */}
+                      {isImg2 && !isVid && !isYT && (
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          background: 'rgba(0,0,0,0)', transition: 'background 0.2s',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; const i = e.currentTarget.querySelector('.zoom-icon'); if(i) i.style.opacity='1' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)'; const i = e.currentTarget.querySelector('.zoom-icon'); if(i) i.style.opacity='0' }}
+                        >
+                          <ZoomIn className="zoom-icon" size={22} color="#fff" style={{ opacity: 0, transition: 'opacity 0.2s' }} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card footer */}
+                    <div style={{ padding: '8px 10px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                          fontSize: 10, fontWeight: 700, color: typeColor,
+                          backgroundColor: typeBg, borderRadius: 20,
+                          padding: '2px 8px', border: `1px solid ${typeColor}30`,
+                        }}>{typeLabel}</span>
+                        <ExternalLink size={11} color={t.textMuted}
+                          onClick={e => { e.stopPropagation(); window.open(finalUrl, '_blank') }}
+                          style={{ cursor: 'pointer', opacity: 0.6 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Scalar Info Fields ── */}
+        {scalarFields.length > 0 && (
+          <CRow className="g-2">
+            {scalarFields.map(([k, v], i) => renderField(k, v, `${index}-scalar-${i}`))}
+          </CRow>
+        )}
       </Accordion>
     )
   }
@@ -531,7 +848,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
         </CModalFooter>
       </CModal>
 
-      {/* ── Image Lightbox ── */}
+      {/* ── Image Lightbox (legacy) ── */}
       {!!preview && (
         <CModal visible={!!preview} onClose={() => setPreview(null)} size="lg">
           <CModalHeader style={{ backgroundColor: PRIMARY, padding: '14px 20px', border: 'none' }}>
@@ -545,6 +862,71 @@ export default function PatientViewModal({ visible, data, onClose }) {
               backgroundColor: '#fff', color: t.text, border: 'none', borderRadius: t.radiusSm,
               padding: '8px 22px', fontWeight: 700, cursor: 'pointer', fontSize: 13,
             }}>
+              Close
+            </button>
+          </CModalFooter>
+        </CModal>
+      )}
+
+      {/* ── Universal Media Lightbox ── */}
+      {!!mediaPreview && (
+        <CModal visible={!!mediaPreview} onClose={() => setMediaPreview(null)} size="xl" alignment="center">
+          <CModalHeader style={{ backgroundColor: '#0f172a', padding: '12px 20px', border: 'none' }}>
+            <CModalTitle style={{ fontSize: 14, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {mediaPreview.type === 'youtube' && <span style={{ color: '#ff4444' }}>▶ YouTube</span>}
+              {mediaPreview.type === 'video' && <span style={{ color: '#a78bfa' }}>🎬 Video</span>}
+              {mediaPreview.type === 'image' && <span style={{ color: '#38bdf8' }}>🖼 Image</span>}
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 400 }}>Preview</span>
+            </CModalTitle>
+          </CModalHeader>
+          <CModalBody style={{ backgroundColor: '#0f172a', textAlign: 'center', padding: '20px' }}>
+            {mediaPreview.type === 'youtube' && (
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 10, overflow: 'hidden' }}>
+                <iframe
+                  src={getYouTubeEmbedUrl(mediaPreview.url)}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="YouTube Preview"
+                />
+              </div>
+            )}
+            {mediaPreview.type === 'video' && (
+              <video
+                key={mediaPreview.url}
+                src={mediaPreview.url}
+                controls
+                autoPlay
+                style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 10, background: '#000' }}
+              />
+            )}
+            {mediaPreview.type === 'image' && (
+              <img
+                src={mediaPreview.url}
+                alt="preview"
+                style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: 10 }}
+              />
+            )}
+          </CModalBody>
+          <CModalFooter style={{ backgroundColor: '#0f172a', border: 'none', justifyContent: 'space-between', padding: '12px 20px' }}>
+            <button
+              onClick={() => window.open(mediaPreview.url, '_blank')}
+              style={{
+                backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid #334155',
+                borderRadius: t.radiusSm, padding: '7px 16px', fontWeight: 600, cursor: 'pointer',
+                fontSize: 12, display: 'flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              <ExternalLink size={12} /> Open in New Tab
+            </button>
+            <button
+              onClick={() => setMediaPreview(null)}
+              style={{
+                backgroundColor: '#fff', color: '#0f172a', border: 'none',
+                borderRadius: t.radiusSm, padding: '7px 22px', fontWeight: 700,
+                cursor: 'pointer', fontSize: 13,
+              }}
+            >
               Close
             </button>
           </CModalFooter>

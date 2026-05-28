@@ -893,7 +893,7 @@ const AttendanceTracker = () => {
                         <td style={styles.td}>{i + 1}</td>
                         <td style={styles.td}>
                           <div
-                            title={item.location || ""}
+                            title={item.activity || ""}
                             style={{
                               maxWidth: "180px",
                               overflow: "hidden",
@@ -904,7 +904,7 @@ const AttendanceTracker = () => {
                               cursor: "pointer",
                             }}
                           >
-                            {item.location || "—"}
+                            {item.activity || "—"}
                           </div>
                         </td>
                         <td style={{ ...styles.td, color: "#374151", fontSize: 12 }}>
@@ -913,7 +913,15 @@ const AttendanceTracker = () => {
                         <td style={styles.td}>
                           <span style={styles.badgeAmber}>{item.duration}</span>
                         </td>
-                        <td style={{ ...styles.td, fontSize: 11, color: "#6b7280", minWidth: 140 }}>
+                        <td style={{
+                          maxWidth: "180px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          fontSize: 11,
+                          color: "#6b7280",
+                          cursor: "pointer",
+                        }}>
                           {item.location || "—"}
                         </td>
                       </tr>

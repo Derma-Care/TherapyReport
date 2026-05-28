@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { CModal, CModalHeader, CModalBody, CCol, CRow, CButton } from '@coreui/react'
 import { COLORS } from '../../Constant/Themes'
+import { BASE_URL } from '../../API/BaseUrl'
 
 const SessionViewModal = ({ visible, data, onClose }) => {
   const [preview, setPreview] = useState(null)
@@ -36,6 +37,18 @@ const SessionViewModal = ({ visible, data, onClose }) => {
       return
     }
 
+    const getFileUrl = (str) => {
+      if (!str) return ''
+      if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('/') || str.startsWith('blob:')) {
+        return str
+      }
+      const isBase64 = str.includes(';base64,') || (str.length > 100 && !str.includes('/') && !str.includes('.'));
+      if (!isBase64) {
+        return `${BASE_URL}/viewFile/${str}`
+      }
+      return ''
+    }
+
     const activeUrls = []
 
     const resolveMediaUrl = (mediaPath, rawBase64, isVideo = false) => {
@@ -49,6 +62,8 @@ const SessionViewModal = ({ visible, data, onClose }) => {
         if (source.startsWith("http") || source.startsWith("blob:") || source.startsWith("data:")) {
           return source
         }
+        const fileUrl = getFileUrl(source)
+        if (fileUrl) return fileUrl
         try {
           const mimeType = isVideo ? "video/mp4" : "image/jpeg"
           const blob = base64ToBlob(source, mimeType)
@@ -73,7 +88,10 @@ const SessionViewModal = ({ visible, data, onClose }) => {
     setAfterVideoUrl(resolveMediaUrl(afterVid, data.afterVideo, true))
 
     if (data.consentPdfUrl) {
-      if (data.consentPdfUrl.startsWith("data:application/pdf;base64,") || !data.consentPdfUrl.startsWith("http")) {
+      const fileUrl = getFileUrl(data.consentPdfUrl)
+      if (fileUrl) {
+        setConsentPdfBlobUrl(fileUrl)
+      } else if (data.consentPdfUrl.startsWith("data:application/pdf;base64,") || !data.consentPdfUrl.startsWith("http")) {
         try {
           const blob = base64ToBlob(data.consentPdfUrl, "application/pdf")
           const url = URL.createObjectURL(blob)
@@ -101,10 +119,18 @@ const SessionViewModal = ({ visible, data, onClose }) => {
     }
   }, [data, visible])
 
-  const audioSrc =
-    data?.voiceRecord ||
-    data?.voiceRecordUrl ||
-    "";
+  const rawAudio = data?.voiceRecord || data?.voiceRecordUrl || "";
+  const audioSrc = (() => {
+    if (!rawAudio) return "";
+    if (rawAudio.startsWith("http://") || rawAudio.startsWith("https://") || rawAudio.startsWith("blob:") || rawAudio.startsWith("data:")) {
+      return rawAudio;
+    }
+    const isBase64 = rawAudio.includes(";base64,") || (rawAudio.length > 100 && !rawAudio.includes("/") && !rawAudio.includes("."));
+    if (!isBase64) {
+      return `${BASE_URL}/viewFile/${rawAudio}`;
+    }
+    return rawAudio;
+  })();
 
   return (
     <>
@@ -397,12 +423,12 @@ const SessionViewModal = ({ visible, data, onClose }) => {
               <br />
 
               {/* PDF Preview */}
-              <embed
+              {/* <embed
                 src={consentPdfBlobUrl}
                 type="application/pdf"
                 width="100%"
                 height="400px"
-              />
+              /> */}
 
               {/* Actions */}
               <div

@@ -12,6 +12,7 @@ import axios from "axios";
 import { wifiUrl } from "../../API/BaseUrl";
 import { showCustomToast } from "../../Utils/Toaster";
 import { COLORS } from "../../Constant/Themes";
+import { uploadFile } from "../../Utils/S3UploadService";
 
 const ConsentFormModal = ({ visible, onClose, onConsentGranted, patientName }) => {
   const canvasRef = useRef(null);
@@ -158,19 +159,12 @@ const ConsentFormModal = ({ visible, onClose, onConsentGranted, patientName }) =
         "FAST"
       );
 
-      // Output as Base64 Data URI
-      // const base64Pdf = doc.output("datauristring");
-      const base64Pdf = await new Promise((resolve) => {
-        const reader = new FileReader();
+      // Output as File to upload to S3
+      const pdfBlob = doc.output("blob");
+      const file = new File([pdfBlob], `${patientName || "Patient"}_Consent.pdf`, { type: "application/pdf" });
+      const fileKey = await uploadFile("consentPdf", file);
 
-        reader.onloadend = () => {
-          resolve(reader.result);
-        };
-
-        reader.readAsDataURL(doc.output("blob"));
-      });
-
-      onConsentGranted(base64Pdf);
+      onConsentGranted(fileKey);
       onClose();
       showCustomToast("Consent recorded successfully.", "success");
     } catch (err) {
