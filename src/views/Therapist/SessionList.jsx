@@ -491,6 +491,7 @@ const SessionList = () => {
                     </td>
                     <td style={S.td}>
                       <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
+                      <span style={{ color: T.muted, fontSize: "0.78rem", display: "flex", justifyContent: "center" }}>{s.paymentStatus}</span>
                     </td>
                     <td style={{ ...S.td, textAlign: "center" }}>
                       {!completed && (
@@ -959,18 +960,18 @@ const SessionList = () => {
                     </div>
                     <div style={{ fontSize: "0.95rem", color: T.navy, fontWeight: 600 }}>
                       {isVideo ? (
-                        <video 
+                        <video
                           key={String(val)}
-                          src={String(val)} 
-                          controls 
-                          playsInline 
-                          style={{ width: "100%", borderRadius: 8, marginTop: 8, maxHeight: 240, background: "#000" }} 
+                          src={String(val)}
+                          controls
+                          playsInline
+                          style={{ width: "100%", borderRadius: 8, marginTop: 8, maxHeight: 240, background: "#000" }}
                         />
                       ) : isImage ? (
-                        <img 
-                          src={String(val)} 
-                          alt={key} 
-                          style={{ width: "100%", borderRadius: 8, marginTop: 8, objectFit: "contain", maxHeight: 240, background: "#fafafa", border: "1px solid #e2e8f0" }} 
+                        <img
+                          src={String(val)}
+                          alt={key}
+                          style={{ width: "100%", borderRadius: 8, marginTop: 8, objectFit: "contain", maxHeight: 240, background: "#fafafa", border: "1px solid #e2e8f0" }}
                         />
                       ) : (
                         String(val)
