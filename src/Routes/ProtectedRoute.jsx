@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children }) => {
     selectedHospital &&
     Object.keys(selectedHospital).length > 0
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />
+  return isAuthenticated ? children : <Navigate to="/" replace />
 }
 
 export default ProtectedRoute

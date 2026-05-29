@@ -9,25 +9,25 @@ import './App.css'
 import { useHospital } from './Context/HospitalContext'
 
 function App() {
- const hospitalData = JSON.parse(localStorage.getItem("selectedClinic") || "{}");
+  const hospitalData = JSON.parse(localStorage.getItem("selectedClinic") || "{}");
 
   const hospitalLogo = hospitalData?.hospitalLogo
     ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
     : "";
   return (
-    <Suspense  fallback={
-        <div
-          style={{
-            height: "100vh",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            background: "#fff",
-            flexDirection: "column",
-          }}
-        >
-          <style>
-            {`
+    <Suspense fallback={
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#fff",
+          flexDirection: "column",
+        }}
+      >
+        <style>
+          {`
               @keyframes blinkHeart {
                 0% { transform: scale(1); opacity: 1; }
                 50% { transform: scale(1.15); opacity: 0.8; }
@@ -38,27 +38,27 @@ function App() {
                 animation: blinkHeart 1s infinite ease-in-out;
               }
             `}
-          </style>
+        </style>
 
-          {hospitalLogo && (
-            <img
-              src={hospitalLogo}
-              alt="Hospital Logo"
-              className="heart-loader"
-              style={{
-                width: "80px",
-                height: "80px",
-                objectFit: "contain",
-                marginBottom: "12px",
-              }}
-            />
-          )}
+        {hospitalLogo && (
+          <img
+            src={hospitalLogo}
+            alt="Hospital Logo"
+            className="heart-loader"
+            style={{
+              width: "80px",
+              height: "80px",
+              objectFit: "contain",
+              marginBottom: "12px",
+            }}
+          />
+        )}
 
-          {/* <h6 style={{ color: "var(--color-black)", margin: 0 }}>
+        {/* <h6 style={{ color: "var(--color-black)", margin: 0 }}>
             Loading...
           </h6> */}
-        </div>
-      }>
+      </div>
+    }>
       <Routes>
 
         {/* Public Route */}

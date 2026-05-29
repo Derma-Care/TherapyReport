@@ -19,7 +19,7 @@ const PublicRoute = ({ children }) => {
     selectedHospital &&
     Object.keys(selectedHospital).length > 0
 
-  return isAuthenticated ? <Navigate to="/" replace /> : children
+  return isAuthenticated ? <Navigate to="/therapist" replace /> : children
 }
 
 export default PublicRoute
