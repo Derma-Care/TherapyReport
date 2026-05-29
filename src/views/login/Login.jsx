@@ -109,7 +109,7 @@ const Login = () => {
                 .therapist-login-root * { box-sizing: border-box; }
 
                 .therapist-login-root {
-                    font-family: 'DM Sans', sans-serif;
+               
                     min-height: 100vh;
                     display: flex;
                     overflow: hidden;
@@ -234,7 +234,7 @@ const Login = () => {
 
                 /* Headline & subtext — staggered fade-up */
                 .left-headline {
-                    font-family: 'Syne', sans-serif;
+                  
                     font-size: 52px;
                     font-weight: 700;
                     line-height: 1.15;
@@ -268,7 +268,7 @@ const Login = () => {
                     animation: text-rise 0.7s ease 0.65s both;
                 }
                 .stat-number {
-                    font-family: 'Syne', sans-serif;
+                    
                     font-size: 28px;
                     font-weight: 700;
                     color: #0c447c;
@@ -311,7 +311,7 @@ const Login = () => {
                     animation: text-rise 0.7s ease 0.25s both;
                 }
                 .form-welcome { font-size:12px;font-weight:600;color:#185fa5;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 10px; }
-                .form-title { font-family:'Syne',sans-serif;font-size:30px;font-weight:700;color:#0c447c;margin:0 0 8px;line-height:1.2; }
+                .form-title {  font-size:30px;font-weight:700;color:#0c447c;margin:0 0 8px;line-height:1.2; }
                 .form-subtitle { font-size:14px;color:#888780;margin:0; }
 
                 .custom-input-wrapper { margin-bottom:20px; }
@@ -341,7 +341,7 @@ const Login = () => {
                 .custom-input-field {
                     flex:1;border:none;background:transparent;outline:none;
                     padding:13px 16px 13px 0;font-size:14px;
-                    font-family:'DM Sans',sans-serif;color:#0c447c;
+                   color:#0c447c;
                 }
                 .custom-input-field::placeholder { color:#b5d4f4; }
                 .custom-input-toggle { padding:0 14px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;color:#888780;transition:color 0.2s; }
@@ -378,7 +378,7 @@ const Login = () => {
                     color: white;
                     border: none;
                     border-radius: 12px;
-                    font-family: 'DM Sans', sans-serif;
+                  
                     font-size: 15px;
                     font-weight: 600;
                     cursor: pointer;
@@ -456,7 +456,7 @@ const Login = () => {
                         </defs>
                         <rect width="100%" height="100%" fill="url(#login-dot-pattern)" />
                     </svg>
-                    {[1,2,3,4,5,6].map(i => (
+                    {[1, 2, 3, 4, 5, 6].map(i => (
                         <div key={i} className={`login-particle login-particle-${i}`} />
                     ))}
                 </div>
@@ -511,7 +511,7 @@ const Login = () => {
                     <form onSubmit={handleClinicLogin} noValidate style={{ width: '100%' }}>
                         <div className="custom-input-wrapper">
                             <label className="custom-input-label">Username</label>
-                            <div className="custom-input-group" style={fieldErrors.userName ? { borderColor:'#ef4444', background:'#fff5f5' } : {}}>
+                            <div className="custom-input-group" style={fieldErrors.userName ? { borderColor: '#ef4444', background: '#fff5f5' } : {}}>
                                 <span className="custom-input-prefix">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
@@ -530,7 +530,7 @@ const Login = () => {
 
                         <div className="custom-input-wrapper">
                             <label className="custom-input-label">Password</label>
-                            <div className="custom-input-group" style={fieldErrors.password ? { borderColor:'#ef4444', background:'#fff5f5' } : {}}>
+                            <div className="custom-input-group" style={fieldErrors.password ? { borderColor: '#ef4444', background: '#fff5f5' } : {}}>
                                 <span className="custom-input-prefix">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />

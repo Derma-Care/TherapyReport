@@ -2,9 +2,9 @@ import React from 'react'
 import { CFooter } from '@coreui/react'
 
 const AppFooter = () => {
-    return (
-        <CFooter className="px-4">
-            {/* <div>
+  return (
+    <CFooter className="px-4">
+      {/* <div>
         <a href="#" target="_blank" rel="noopener noreferrer">
           SureCare
         </a>
@@ -16,8 +16,8 @@ const AppFooter = () => {
           SureCare &amp; Dashboard Template
         </a>
       </div> */}
-        </CFooter>
-    )
+    </CFooter>
+  )
 }
 
 export default React.memo(AppFooter)

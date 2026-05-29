@@ -41,7 +41,7 @@ const styles = {
         maxWidth: 960,
         margin: "0 auto",
         padding: "2rem 1rem",
-        fontFamily: "'Inter', system-ui, sans-serif",
+
     },
     statsGrid: {
         display: "grid",
@@ -174,7 +174,7 @@ const styles = {
         fontSize: 13,
         color: "#5c6370",
         cursor: "pointer",
-        fontFamily: "inherit",
+
     },
     btnSubmit: {
         backgroundColor: COLORS.primary,
@@ -189,7 +189,7 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: 6,
-        fontFamily: "inherit",
+
     },
     th: {
         fontSize: 11,
@@ -251,7 +251,7 @@ const styles = {
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
-        fontFamily: "inherit",
+
     },
     emptyState: {
         textAlign: "center",
@@ -282,7 +282,7 @@ const styles = {
         outline: "none",
         color: "#1a1d23",
         background: "#f8f9fa",
-        fontFamily: "inherit",
+
     },
     toastWrap: {
         position: "fixed",
@@ -303,7 +303,7 @@ const styles = {
         display: "flex",
         alignItems: "center",
         gap: 8,
-        fontFamily: "inherit",
+
         fontWeight: 500,
         transform: visible ? "translateY(0)" : "translateY(20px)",
         opacity: visible ? 1 : 0,

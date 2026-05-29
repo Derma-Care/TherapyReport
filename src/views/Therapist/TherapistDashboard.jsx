@@ -226,10 +226,10 @@ const TherapyDashboard = () => {
           </div>
 
           <CButton
-            style={{ backgroundColor: COLORS.primary, color: "white", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ backgroundColor: COLORS.primary, color: "white", display: "flex", justifyContent: "end", alignItems: "center", gap: 8 }}
             onClick={() => navigate('/therapist/attendance', { state: { clinicId, branchId, therapistId } })}
           >
-            <Clock size={16} /> Duty Logs
+            <Clock size={16} color="white" /> Duty Logs
           </CButton>
         </div>
 
@@ -443,7 +443,7 @@ const TherapyDashboard = () => {
           position: relative;
           z-index: 1;
           padding: 1.25rem;
-          font-family: 'DM Sans', sans-serif;
+        
           max-width: 960px;
           margin: 0 auto;
         }
@@ -458,7 +458,7 @@ const TherapyDashboard = () => {
           flex-wrap: wrap;
         }
         .td-page-title {
-          font-family: 'Syne', sans-serif;
+         
           font-size: 22px;
           font-weight: 700;
           color: #0c447c;
@@ -470,9 +470,9 @@ const TherapyDashboard = () => {
           margin: 0;
         }
         @media (max-width: 576px) {
-          .td-page { padding: 0.75rem; }
-          .td-page-header { flex-direction: column; align-items: stretch; }
-          .td-page-header .btn { width: 100%; }
+          
+          .td-page-header {display: flex;   justify-content: end }
+          
         }
 
         /* Main panel */
@@ -509,7 +509,7 @@ const TherapyDashboard = () => {
           background: #fff;
           cursor: pointer;
           transition: all 0.15s;
-          font-family: 'DM Sans', sans-serif;
+     
           white-space: nowrap;
           position: relative;
           bottom: -0.5px;
@@ -608,7 +608,7 @@ const TherapyDashboard = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: 'Syne', sans-serif;
+        
           font-size: 14px;
           font-weight: 700;
           flex-shrink: 0;
@@ -616,7 +616,7 @@ const TherapyDashboard = () => {
         }
         .td-patient-info { flex: 1; min-width: 160px; }
         .td-patient-name {
-          font-family: 'Syne', sans-serif;
+         
           font-size: 14px;
           font-weight: 600;
           color: #0c447c;
@@ -674,7 +674,7 @@ const TherapyDashboard = () => {
           cursor: pointer;
           transition: all 0.15s;
           border: 0.5px solid;
-          font-family: 'DM Sans', sans-serif;
+         
           white-space: nowrap;
         }
         .td-btn:disabled { opacity: 0.55; cursor: not-allowed; }

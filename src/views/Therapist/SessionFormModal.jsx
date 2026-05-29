@@ -86,7 +86,7 @@ const Textarea = ({ error, ...props }) => (
       width: '100%', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box',
       border: `1px solid ${error ? t.danger : t.border}`, borderRadius: t.radiusSm,
       outline: 'none', color: t.text, backgroundColor: '#fff', resize: 'vertical',
-      transition: 'border-color .15s', fontFamily: 'inherit',
+      transition: 'border-color .15s',
     }}
     onFocus={e => { e.target.style.borderColor = PRIMARY }}
     onBlur={e => { e.target.style.borderColor = error ? t.danger : t.border }}

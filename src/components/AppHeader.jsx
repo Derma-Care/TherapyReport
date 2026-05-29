@@ -103,7 +103,7 @@ const AppHeader = () => {
         }
         .therapist-id {
           font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px;
-          font-family: 'Courier New', monospace; letter-spacing: 0.03em;
+       letter-spacing: 0.03em;
         }
         .bell-btn {
           width: 38px; height: 38px; border-radius: 10px;
@@ -153,11 +153,11 @@ const AppHeader = () => {
         className={`mb-3 p-0 app-header-shell${scrolled ? ' scrolled' : ''}`}
         ref={headerRef}
       >
-        <CContainer fluid className="px-4 py-0" style={{ minHeight: 64, display: 'flex', alignItems: 'center' }}>
+        <CContainer fluid className=" py-0" style={{ minHeight: 64, display: 'flex', alignItems: 'center' }}>
 
           {/* ── DESKTOP ── */}
           <div className="d-none d-md-flex align-items-center w-100" style={{ gap: 0 }}>
-            
+
             {!isDashboard && (
               <button className="back-btn" onClick={() => navigate(-1)} title="Back">
                 <ArrowLeft size={18} />

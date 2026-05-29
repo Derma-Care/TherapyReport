@@ -41,7 +41,7 @@ const T = {
 
 const S = {
   /* Page */
-  page: (isMobile) => ({ minHeight: "100vh", padding: isMobile ? "0.75rem" : "1.5rem", fontFamily: "'Segoe UI', system-ui, sans-serif" }),
+  page: (isMobile) => ({ minHeight: "100vh", padding: isMobile ? "0.75rem" : "1.5rem", }),
 
   /* Patient card header */
   patientCard: {
@@ -126,7 +126,7 @@ const S = {
 
   /* Tracker box */
   trackerBox: { background: "#fff5f5", border: `1.5px solid ${T.danger}`, borderRadius: 10, padding: "0.75rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 140, boxShadow: "0 2px 8px rgba(220,38,38,0.1)" },
-  trackerTime: { color: T.danger, fontFamily: "monospace", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 },
+  trackerTime: { color: T.danger, fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 },
   trackerHint: { fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", letterSpacing: "0.02em" },
 
   /* Mobile card */
@@ -280,7 +280,7 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
       </CModalHeader>
       <CModalBody className="text-center py-4">
         {status !== "PREVIEW" && status !== "STOPPED" && (
-          <div style={{ fontSize: "2.5rem", fontFamily: "monospace", color: T.navy, fontWeight: 700, marginBottom: "1rem" }}>{timeStr}</div>
+          <div style={{ fontSize: "2.5rem", color: T.navy, fontWeight: 700, marginBottom: "1rem" }}>{timeStr}</div>
         )}
         {status === "IDLE" && <button style={S.btn("danger", "md")} onClick={start}>▶ Start Recording</button>}
         {(status === "RECORDING" || status === "PAUSED") && (
@@ -461,7 +461,7 @@ const SessionList = () => {
                 return (
                   <tr key={s.sessionId || i} style={{ background: i % 2 === 0 ? T.white : "#f8fafd" }}>
                     <td style={S.td}>
-                      <span style={{ fontFamily: "monospace", fontSize: "0.78rem", color: T.navy, fontWeight: 600 }}>{s.sessionId}</span>
+                      <span style={{ fontSize: "0.78rem", color: T.navy, fontWeight: 600 }}>{s.sessionId}</span>
                     </td>
                     <td style={S.td}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -570,7 +570,7 @@ const SessionList = () => {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Session ID</div>
-                    <div style={{ fontFamily: "monospace", fontSize: "0.85rem", color: T.navy, fontWeight: 700 }}>{s.sessionId}</div>
+                    <div style={{ fontSize: "0.85rem", color: T.navy, fontWeight: 700 }}>{s.sessionId}</div>
                   </div>
                   <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
                 </div>

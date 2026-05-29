@@ -12,25 +12,25 @@ import { FileText, X, ZoomIn, ExternalLink, ChevronDown, ChevronUp } from "lucid
 import { BASE_URL } from "../../API/BaseUrl"
 
 /* ─── Design tokens — matches AppointmentDetails / DoctorDetailsPage ─── */
-const PRIMARY      = '#1B4F8A'
+const PRIMARY = '#1B4F8A'
 const PRIMARY_DARK = '#143d6e'
 const t = {
-  primary:     PRIMARY,
+  primary: PRIMARY,
   primaryDark: PRIMARY_DARK,
-  text:        '#1e293b',
-  textMuted:   '#64748b',
-  textLight:   '#94a3b8',
-  surface:     '#f8fafc',
-  surfaceAlt:  '#f1f5f9',
-  border:      '#e2e8f0',
-  danger:      '#dc2626',
-  success:     '#16a34a',
-  warning:     '#d97706',
-  radius:      '10px',
-  radiusSm:    '6px',
-  shadow:      '0 1px 3px rgba(0,0,0,0.07)',
-  shadowMd:    '0 4px 12px rgba(0,0,0,0.08)',
-  shadowLg:    '0 8px 24px rgba(0,0,0,0.10)',
+  text: '#1e293b',
+  textMuted: '#64748b',
+  textLight: '#94a3b8',
+  surface: '#f8fafc',
+  surfaceAlt: '#f1f5f9',
+  border: '#e2e8f0',
+  danger: '#dc2626',
+  success: '#16a34a',
+  warning: '#d97706',
+  radius: '10px',
+  radiusSm: '6px',
+  shadow: '0 1px 3px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+  shadowLg: '0 8px 24px rgba(0,0,0,0.10)',
 }
 
 /* ─── Helpers ─── */
@@ -46,7 +46,7 @@ const coerceValue = (v) => {
 const isImgString = (str) =>
   typeof str === "string" &&
   (str.startsWith("/9j/") || str.startsWith("iVBOR") ||
-   str.startsWith("R0lGOD") || str.startsWith("data:image"))
+    str.startsWith("R0lGOD") || str.startsWith("data:image"))
 
 const isImgField = (key, val) => {
   if (typeof val !== "string" || !val) return false;
@@ -117,24 +117,24 @@ const getYouTubeThumbnail = (url) => {
   return videoId ? `https://img.youtube.com/vi/${videoId}/0.jpg` : "";
 };
 
-const HIDDEN = ["payment","paymentinfo","amount","paidamount","balanceamount",
-  "totalamount","discount","price","fee","cost"]
+const HIDDEN = ["payment", "paymentinfo", "amount", "paidamount", "balanceamount",
+  "totalamount", "discount", "price", "fee", "cost"]
 const shouldHide = (key) => { const k = key?.toLowerCase(); return HIDDEN.some(h => k?.includes(h)) }
 
 /* ─── Section config ─── */
 const SECTION_CFG = {
-  "Main Details":   { color: PRIMARY,     icon: '🏥' },
-  "Patient Info":   { color: '#0e7490',   icon: '👤' },
-  "Complaints":     { color: '#b91c1c',   icon: '📋' },
-  "Reports":        { color: '#1d4ed8',   icon: '📊' },
-  "Assessment":     { color: '#15803d',   icon: '🔍' },
-  "Diagnosis":      { color: '#92400e',   icon: '🩺' },
-  "Treatment Plan": { color: '#7c3aed',   icon: '💊' },
-  "Home Exercise":  { color: '#065f46',   icon: '🏃' },
-  "Questions":      { color: '#6d28d9',   icon: '❓' },
-  "Exercise Plan":  { color: '#0369a1',   icon: '📝' },
-  "Follow Up":      { color: '#b45309',   icon: '📅' },
-  "Home Advice":    { color: '#166534',   icon: '🏠' },
+  "Main Details": { color: PRIMARY, icon: '🏥' },
+  "Patient Info": { color: '#0e7490', icon: '👤' },
+  "Complaints": { color: '#b91c1c', icon: '📋' },
+  "Reports": { color: '#1d4ed8', icon: '📊' },
+  "Assessment": { color: '#15803d', icon: '🔍' },
+  "Diagnosis": { color: '#92400e', icon: '🩺' },
+  "Treatment Plan": { color: '#7c3aed', icon: '💊' },
+  "Home Exercise": { color: '#065f46', icon: '🏃' },
+  "Questions": { color: '#6d28d9', icon: '❓' },
+  "Exercise Plan": { color: '#0369a1', icon: '📝' },
+  "Follow Up": { color: '#b45309', icon: '📅' },
+  "Home Advice": { color: '#166534', icon: '🏠' },
 }
 
 /* ─── Status badge ─── */
@@ -142,9 +142,9 @@ const StatusBadge = ({ value }) => {
   const v = String(value).toLowerCase()
   const map = {
     completed: { bg: '#dcfce7', color: t.success, dot: t.success },
-    active:    { bg: '#dbeafe', color: PRIMARY,    dot: PRIMARY },
-    pending:   { bg: '#fef3c7', color: t.warning,  dot: t.warning },
-    cancelled: { bg: '#fee2e2', color: t.danger,   dot: t.danger },
+    active: { bg: '#dbeafe', color: PRIMARY, dot: PRIMARY },
+    pending: { bg: '#fef3c7', color: t.warning, dot: t.warning },
+    cancelled: { bg: '#fee2e2', color: t.danger, dot: t.danger },
   }
   const s = map[v] || { bg: t.surface, color: t.textMuted, dot: t.textMuted }
   return (
@@ -252,31 +252,135 @@ export default function PatientViewModal({ visible, data, onClose }) {
     if (!key || shouldHide(key)) return null
     if (val === null || val === undefined || val === "") return null
 
-    // IMAGE
-    if (isImgField(key, val)) {
-      const src = resolveImg(val)
-      return (
-        <CCol md={4} key={i} className="mb-3">
-          <Tile label={labelify(key)}>
-            <div style={{ position: 'relative', cursor: 'pointer', borderRadius: t.radiusSm, overflow: 'hidden' }}
-              onClick={() => setPreview(src)}>
-              <img src={src} alt={key} style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+    // MEDIA (Image, Video, URL, PDF, S3 Key)
+    if (typeof val === 'string') {
+      let resolved = val
+      try {
+        if (!resolved.startsWith('http') && !resolved.startsWith('data:') && !resolved.startsWith('/')) {
+          const dec = atob(resolved)
+          if (dec.startsWith('http://') || dec.startsWith('https://')) resolved = dec
+        }
+      } catch { }
+
+      const isUrl = resolved.startsWith('http://') || resolved.startsWith('https://') || resolved.startsWith('www.')
+      const isBase64Img = isImgString(resolved)
+
+      const fieldLower = (key || '').toLowerCase()
+      const isMediaKey = fieldLower.includes('image') || fieldLower.includes('video') ||
+        fieldLower.includes('photo') || fieldLower.includes('media') ||
+        fieldLower.includes('url') || fieldLower.includes('link') ||
+        fieldLower.includes('file') || fieldLower.includes('pdf') ||
+        fieldLower.includes('thumbnail') || fieldLower.includes('attachment') ||
+        fieldLower.includes('record') || fieldLower.includes('audio')
+
+      const hasKnownExt = /\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mov|ogg|mp3|wav|pdf)$/i.test(resolved)
+      const isS3Key = !isUrl && !isBase64Img && resolved.length > 8 &&
+        !resolved.includes(' ') && (isMediaKey || hasKnownExt)
+
+      if (isUrl || isBase64Img || isS3Key) {
+        let finalUrl = resolved
+        if (isBase64Img) finalUrl = resolveImg(resolved)
+        else if (isS3Key && !isUrl) finalUrl = `${BASE_URL}/viewFile/${resolved}`
+
+        const type = getPreviewType(finalUrl)
+        const isPdf = /\.pdf(\?|$)/i.test(finalUrl) || fieldLower.includes('pdf')
+        const previewType = isPdf ? 'pdf' : type
+        const isYT = previewType === 'youtube'
+        const isVid = previewType === 'video'
+        const isImg2 = previewType === 'image' || isBase64Img
+
+        const thumbnail = isYT
+          ? getYouTubeThumbnail(finalUrl)
+          : isImg2 ? finalUrl : null
+
+        const typeColor = isPdf ? '#dc2626' : isYT ? '#ff0000' : isVid ? '#7c3aed' : isUrl ? '#0ea5e9' : '#16a34a'
+        const typeBg = isPdf ? '#fee2e2' : isYT ? '#fee2e2' : isVid ? '#f3f0ff' : isUrl ? '#e0f2fe' : '#dcfce7'
+        const typeLabel = isPdf ? '📄 PDF' : isYT ? '▶ YouTube' : isVid ? '🎬 Video' : isImg2 ? '🖼 Image' : '🔗 Link'
+
+        const handleClick = () => {
+          if (isPdf || (!isYT && !isVid && !isImg2)) {
+            window.open(finalUrl, '_blank')
+          } else {
+            setMediaPreview({ url: finalUrl, type: previewType })
+          }
+        }
+
+        return (
+          <CCol xs={12} sm={6} md={4} key={i} className="mb-3">
+            <Tile label={labelify(key)}>
               <div style={{
-                position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background .2s',
+                borderRadius: 10, overflow: 'hidden',
+                border: `1px solid ${t.border}`,
+                backgroundColor: '#fff',
+                boxShadow: t.shadow,
+                cursor: 'pointer',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                marginTop: 6
               }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.45)'; e.currentTarget.querySelector('span').style.opacity = '1' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0)'; e.currentTarget.querySelector('span').style.opacity = '0' }}
+                onClick={handleClick}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = t.shadowMd }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = t.shadow }}
               >
-                <span style={{ opacity: 0, color: '#fff', fontSize: 11, fontWeight: 700, transition: 'opacity .2s', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <ZoomIn size={13} /> Preview
-                </span>
+                <div style={{
+                  width: '100%', height: 110, backgroundColor: isPdf ? '#fff1f2' : '#f1f5f9',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  {thumbnail && !isPdf ? (
+                    <img src={thumbnail} alt={labelify(key)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={e => { e.target.style.display = 'none' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: 32, opacity: 0.4 }}>
+                      {isPdf ? '📄' : isVid ? '🎬' : '🔗'}
+                    </div>
+                  )}
+                  {(isVid || isYT) && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.35)',
+                    }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.9)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <span style={{ fontSize: 16, marginLeft: 3 }}>▶</span>
+                      </div>
+                    </div>
+                  )}
+                  {isImg2 && !isVid && !isYT && !isPdf && (
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0)', transition: 'background 0.2s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; const i = e.currentTarget.querySelector('.zoom-icon'); if (i) i.style.opacity = '1' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)'; const i = e.currentTarget.querySelector('.zoom-icon'); if (i) i.style.opacity = '0' }}
+                    >
+                      <ZoomIn className="zoom-icon" size={22} color="#fff" style={{ opacity: 0, transition: 'opacity 0.2s' }} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                    fontSize: 10, fontWeight: 700, color: typeColor,
+                    backgroundColor: typeBg, borderRadius: 20,
+                    padding: '2px 8px', border: `1px solid ${typeColor}30`,
+                  }}>{typeLabel}</span>
+                  <ExternalLink size={11} color={t.textMuted}
+                    onClick={e => { e.stopPropagation(); window.open(finalUrl, '_blank') }}
+                    style={{ cursor: 'pointer', opacity: 0.6 }}
+                  />
+                </div>
               </div>
-            </div>
-          </Tile>
-        </CCol>
-      )
+            </Tile>
+          </CCol>
+        )
+      }
     }
 
     // ARRAY
@@ -448,11 +552,11 @@ export default function PatientViewModal({ visible, data, onClose }) {
     const display = coerceValue(val)
     if (!display) return null
     const isStatus = ['status', 'overallstatus', 'state'].some(s => key?.toLowerCase().includes(s))
-    const isId     = key?.toLowerCase().includes('id')
-    const isDate   = ['createdat', 'updatedat', 'date', 'time'].some(s => key?.toLowerCase().includes(s))
+    const isId = key?.toLowerCase().includes('id')
+    const isDate = ['createdat', 'updatedat', 'date', 'time'].some(s => key?.toLowerCase().includes(s))
 
     return (
-      <CCol md={4} key={i} className="mb-3">
+      <CCol xs={12} sm={6} md={4} key={i} className="mb-3">
         <Tile label={labelify(key)}>
           {isStatus ? (
             <StatusBadge value={display} />
@@ -461,7 +565,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
               fontSize: isId ? 11 : 13,
               color: isId || isDate ? t.textMuted : t.text,
               fontWeight: isId ? 500 : 600,
-              fontFamily: isId ? "'Courier New',monospace" : 'inherit',
+
               wordBreak: 'break-word',
             }}>
               {display}
@@ -508,7 +612,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
           const dec = atob(resolved)
           if (dec.startsWith('http://') || dec.startsWith('https://')) resolved = dec
         }
-      } catch {}
+      } catch { }
 
       const isUrl = resolved.startsWith('http://') || resolved.startsWith('https://') || resolved.startsWith('www.')
       const isBase64Img = isImgString(resolved)
@@ -549,7 +653,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
               {mediaFields.map(({ key: k, resolved, isUrl, isBase64Img, isS3Key }, mi) => {
                 let label = labelify(k)
-                try { label = labelify(atob(k)) } catch {}
+                try { label = labelify(atob(k)) } catch { }
 
                 // Resolve final URL
                 let finalUrl = resolved
@@ -621,8 +725,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
                           background: 'rgba(0,0,0,0)', transition: 'background 0.2s',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; const i = e.currentTarget.querySelector('.zoom-icon'); if(i) i.style.opacity='1' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)'; const i = e.currentTarget.querySelector('.zoom-icon'); if(i) i.style.opacity='0' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; const i = e.currentTarget.querySelector('.zoom-icon'); if (i) i.style.opacity = '1' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)'; const i = e.currentTarget.querySelector('.zoom-icon'); if (i) i.style.opacity = '0' }}
                         >
                           <ZoomIn className="zoom-icon" size={22} color="#fff" style={{ opacity: 0, transition: 'opacity 0.2s' }} />
                         </div>
@@ -709,7 +813,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
                 {record?.patientInfo?.name || record?.patientInfo?.patientName || 'Patient Details'}
               </CModalTitle>
               {record?.bookingId && (
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 1, fontFamily: "'Courier New',monospace", letterSpacing: '0.04em' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 1, letterSpacing: '0.04em' }}>
                   #{record.bookingId}
                 </div>
               )}
@@ -733,7 +837,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
 
           {/* Each section is wrapped in a white card */}
           {[
-            { title: 'Main Details', obj: {
+            {
+              title: 'Main Details', obj: {
                 therapistRecordId: record?.therapistRecordId,
                 bookingId: record?.bookingId,
                 clinicId: record?.clinicId,
@@ -743,11 +848,11 @@ export default function PatientViewModal({ visible, data, onClose }) {
                 updatedAt: record?.updatedAt,
               }
             },
-            { title: 'Patient Info',   obj: record?.patientInfo },
-            { title: 'Complaints',     obj: record?.complaints },
-            { title: 'Reports',        obj: record?.reports },
-            { title: 'Assessment',     obj: record?.assessment },
-            { title: 'Diagnosis',      obj: record?.diagnosis },
+            { title: 'Patient Info', obj: record?.patientInfo },
+            { title: 'Complaints', obj: record?.complaints },
+            { title: 'Reports', obj: record?.reports },
+            { title: 'Assessment', obj: record?.assessment },
+            { title: 'Diagnosis', obj: record?.diagnosis },
             { title: 'Treatment Plan', obj: record?.treatmentPlan },
           ].map(({ title, obj }) => {
             if (!obj) return null
@@ -763,13 +868,18 @@ export default function PatientViewModal({ visible, data, onClose }) {
           })}
 
           {/* Home Exercises */}
-          {record?.exercisePlan?.exercises?.length > 0 && (
-            <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-              <SectionCard title="Home Exercise">
-                {record.exercisePlan.exercises.map((item, index) => renderExerciseItem(item, index))}
-              </SectionCard>
-            </div>
-          )}
+          {(record?.exercisePlan?.exercises?.length > 0 || record?.exercisePlan?.homeExercises?.length > 0) && (() => {
+            const exercisesList = record?.exercisePlan?.exercises?.length > 0 
+                ? record.exercisePlan.exercises 
+                : record.exercisePlan.homeExercises;
+            return (
+              <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
+                <SectionCard title="Home Exercise">
+                  {exercisesList.map((item, index) => renderExerciseItem(item, index))}
+                </SectionCard>
+              </div>
+            )
+          })()}
 
           {/* Questions */}
           {record?.questions?.length > 0 && (
@@ -788,7 +898,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
 
           {/* Exercise Plan (non-exercises fields) */}
           {record?.exercisePlan && (() => {
-            const obj = Object.fromEntries(Object.entries(record.exercisePlan).filter(([k]) => k !== 'exercises'))
+            const obj = Object.fromEntries(Object.entries(record.exercisePlan).filter(([k]) => k !== 'exercises' && k !== 'homeExercises'))
             const fields = Object.entries(obj).map(([k, v], i) => renderField(k, v, i))
             if (!fields.some(Boolean)) return null
             return (
