@@ -134,7 +134,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 
   return (
     <>
-      <CModal visible={visible} onClose={onClose} size="lg" backdrop="static" className='custom-modal' scrollable={true}>
+      <CModal visible={visible} onClose={onClose} backdrop="static" className='custom-modal' scrollable={true}>
         <CModalHeader closeButton style={{ backgroundColor: COLORS.primary, color: "white" }} className="text-white">Session Details</CModalHeader>
 
         <CModalBody>
@@ -145,7 +145,7 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           <CRow className="mb-3" style={{ color: COLORS.primary }}>
             {[
               { label: "Patient", value: data.patientName },
-              { label: "Therapy", value: data.therapy },
+              // { label: "Therapy", value: data.therapy },
               { label: "Date", value: data.completedDate },
               { label: "Time", value: data.completedTime },
               { label: "Patient ID", value: data.patientId },
@@ -179,133 +179,25 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           <h6 className="section-title" style={{ color: COLORS.primary }}>Session Details</h6>
 
           <CRow className="g-3 mt-1">
-            <CCol md={6}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "12px",
-                  height: "100%",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Pain Before
-                </div>
-                <div style={{ fontSize: "15px", fontWeight: "500" }}>
-                  {data.painBefore || "-"}
-                </div>
-              </div>
-            </CCol>
 
-            <CCol md={6}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "12px",
-                  height: "100%",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Pain After
+            {[
+              { label: "Pain Before", value: data.painBefore || "-" },
+              { label: "Pain After", value: data.painAfter || "-" },
+              { label: "Result", value: data.result },
+              { label: "Duration", value: data.duration },
+              { label: "Next Plan", value: data.nextPlan },
+              { label: "Booking ID", value: data.bookingId },
+              { label: "Therapist ID", value: data.therapistId },
+              { label: "Session ID", value: data.sessionId },
+            ].map((item, i) => (
+              <CCol md={6} key={i}>
+                <div className="info-box">
+                  <span className="label" style={{ color: COLORS.primary }}>{item.label}</span>
+                  <span className="value" style={{ color: COLORS.primary }}>{item.value || "-"}</span>
                 </div>
-                <div style={{ fontSize: "15px", fontWeight: "500" }}>
-                  {data.painAfter || "-"}
-                </div>
-              </div>
-            </CCol>
+              </CCol>
+            ))}
 
-            <CCol md={6}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "12px",
-                  height: "100%",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: COLORS.primary,
-                    fontWeight: "600",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Result
-                </div>
-                <div style={{ fontSize: "15px", fontWeight: "500" }}>
-                  {data.result || "-"}
-                </div>
-              </div>
-            </CCol>
-
-            <CCol md={6}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "10px",
-                  color: COLORS.primary,
-                  padding: "12px",
-                  height: "100%",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: COLORS.primary,
-                    fontWeight: "600",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Duration
-                </div>
-                <div style={{ fontSize: "15px", fontWeight: "500" }}>
-                  {data.duration || "-"}
-                </div>
-              </div>
-            </CCol>
-
-            <CCol md={12}>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "12px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "#64748b",
-                    fontWeight: "600",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Next Plan
-                </div>
-                <div style={{ fontSize: "15px", fontWeight: "500", color: COLORS.primary }}>
-                  {data.nextPlan || "-"}
-                </div>
-              </div>
-            </CCol>
           </CRow>
 
           {/* 🔷 MEDIA */}
@@ -314,17 +206,25 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           <CRow>
             <CRow className="g-3">
 
-              {/* No Sets Completed */}
-              <CCol md={6}>
-                <strong>No Sets Completed:</strong>
-                <div>{data?.setsDone || "-"}</div>
-              </CCol>
+              {[
+                { label: "No Sets Completed", value: data?.setsDone || "-" },
+                { label: "Repetition Done", value: data.repetationDone || "-" },
+                // { label: "Result", value: data.result },
+                // { label: "Duration", value: data.duration },
+                // { label: "Next Plan", value: data.nextPlan },
+                // { label: "Booking ID", value: data.bookingId },
+                // { label: "Therapist ID", value: data.therapistId },
+                // { label: "Session ID", value: data.sessionId },
+              ].map((item, i) => (
+                <CCol md={6} key={i}>
+                  <div className="info-box">
+                    <span className="label" style={{ color: COLORS.primary }}>{item.label}</span>
+                    <span className="value" style={{ color: COLORS.primary }}>{item.value || "-"}</span>
+                  </div>
+                </CCol>
+              ))}
 
-              {/* Repetition Done */}
-              <CCol md={6}>
-                <strong>Repetition Done:</strong>
-                <div>{data?.repetationDone || "-"}</div>
-              </CCol>
+
 
               {/* Audio */}
               <CCol md={12} className='mt-5'>
@@ -406,62 +306,74 @@ const SessionViewModal = ({ visible, data, onClose }) => {
 
 
           {consentPdfBlobUrl && (
-
-            <div
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                padding: "12px",
-                marginTop: "10px",
-                background: "#f8fafc",
-              }}
-            >
-              <hr />
-
-              Consent Form PDF
-
-              <br />
-
-              {/* PDF Preview */}
-              {/* <embed
-                src={consentPdfBlobUrl}
-                type="application/pdf"
-                width="100%"
-                height="400px"
-              /> */}
-
-              {/* Actions */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  justifyContent: "flex-end",
-                  flexWrap: "wrap",
-                }}
-              >
-
-                <CButton
-                  color="primary"
-                  variant="outline"
-                  onClick={() =>
-                    window.open(consentPdfBlobUrl, "_blank")
-                  }
-                >
-                  View PDF
-                </CButton>
-
-                <a
-                  href={consentPdfBlobUrl}
-                  download="consent-form.pdf"
-                  style={{ textDecoration: "none" }}
-                >
-                  <CButton color="success">
-                    Download PDF
-                  </CButton>
-                </a>
-
+            <div className="consent-pdf-card">
+              {/* ── Card header ── */}
+              <div className="consent-pdf-header">
+                <div className="consent-pdf-icon-wrap">
+                  {/* PDF icon SVG */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                </div>
+                <div className="consent-pdf-title-wrap">
+                  <span className="consent-pdf-title">Consent Form</span>
+                  <span className="consent-pdf-badge">PDF</span>
+                </div>
+                <div className="consent-pdf-actions">
+                  <button
+                    className="consent-btn consent-btn-outline"
+                    onClick={() => window.open(consentPdfBlobUrl, "_blank")}
+                    title="Open PDF in new tab"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    {/* View */}
+                  </button>
+                  <a
+                    href={consentPdfBlobUrl}
+                    download="consent-form.pdf"
+                    className="consent-btn consent-btn-primary "
+                    title="Download PDF"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5 }}>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {/* Download */}
+                  </a>
+                </div>
               </div>
 
+              {/* ── Inline preview (desktop only — hidden on mobile) ── */}
+              <div className="consent-pdf-preview-wrap">
+                <iframe
+                  src={consentPdfBlobUrl}
+                  title="Consent Form PDF"
+                  className="consent-pdf-iframe"
+                />
+              </div>
+
+              {/* ── Mobile tap-to-open hint ── */}
+              <div
+                className="consent-pdf-mobile-hint"
+                onClick={() => window.open(consentPdfBlobUrl, "_blank")}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <span className="consent-pdf-hint-text">Tap to open the consent PDF</span>
+              </div>
             </div>
           )}
 
@@ -655,6 +567,144 @@ const SessionViewModal = ({ visible, data, onClose }) => {
           }
 
           /* Mobile Responsive */
+          /* ── Consent PDF card ── */
+          .consent-pdf-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          }
+
+          .consent-pdf-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            background: #fef2f2;
+            border-bottom: 1px solid #fecaca;
+            flex-wrap: wrap;
+          }
+
+          .consent-pdf-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #fee2e2;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .consent-pdf-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+          }
+
+          .consent-pdf-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1d23;
+            white-space: nowrap;
+          }
+
+          .consent-pdf-badge {
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 99px;
+          }
+
+          .consent-pdf-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+          }
+
+          .consent-btn {
+            display: inline-flex;
+            align-items: center;
+            height: 32px;
+            padding: 0 13px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+          }
+
+          .consent-btn-outline {
+            background: #fff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+          }
+          .consent-btn-outline:hover {
+            background: #f3f4f6;
+          }
+
+          .consent-btn-primary {
+            background: #dc2626;
+            border: 1px solid transparent;
+            color: #fff;
+          }
+          .consent-btn-primary:hover {
+            background: #b91c1c;
+          }
+
+          /* Desktop: show iframe, hide mobile hint */
+          .consent-pdf-preview-wrap {
+            display: block;
+            padding: 0;
+          }
+          .consent-pdf-iframe {
+            width: 100%;
+            height: 420px;
+            border: none;
+            display: block;
+          }
+          .consent-pdf-mobile-hint {
+            display: none;
+          }
+
+          /* Mobile: hide iframe, show tap hint */
+          @media (max-width: 576px) {
+            .consent-pdf-preview-wrap {
+              display: none !important;
+            }
+            .consent-pdf-mobile-hint {
+              display: flex !important;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              padding: 28px 16px;
+              background: #fef2f2;
+              cursor: pointer;
+              text-align: center;
+            }
+            .consent-pdf-hint-text {
+              font-size: 13px;
+              color: #dc2626;
+              font-weight: 500;
+            }
+            .consent-pdf-header {
+              padding: 12px 14px;
+            }
+          }
+
           @media (max-width: 768px) {
             .section-title {
               font-size: 16px;

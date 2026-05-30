@@ -34,6 +34,29 @@ import { COLORS } from "../../Constant/Themes"
 import { uploadFile } from "../../Utils/S3UploadService"
 import { BASE_URL } from "../../API/BaseUrl"
 
+// ─── Injected responsive CSS ─────────────────────────────────────────────────
+const RESPONSIVE_CSS = `
+  @media (max-width: 576px) {
+    .cert-form-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .cert-card-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 10px !important;
+    }
+    .cert-search-wrap {
+      width: 100% !important;
+    }
+    .cert-table-wrap { display: none !important; }
+    .cert-mobile-list { display: flex !important; }
+  }
+  @media (min-width: 577px) {
+    .cert-table-wrap { display: block !important; }
+    .cert-mobile-list { display: none !important; }
+  }
+`
+
 // ─── Inline styles ────────────────────────────────────────────────────────────
 
 const styles = {
@@ -98,6 +121,57 @@ const styles = {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 16,
+    },
+    mobileCertCard: {
+        border: "0.5px solid #e4e6ea",
+        borderRadius: 10,
+        padding: "14px 16px",
+        background: "#fff",
+        marginBottom: 10,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+    },
+    mobileCertRow: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 8,
+    },
+    mobileCertLabel: {
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: "0.07em",
+        textTransform: "uppercase",
+        color: "#8b929a",
+        minWidth: 90,
+        flexShrink: 0,
+    },
+    mobileCertValue: {
+        fontSize: 13,
+        color: "#1a1d23",
+        fontWeight: 500,
+        textAlign: "right",
+        flex: 1,
+    },
+    mobileCertMuted: {
+        fontSize: 12,
+        color: "#5c6370",
+        textAlign: "right",
+        flex: 1,
+    },
+    mobileCertIndex: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 22,
+        height: 22,
+        borderRadius: "50%",
+        background: "#f0f4ff",
+        color: "#2563eb",
+        fontSize: 11,
+        fontWeight: 700,
+        flexShrink: 0,
     },
     label: {
         fontSize: 12,
@@ -523,6 +597,8 @@ export default function TherapistCertification() {
 
     return (
         <div style={styles.page}>
+            {/* Injected responsive CSS */}
+            <style>{RESPONSIVE_CSS}</style>
 
             {/* Stats */}
             {/* <div style={styles.statsGrid}>
@@ -542,7 +618,7 @@ export default function TherapistCertification() {
                 </div>
                 <div style={{ padding: "20px" }}>
                     <CForm onSubmit={handleSubmit}>
-                        <div style={styles.formGrid}>
+                        <div style={styles.formGrid} className="cert-form-grid">
 
                             <div>
                                 <label style={styles.label}>Certification name</label>
@@ -631,13 +707,13 @@ export default function TherapistCertification() {
 
             {/* Certifications Table */}
             <div style={styles.card}>
-                <div style={styles.cardHeader}>
+                <div style={styles.cardHeader} className="cert-card-header">
                     <div>
                         <p style={styles.cardTitle}>Uploaded certifications</p>
                         <p style={styles.cardSub}>All documents submitted for this therapist</p>
                     </div>
                     {certifications.length > 0 && (
-                        <div style={styles.searchWrap}>
+                        <div style={styles.searchWrap} className="cert-search-wrap">
                             <span style={styles.searchIcon}>
                                 <CIcon icon={cilSearch} size="sm" />
                             </span>
@@ -650,7 +726,8 @@ export default function TherapistCertification() {
                         </div>
                     )}
                 </div>
-                <div style={{ overflowX: "auto" }}>
+                {/* ── Desktop table ── */}
+                <div style={{ overflowX: "auto" }} className="cert-table-wrap">
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
                             <tr>
@@ -658,14 +735,13 @@ export default function TherapistCertification() {
                                 <th style={styles.th}>Certification name</th>
                                 <th style={styles.th}>Issuing authority</th>
                                 <th style={{ ...styles.th, width: 120 }}>Upload date</th>
-                                {/* <th style={{ ...styles.th, width: 100 }}>Status</th> */}
                                 <th style={{ ...styles.th, width: 80 }}>File</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} style={styles.emptyState}>
+                                    <td colSpan={5} style={styles.emptyState}>
                                         <div>
                                             <CIcon icon={cilFolderOpen} size="xl" style={{ color: "#d1d5db", marginBottom: 8, display: "block", margin: "0 auto 8px" }} />
                                             {search ? "No results match your search" : "No certifications uploaded yet"}
@@ -688,19 +764,6 @@ export default function TherapistCertification() {
                                         <td style={styles.tdMuted}>
                                             {formatDateTime(item.uploadDateTime || item.createdAt)}
                                         </td>
-                                        {/* <td style={styles.td}>
-                                            {(item.status || 'pending') === "verified" ? (
-                                                <span style={styles.badgeVerified}>
-                                                    <CIcon icon={cilCheckCircle} size="sm" />
-                                                    Verified
-                                                </span>
-                                            ) : (
-                                                <span style={styles.badgePending}>
-                                                    <CIcon icon={cilClock} size="sm" />
-                                                    Pending
-                                                </span>
-                                            )}
-                                        </td> */}
                                         <td style={styles.td}>
                                             <button
                                                 style={styles.btnView}
@@ -718,6 +781,56 @@ export default function TherapistCertification() {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* ── Mobile card list ── */}
+                <div
+                    className="cert-mobile-list"
+                    style={{ flexDirection: "column", padding: "12px 14px", gap: 10 }}
+                >
+                    {filtered.length === 0 ? (
+                        <div style={styles.emptyState}>
+                            <CIcon icon={cilFolderOpen} size="xl" style={{ color: "#d1d5db", display: "block", margin: "0 auto 8px" }} />
+                            {search ? "No results match your search" : "No certifications uploaded yet"}
+                        </div>
+                    ) : (
+                        filtered.map((item, index) => (
+                            <div key={index} style={styles.mobileCertCard}>
+                                {/* Header row: index badge + cert name + view btn */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <span style={styles.mobileCertIndex}>{index + 1}</span>
+                                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1a1d23", lineHeight: 1.3 }}>
+                                        {item.certificateName || item.certificationName}
+                                    </span>
+                                    <button
+                                        style={{ ...styles.btnView, flexShrink: 0 }}
+                                        onClick={() => {
+                                            setSelectedCert(item)
+                                            setPreviewLoading(true)
+                                            setPreviewModal(true)
+                                        }}
+                                    >
+                                        <CIcon icon={cilFile} size="sm" />
+                                        View
+                                    </button>
+                                </div>
+                                {/* Authority row */}
+                                <div style={styles.mobileCertRow}>
+                                    <span style={styles.mobileCertLabel}>Authority</span>
+                                    <span style={styles.mobileCertMuted}>
+                                        {item.issueAuthority || item.issuingAuthority || "—"}
+                                    </span>
+                                </div>
+                                {/* Date row */}
+                                <div style={styles.mobileCertRow}>
+                                    <span style={styles.mobileCertLabel}>Uploaded</span>
+                                    <span style={styles.mobileCertMuted}>
+                                        {formatDateTime(item.uploadDateTime || item.createdAt)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
