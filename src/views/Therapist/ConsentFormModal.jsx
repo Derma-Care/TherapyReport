@@ -14,7 +14,16 @@ import { showCustomToast } from "../../Utils/Toaster";
 import { COLORS } from "../../Constant/Themes";
 import { uploadFile } from "../../Utils/S3UploadService";
 
-const ConsentFormModal = ({ visible, onClose, onConsentGranted, patientName }) => {
+const ConsentFormModal = ({
+  visible,
+  onClose,
+  onConsentGranted,
+  patientName,
+  doctorName,
+  bookingId,
+  bookingDate,
+  bookingTime,
+}) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -134,6 +143,21 @@ const ConsentFormModal = ({ visible, onClose, onConsentGranted, patientName }) =
       doc.text("Media Consent Form", 105, currentY, null, null, "center");
       currentY += 15;
 
+      // Patient and booking details
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("Patient & Booking Details", 15, currentY);
+      currentY += 7;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Patient: ${patientName || "N/A"}`, 15, currentY);
+      doc.text(`Doctor: ${doctorName || "N/A"}`, 105, currentY);
+      currentY += 7;
+      doc.text(`Booking ID: ${bookingId || "N/A"}`, 15, currentY);
+      // doc.text(`Booking Date: ${bookingDate || "N/A"}`, 105, currentY);
+      // currentY += 7;
+      // doc.text(`Booking Time: ${bookingTime || "N/A"}`, 15, currentY);
+      // currentY += 12;
+
       // Consent Text
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
@@ -181,6 +205,25 @@ const ConsentFormModal = ({ visible, onClose, onConsentGranted, patientName }) =
         <CModalTitle>Patient Media Consent</CModalTitle>
       </CModalHeader>
       <CModalBody>
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.85rem", marginBottom: "1rem" }}>
+          <div style={{ color: "#1e3a5f", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.65rem" }}>
+            Patient & Booking Details
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))", gap: "0.65rem" }}>
+            {[
+              ["Patient", patientName],
+              ["Doctor", doctorName],
+              ["Booking ID", bookingId],
+              // ["Booking Date", bookingDate],
+              // ["Booking Time", bookingTime],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <div style={{ color: "#64748b", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase" }}>{label}</div>
+                <div style={{ color: "#1e293b", fontSize: "0.82rem", fontWeight: 600, marginTop: 2 }}>{value || "N/A"}</div>
+              </div>
+            ))}
+          </div>
+        </div>
         <p
           style={{
             fontSize: "0.9rem",

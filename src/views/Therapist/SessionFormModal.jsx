@@ -255,21 +255,22 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
   const [showConsent, setShowConsent] = useState(false)
   const [pendingFile, setPendingFile] = useState(null)
   const [localConsentPdf, setLocalConsentPdf] = useState(data.consentPdfUrl || null)
+  const isVideoMedia = (url, type) => type === "video" || url?.match(/\.(mp4|webm|mov|ogg)$/i) || url?.includes("video")
 
   // Initialize previews with data captured from dashboard if present
   useEffect(() => {
     if (data.beforeMediaUrl) {
-      if (data.beforeMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl.includes("video")) {
-        setBeforeVideoPreview(data.beforeMediaUrl)
+      if (isVideoMedia(data.beforeMediaUrl, data.beforeMediaType)) {
+        setBeforeVideoPreview(data.beforeMediaPreviewUrl || data.beforeMediaUrl)
       } else {
-        setBeforePreview(data.beforeMediaUrl)
+        setBeforePreview(data.beforeMediaPreviewUrl || data.beforeMediaUrl)
       }
     }
     if (data.afterMediaUrl) {
-      if (data.afterMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl.includes("video")) {
-        setAfterVideoPreview(data.afterMediaUrl)
+      if (isVideoMedia(data.afterMediaUrl, data.afterMediaType)) {
+        setAfterVideoPreview(data.afterMediaPreviewUrl || data.afterMediaUrl)
       } else {
-        setAfterPreview(data.afterMediaUrl)
+        setAfterPreview(data.afterMediaPreviewUrl || data.afterMediaUrl)
       }
     }
   }, [data])
@@ -403,10 +404,10 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         therapistNotes: notes,
         patientResponse: patientResponse || 'Good',
         result, mode: 'complete', nextPlan,
-        beforeImage: beforeKey || (beforePreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes("video") ? '' : data.beforeMediaUrl) : ''),
-        afterImage: afterKey || (afterPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes("video") ? '' : data.afterMediaUrl) : ''),
-        beforeVideo: beforeVideoKey || (beforeVideoPreview ? (data.beforeMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.beforeMediaUrl?.includes('video') ? data.beforeMediaUrl : '') : ''),
-        afterVideo: afterVideoKey || (afterVideoPreview ? (data.afterMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || data.afterMediaUrl?.includes('video') ? data.afterMediaUrl : '') : ''),
+        beforeImage: beforeKey || (beforePreview && !isVideoMedia(data.beforeMediaUrl, data.beforeMediaType) ? data.beforeMediaUrl : ''),
+        afterImage: afterKey || (afterPreview && !isVideoMedia(data.afterMediaUrl, data.afterMediaType) ? data.afterMediaUrl : ''),
+        beforeVideo: beforeVideoKey || (beforeVideoPreview && isVideoMedia(data.beforeMediaUrl, data.beforeMediaType) ? data.beforeMediaUrl : ''),
+        afterVideo: afterVideoKey || (afterVideoPreview && isVideoMedia(data.afterMediaUrl, data.afterMediaType) ? data.afterMediaUrl : ''),
         latitude: loc.latitude, longitude: loc.longitude,
         consentPdfUrl: localConsentPdf || data.consentPdfUrl || '',
       }
@@ -621,6 +622,10 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
             cleanupModalArtifacts();
           }}
           patientName={data?.patientName}
+          doctorName={data?.doctorName}
+          bookingId={data?.bookingId}
+          bookingDate={data?.date || data?.sessionDate}
+          bookingTime={data?.bookingTime || data?.appointmentTime || data?.slotTime || data?.startTime}
           onConsentGranted={handleConsentGranted}
         />
       )}

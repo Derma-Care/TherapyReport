@@ -275,7 +275,11 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       const fileKey = await uploadFile(fieldName, fileToUpload);
       
       setIsLoading(false);
-      onMediaSaved(fileKey);
+      onMediaSaved({
+        fileKey,
+        previewUrl,
+        mediaType: captureMode,
+      });
       onClose();
       showCustomToast("Media saved successfully.", "success");
     } catch (error) {

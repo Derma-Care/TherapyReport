@@ -182,12 +182,14 @@ const deepUpdateSession = (node, upd) => {
 const extractExercises = (node) => {
   let list = []
   if (!node) return list
-  if (node.exerciseId && node.sessions) list.push(node)
+  if (Array.isArray(node.sessions) && (node.exerciseId !== undefined || node.exerciseName)) list.push(node)
     ;["therapyWithSessions", "programs", "therapyData", "exercises"].forEach(k => {
       if (node[k]) node[k].forEach(c => list = list.concat(extractExercises(c)))
     })
   return list
 }
+
+const getExerciseKey = (exercise) => exercise.exerciseId || exercise.sessions?.[0]?.sessionId || exercise.exerciseName
 
 const isDateToday = (dateStr) => {
   if (!dateStr) return false
@@ -313,6 +315,7 @@ const SessionList = () => {
   const [patientData, setPatientData] = useState(location.state || { name: "John Doe" })
   const [patientDataSource, setPatientDataSource] = useState(location.state)
   const patient = patientData
+  console.log("patient", patientData)
 
   const [loadingId, setLoadingId] = useState(null)
   const [dataLoading, setDataLoading] = useState(false)
@@ -329,7 +332,6 @@ const SessionList = () => {
   const [activeSessions, setActiveSessions] = useState({})
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [mediaPreview, setMediaPreview] = useState(null)
-
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener("resize", handleResize)
@@ -383,7 +385,7 @@ const SessionList = () => {
     setSelected({
       ...s, mode: "complete", sessionTime: dur,
       startTime: s.startTime || "", endTime: s.endTime || "",
-      patientName: patient.name, bookingId: patientDataSource?.bookingId,
+      patientName: patient.name, doctorName: patient.doctorName || patientDataSource?.doctorName, bookingId: patientDataSource?.bookingId,
       patientId: patientDataSource?.patientId, serviceType: patientDataSource?.serviceType,
       sets: ex?.sets, repetitions: ex?.repetitions, disease: patient.disease,
       therapistRecordId: patient.therapistRecordId, voiceRecordUrl: s.voiceRecordUrl || "",
@@ -401,7 +403,6 @@ const SessionList = () => {
       setSelectedSession(res?.data || res || item)
     } catch { setSelectedSession(item) } finally { setLoadingId(null) }
   }
-
   const handleVoiceRecordSaved = url => {
     if (voiceRecordSession && url) handleUpdate({ ...voiceRecordSession, voiceRecordUrl: url })
     setVoiceRecordSession(null)
@@ -420,11 +421,19 @@ const SessionList = () => {
     }, 400)
   }
 
-  const handleMediaSaved = (mediaUrl) => {
+  const handleMediaSaved = ({ fileKey, previewUrl, mediaType }) => {
     if (!mediaSession) return
     const updatedSession = { ...mediaSession.session }
-    if (mediaSession.type === "before") updatedSession.beforeMediaUrl = mediaUrl
-    if (mediaSession.type === "after") updatedSession.afterMediaUrl = mediaUrl
+    if (mediaSession.type === "before") {
+      updatedSession.beforeMediaUrl = fileKey
+      updatedSession.beforeMediaPreviewUrl = previewUrl
+      updatedSession.beforeMediaType = mediaType
+    }
+    if (mediaSession.type === "after") {
+      updatedSession.afterMediaUrl = fileKey
+      updatedSession.afterMediaPreviewUrl = previewUrl
+      updatedSession.afterMediaType = mediaType
+    }
     handleUpdate(updatedSession)
     setMediaSession(null)
     cleanupModalArtifacts()
@@ -509,7 +518,7 @@ const SessionList = () => {
                             {s.beforeMediaUrl && (
                               <button
                                 style={{ ...S.btn("info", "sm"), padding: "4px 8px" }}
-                                onClick={() => setMediaPreview(s.beforeMediaUrl)}
+                                onClick={() => setMediaPreview({ url: s.beforeMediaPreviewUrl || s.beforeMediaUrl, type: s.beforeMediaType })}
                               >
                                 <Eye size={12} />
                               </button>
@@ -529,7 +538,7 @@ const SessionList = () => {
                             {s.afterMediaUrl && (
                               <button
                                 style={{ ...S.btn("info", "sm"), padding: "4px 8px" }}
-                                onClick={() => setMediaPreview(s.afterMediaUrl)}
+                                onClick={() => setMediaPreview({ url: s.afterMediaPreviewUrl || s.afterMediaUrl, type: s.afterMediaType })}
                               >
                                 <Eye size={12} />
                               </button>
@@ -572,7 +581,10 @@ const SessionList = () => {
                     <div style={{ fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Session ID</div>
                     <div style={{ fontSize: "0.85rem", color: T.navy, fontWeight: 700 }}>{s.sessionId}</div>
                   </div>
-                  <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                    <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
+                    <span style={{ color: T.muted, fontSize: "0.68rem", fontWeight: 600 }}>{s.paymentStatus || "Unpaid"}</span>
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "0.75rem 0" }}>
@@ -626,7 +638,7 @@ const SessionList = () => {
                       {s.beforeMediaUrl && (
                         <button
                           style={{ ...S.btn("info", "sm"), padding: "6px 10px" }}
-                          onClick={() => setMediaPreview(s.beforeMediaUrl)}
+                          onClick={() => setMediaPreview({ url: s.beforeMediaPreviewUrl || s.beforeMediaUrl, type: s.beforeMediaType })}
                         >
                           <Eye size={14} />
                         </button>
@@ -645,7 +657,7 @@ const SessionList = () => {
                       {s.afterMediaUrl && (
                         <button
                           style={{ ...S.btn("info", "sm"), padding: "6px 10px" }}
-                          onClick={() => setMediaPreview(s.afterMediaUrl)}
+                          onClick={() => setMediaPreview({ url: s.afterMediaPreviewUrl || s.afterMediaUrl, type: s.afterMediaType })}
                         >
                           <Eye size={14} />
                         </button>
@@ -689,13 +701,14 @@ const SessionList = () => {
 
   /* ── exercise accordion ── */
   const renderExercise = (ex) => {
-    const isOpen = !!openExercises[ex.exerciseId]
+    const exerciseKey = getExerciseKey(ex)
+    const isOpen = !!openExercises[exerciseKey]
     const hasToday = ex.sessions?.some(s => isDateToday(s.date || s.sessionDate))
     const completedSessions = ex.sessions?.filter(s => s.status?.toLowerCase() === "completed").length || 0
     const totalSessions = ex.sessions?.length || 0
 
     return (
-      <div key={ex.exerciseId} style={{ borderBottom: `1px solid ${T.border}` }}>
+      <div key={exerciseKey} style={{ borderBottom: `1px solid ${T.border}` }}>
         <div
           style={{
             ...S.exHeader,
@@ -706,7 +719,7 @@ const SessionList = () => {
             alignItems: isMobile ? "flex-start" : "center",
             gap: isMobile ? 10 : 0
           }}
-          onClick={() => setOpenExercises(p => ({ ...p, [ex.exerciseId]: !p[ex.exerciseId] }))}
+          onClick={() => setOpenExercises(p => ({ ...p, [exerciseKey]: !p[exerciseKey] }))}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flex: 1, minWidth: 0 }}>
             <span style={{ color: T.navy, fontSize: isMobile ? "0.95rem" : "1.05rem", fontWeight: 700, whiteSpace: "normal" }}>{ex.exerciseName}</span>
@@ -921,10 +934,16 @@ const SessionList = () => {
         <SessionViewModal visible data={selectedSession} onClose={() => { setSelected(null); setSelectedSession(null) }} />
       )}
 
+
+
       <ConsentFormModal
         visible={!!consentSession}
         onClose={() => setConsentSession(null)}
         patientName={patient?.name}
+        doctorName={patient?.doctorName || patientDataSource?.doctorName}
+        bookingId={patientDataSource?.bookingId}
+        bookingDate={patient?.sessionDate || consentSession?.session?.sessionDate || patientDataSource?.sessionStartDate}
+        bookingTime={patient?.sessionTime || consentSession?.session?.appointmentTime || consentSession?.session?.slotTime || consentSession?.session?.startTime}
         onConsentGranted={handleConsentGranted}
       />
 
@@ -998,8 +1017,9 @@ const SessionList = () => {
           }
           return ''
         }
-        const previewUrl = getFileUrl(mediaPreview)
-        const isVideo = mediaPreview.startsWith("data:video") || mediaPreview.startsWith("blob:") || mediaPreview.match(/\.(mp4|webm|mov|ogg)$/i) || mediaPreview.toLowerCase().includes("video");
+        const mediaUrl = typeof mediaPreview === "string" ? mediaPreview : mediaPreview.url
+        const previewUrl = getFileUrl(mediaUrl)
+        const isVideo = mediaPreview.type === "video" || mediaUrl.startsWith("data:video") || mediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) || mediaUrl.toLowerCase().includes("video");
 
         return (
           <CModal
