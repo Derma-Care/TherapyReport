@@ -266,12 +266,12 @@ export default function PatientViewModal({ visible, data, onClose }) {
       const isBase64Img = isImgString(resolved)
 
       const fieldLower = (key || '').toLowerCase()
-      const isMediaKey = fieldLower.includes('image') || fieldLower.includes('video') ||
+      const isMediaKey = (fieldLower.includes('image') || fieldLower.includes('video') ||
         fieldLower.includes('photo') || fieldLower.includes('media') ||
         fieldLower.includes('url') || fieldLower.includes('link') ||
         fieldLower.includes('file') || fieldLower.includes('pdf') ||
         fieldLower.includes('thumbnail') || fieldLower.includes('attachment') ||
-        fieldLower.includes('record') || fieldLower.includes('audio')
+        fieldLower.includes('record') || fieldLower.includes('audio')) && !fieldLower.endsWith('id')
 
       const hasKnownExt = /\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mov|ogg|mp3|wav|pdf)$/i.test(resolved)
       const isS3Key = !isUrl && !isBase64Img && resolved.length > 8 &&
