@@ -62,7 +62,7 @@ function App() {
       <Routes>
 
         {/* Public Route */}
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
 
         {/* Protected Layout */}
         <Route
