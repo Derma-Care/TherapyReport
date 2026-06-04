@@ -147,6 +147,9 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
   };
 
   const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) {
+      return "";
+    }
     const types = [
       "video/mp4;codecs=avc1,mp4a",
       "video/mp4",
@@ -178,7 +181,21 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         audio: true
       };
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      let mediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        console.error("Ideal constraints failed, trying simpler constraints", err);
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (err2) {
+          console.error("Audio+Video failed (possibly microphone denied), trying video only", err2);
+          // If microphone access is denied, try getting just the video
+          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          showCustomToast("Microphone access denied. Recording video only.", "info");
+        }
+      }
+
       streamRef.current = mediaStream;
       setIsRecording(true);
       setIsLoading(false);
@@ -196,7 +213,14 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         options.mimeType = mimeType;
       }
 
-      const recorder = new MediaRecorder(mediaStream, options);
+      let recorder;
+      try {
+        recorder = new MediaRecorder(mediaStream, options);
+      } catch (e) {
+        console.warn("MediaRecorder with options failed, using default", e);
+        recorder = new MediaRecorder(mediaStream);
+      }
+      
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -242,7 +266,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
 
     } catch (err) {
       console.error("Failed to start recording:", err);
-      showCustomToast("Could not start live recording. Opening camera fallback...", "warning");
+      showCustomToast(`Recording failed: ${err.name || err.message}. Opening fallback...`, "warning");
       setIsLoading(false);
       setIsRecording(false);
       triggerFileInput("video");
