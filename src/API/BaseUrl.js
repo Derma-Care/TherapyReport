@@ -1,6 +1,7 @@
 
 // export let wifiUrl = 'http://3.111.28.174:9090'
-export let wifiUrl = 'http://3.7.216.95:9090'
+// export let wifiUrl = 'http://3.7.216.95:9090'
+export let wifiUrl = 'https://api.ccmstestserver.online'
 
 export let splrUrl = 'http:/localhost:8801'
 export let ImageBaseUrl = 'https://physiocare-prod-storage.s3.ap-south-1.amazonaws.com'

@@ -171,6 +171,14 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
     chunksRef.current = [];
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCustomToast("Live recording requires a secure connection (HTTPS). Falling back to camera app...", "warning");
+        setIsLoading(false);
+        setIsRecording(false);
+        triggerFileInput("video");
+        return;
+      }
+
       const constraints = {
         video: {
           facingMode: { ideal: "environment" },
