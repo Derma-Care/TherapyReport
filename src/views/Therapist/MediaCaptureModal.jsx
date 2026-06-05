@@ -91,9 +91,9 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       }
     } else if (captureMode === "video") {
       setIsLoading(true);
-      // 1 MB limit
-      if (selectedFile.size > 1 * 1024 * 1024) {
-        showCustomToast("Video must be 1 MB or smaller.", "error");
+      // 2 MB limit
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        showCustomToast("Video must be 2 MB or smaller.", "error");
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
