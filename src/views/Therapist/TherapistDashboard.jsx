@@ -68,6 +68,7 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
         <div className="td-patient-info">
           <div className="td-patient-name">{p.patientName || 'N/A'}</div>
           <div className="td-patient-meta">
+            <span><ClipboardList size={11} /> {p.bookingId || 'N/A'}</span>
             <span><Stethoscope size={11} /> {p.doctorName || 'N/A'}</span>
             <span><Activity size={11} /> {p.serivceType || 'N/A'}</span>
             <span><Phone size={11} /> {p.mobileNumber || p.patientMobileNumber || 'N/A'}</span>
@@ -271,7 +272,7 @@ const TherapyDashboard = () => {
                 </div>
                 {patientList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p, index) => (
                   <PatientRow
-                    key={p.patientId || index}
+                    key={`${p.bookingId || 'no-booking'}-${index}-${currentPage}`}
                     p={p}
                     index={index}
                     clinicId={clinicId}
