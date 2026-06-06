@@ -1,23 +1,23 @@
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import capitalizeWords from '../../Utils/capitalizeWords'
-import { ArrowLeft, Phone, User, Calendar, GraduationCap, Briefcase, Clock, Globe, FileText, Star, Activity } from 'lucide-react'
+import { ArrowLeft, Phone, User, Calendar, GraduationCap, Briefcase, Clock, Globe, FileText, Star, Activity, Eye, Download } from 'lucide-react'
 
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
 const t = {
-  primary:   PRIMARY,
-  text:      '#1e293b',
+  primary: PRIMARY,
+  text: '#1e293b',
   textMuted: '#64748b',
   textLight: '#94a3b8',
-  surface:   '#f8fafc',
-  border:    '#e2e8f0',
-  danger:    '#dc2626',
-  success:   '#16a34a',
-  radius:    '10px',
-  radiusSm:  '6px',
-  shadow:    '0 1px 3px rgba(0,0,0,0.07)',
-  shadowMd:  '0 4px 12px rgba(0,0,0,0.08)',
+  surface: '#f8fafc',
+  border: '#e2e8f0',
+  danger: '#dc2626',
+  success: '#16a34a',
+  radius: '10px',
+  radiusSm: '6px',
+  shadow: '0 1px 3px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
 }
 
 /* ─── Primitives ─── */
@@ -68,7 +68,7 @@ const InfoRow = ({ label, value }) => (
 const Tag = ({ label, variant = 'default' }) => {
   const styles = {
     default: { bg: '#eff6ff', color: PRIMARY, border: `1px solid ${PRIMARY}30` },
-    muted:   { bg: t.surface, color: t.textMuted, border: `1px solid ${t.border}` },
+    muted: { bg: t.surface, color: t.textMuted, border: `1px solid ${t.border}` },
     success: { bg: '#dcfce7', color: t.success, border: '1px solid #86efac' },
   }
   const s = styles[variant] || styles.default
@@ -83,30 +83,98 @@ const Tag = ({ label, variant = 'default' }) => {
   )
 }
 
-const DocBtn = ({ label, base64, mimeType = 'application/pdf' }) => (
-  <div>
-    <div style={{ fontSize: '11px', fontWeight: '700', color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-      {label}
+const DocBtn = ({ label, base64 }) => {
+  let mimeType = 'application/pdf'
+  let ext = 'pdf'
+  if (base64) {
+    if (base64.startsWith('/9j/')) { mimeType = 'image/jpeg'; ext = 'jpg' }
+    else if (base64.startsWith('iVBORw0KGgo')) { mimeType = 'image/png'; ext = 'png' }
+    else if (base64.startsWith('JVBERi0')) { mimeType = 'application/pdf'; ext = 'pdf' }
+  }
+
+  const handleAction = (action) => {
+    try {
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      
+      if (action === 'view') {
+        window.open(url, '_blank');
+      } else if (action === 'download') {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${label.replace(/\s+/g, '_')}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) {
+      // Fallback
+      if (action === 'view') {
+        window.open(`data:${mimeType};base64,${base64}`);
+      } else {
+        const a = document.createElement('a');
+        a.href = `data:${mimeType};base64,${base64}`;
+        a.download = `${label.replace(/\s+/g, '_')}.${ext}`;
+        a.click();
+      }
+    }
+  }
+
+  return (
+    <div style={{
+      border: `1px solid ${t.border}`,
+      borderRadius: t.radiusSm,
+      padding: '12px 14px',
+      backgroundColor: '#fff',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }}>
+      <div style={{ fontSize: '13px', fontWeight: '700', color: t.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FileText size={16} color={PRIMARY} /> {label}
+      </div>
+      {base64 ? (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => handleAction('view')}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '6px 12px', borderRadius: '4px', border: `1px solid ${PRIMARY}`,
+              backgroundColor: '#eff6ff', color: PRIMARY, fontSize: '12px',
+              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', minWidth: '90px'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = PRIMARY; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#eff6ff'; e.currentTarget.style.color = PRIMARY }}
+          >
+            <Eye size={14} /> View
+          </button>
+          <button
+            onClick={() => handleAction('download')}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '6px 12px', borderRadius: '4px', border: `1px solid ${t.border}`,
+              backgroundColor: '#fff', color: t.text, fontSize: '12px',
+              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', minWidth: '90px'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = t.surface; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}
+          >
+            <Download size={14} /> Download
+          </button>
+        </div>
+      ) : (
+        <div style={{ fontSize: '12px', color: t.textMuted, fontStyle: 'italic', padding: '6px 0', borderTop: `1px solid ${t.surface}` }}>Not uploaded</div>
+      )}
     </div>
-    {base64 ? (
-      <button
-        onClick={() => window.open(`data:${mimeType};base64,${base64}`)}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          padding: '6px 16px', borderRadius: t.radiusSm, border: `1px solid ${PRIMARY}`,
-          backgroundColor: '#eff6ff', color: PRIMARY, fontSize: '12px',
-          fontWeight: '600', cursor: 'pointer',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.backgroundColor = PRIMARY; e.currentTarget.style.color = '#fff' }}
-        onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#eff6ff'; e.currentTarget.style.color = PRIMARY }}
-      >
-        <FileText size={13} /> View PDF
-      </button>
-    ) : (
-      <span style={{ fontSize: '12px', color: t.textMuted, fontStyle: 'italic' }}>Not uploaded</span>
-    )}
-  </div>
-)
+  )
+}
 
 /* ═══════════════════════════════════════════════════════════════════ */
 
@@ -162,12 +230,12 @@ export default function TherapistDetails() {
           }}>
             {capitalizeWords(data.role || 'Therapist')}
           </span>
-          <span style={{
+          {/* <span style={{
             fontSize: '11px', fontWeight: '600', padding: '4px 12px',
             borderRadius: '20px', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff',
           }}>
             {data.yearsOfExperience} yrs exp
-          </span>
+          </span> */}
         </div>
       </div>
 
@@ -239,31 +307,31 @@ export default function TherapistDetails() {
 
         {/* Personal Details */}
         <SectionCard icon={User} title="Personal Details">
-          <InfoRow label="Full Name"    value={data.fullName} />
-          <InfoRow label="Contact"      value={data.contactNumber} />
-          <InfoRow label="Gender"       value={capitalizeWords(data.gender)} />
+          <InfoRow label="Full Name" value={data.fullName} />
+          <InfoRow label="Contact" value={data.contactNumber} />
+          <InfoRow label="Gender" value={capitalizeWords(data.gender)} />
           <InfoRow label="Date of Birth" value={data.dateOfBirth} />
         </SectionCard>
 
         {/* Professional Details */}
         <SectionCard icon={Briefcase} title="Professional Details">
-          <InfoRow label="Qualification"   value={data.qualification} />
-          <InfoRow label="Experience"       value={`${data.yearsOfExperience} years`} />
-          <InfoRow label="Services"         value={data.services?.join(', ')} />
-          <InfoRow label="Specializations"  value={data.specializations?.join(', ')} />
+          <InfoRow label="Qualification" value={data.qualification} />
+          <InfoRow label="Experience" value={`${data.yearsOfExperience} years`} />
+          <InfoRow label="Services" value={data.services?.join(', ')} />
+          <InfoRow label="Specializations" value={data.specializations?.join(', ')} />
         </SectionCard>
 
         {/* Expertise */}
         <SectionCard icon={Star} title="Expertise & Treatments">
-          <InfoRow label="Expertise"   value={data.expertiseAreas?.join(', ')} />
-          <InfoRow label="Treatments"  value={data.treatmentTypes?.join(', ')} />
+          <InfoRow label="Expertise" value={data.expertiseAreas?.join(', ')} />
+          <InfoRow label="Treatments" value={data.treatmentTypes?.join(', ')} />
         </SectionCard>
 
         {/* Availability */}
         <SectionCard icon={Clock} title="Availability">
           <InfoRow label="Days" value={data.availability?.days?.map(formatDay).join(', ')} />
           <InfoRow label="Start Time" value={data.availability?.startTime} />
-          <InfoRow label="End Time"   value={data.availability?.endTime} />
+          <InfoRow label="End Time" value={data.availability?.endTime} />
         </SectionCard>
       </div>
 
@@ -288,7 +356,7 @@ export default function TherapistDetails() {
       <SectionCard icon={FileText} title="Documents">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <DocBtn label="License Certificate" base64={data.documents?.licenseCertificate} />
-          <DocBtn label="Degree Certificate"  base64={data.documents?.degreeCertificate} />
+          <DocBtn label="Degree Certificate" base64={data.documents?.degreeCertificate} />
         </div>
       </SectionCard>
 

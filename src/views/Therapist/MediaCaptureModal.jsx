@@ -10,7 +10,7 @@ import {
 import axios from "axios";
 import { wifiUrl } from "../../API/BaseUrl";
 import { showCustomToast } from "../../Utils/Toaster";
-import { Camera, Video } from "lucide-react";
+import { Camera, Video, Upload } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { uploadFile } from "../../Utils/S3UploadService";
 
@@ -18,7 +18,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [captureMode, setCaptureMode] = useState("image"); // 'image' or 'video'
+  const [captureMode, setCaptureMode] = useState("image"); // 'image', 'video', or 'upload_media'
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
 
@@ -71,7 +71,22 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
-    if (captureMode === "image") {
+    let currentMode = captureMode;
+    if (currentMode === "upload_media") {
+      if (selectedFile.type.startsWith("image/")) {
+        currentMode = "image";
+        setCaptureMode("image");
+      } else if (selectedFile.type.startsWith("video/")) {
+        currentMode = "video";
+        setCaptureMode("video");
+      } else {
+        showCustomToast("Unsupported file type.", "error");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+    }
+
+    if (currentMode === "image") {
       setIsLoading(true);
       try {
         const options = {
@@ -89,7 +104,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
-    } else if (captureMode === "video") {
+    } else if (currentMode === "video") {
       setIsLoading(true);
       // 2 MB limit
       if (selectedFile.size > 2 * 1024 * 1024) {
@@ -172,10 +187,9 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showCustomToast("Live recording requires a secure connection (HTTPS). Falling back to camera app...", "warning");
+        showCustomToast("Live recording is not supported on this browser. Please use Upload Media.", "error");
         setIsLoading(false);
         setIsRecording(false);
-        triggerFileInput("video");
         return;
       }
 
@@ -200,7 +214,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
           console.error("Audio+Video failed (possibly microphone denied), trying video only", err2);
           // If microphone access is denied, try getting just the video
           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          showCustomToast("Microphone access denied. Recording video only.", "info");
+          showCustomToast("Microphone access denied. Recording video without audio.", "info");
         }
       }
 
@@ -274,10 +288,14 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
 
     } catch (err) {
       console.error("Failed to start recording:", err);
-      showCustomToast(`Recording failed: ${err.name || err.message}. Opening fallback...`, "warning");
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        showCustomToast("Camera/Microphone permission denied. Please enable them in your browser settings or use Upload Media.", "error");
+      } else {
+        showCustomToast(`Recording failed: ${err.name || err.message}. Please use Upload Media.`, "error");
+      }
       setIsLoading(false);
       setIsRecording(false);
-      triggerFileInput("video");
+      // Explicitly NOT triggering file input fallback
     }
   };
 
@@ -350,17 +368,17 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         {/* Hidden File Input */}
         <input
           type="file"
-          accept={captureMode === "image" ? "image/*" : "video/*"}
-          capture="environment"
+          accept={captureMode === "image" ? "image/*" : captureMode === "video" ? "video/*" : "image/*,video/*"}
+          capture={captureMode === "upload_media" ? undefined : "environment"}
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleFileChange}
         />
 
         {!previewUrl && !isRecording ? (
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem 0" }}>
+          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem 0", flexWrap: "wrap" }}>
             <div 
-              style={{ padding: "1.5rem", border: "1.5px solid #0ea5e9", borderRadius: 12, cursor: "pointer", background: "#f0f9ff", width: 120 }}
+              style={{ padding: "1rem", border: "1.5px solid #0ea5e9", borderRadius: 12, cursor: "pointer", background: "#f0f9ff", width: 110 }}
               onClick={() => triggerFileInput("image")}
             >
               <Camera size={32} color="#0369a1" style={{ marginBottom: 8 }} />
@@ -368,11 +386,19 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
             </div>
             
             <div 
-              style={{ padding: "1.5rem", border: "1.5px solid #8b5cf6", borderRadius: 12, cursor: "pointer", background: "#f5f3ff", width: 120 }}
+              style={{ padding: "1rem", border: "1.5px solid #8b5cf6", borderRadius: 12, cursor: "pointer", background: "#f5f3ff", width: 110 }}
               onClick={startRecording}
             >
               <Video size={32} color="#6d28d9" style={{ marginBottom: 8 }} />
-              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#6d28d9" }}>Record Video</div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#6d28d9" }}>Live Record</div>
+            </div>
+
+            <div 
+              style={{ padding: "1rem", border: "1.5px solid #10b981", borderRadius: 12, cursor: "pointer", background: "#ecfdf5", width: 110 }}
+              onClick={() => triggerFileInput("upload_media")}
+            >
+              <Upload size={32} color="#059669" style={{ marginBottom: 8 }} />
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#059669" }}>Upload Media</div>
             </div>
           </div>
         ) : isRecording ? (
@@ -453,3 +479,4 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
 };
 
 export default MediaCaptureModal;
+

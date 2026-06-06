@@ -8,7 +8,7 @@ import {
   CCol,
 } from "@coreui/react"
 import { useState } from "react"
-import { FileText, X, ZoomIn, ExternalLink, ChevronDown, ChevronUp } from "lucide-react"
+import { FileText, X, ZoomIn, ExternalLink, ChevronDown, ChevronUp, MessageSquare } from "lucide-react"
 import { BASE_URL } from "../../API/BaseUrl"
 
 /* ─── Design tokens — matches AppointmentDetails / DoctorDetailsPage ─── */
@@ -192,14 +192,16 @@ const Accordion = ({ title, index, children, accentColor = PRIMARY }) => {
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-            backgroundColor: `${accentColor}15`, color: accentColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 700,
-          }}>
-            {index + 1}
-          </span>
+          {index != null && (
+            <span style={{
+              width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+              backgroundColor: `${accentColor}15`, color: accentColor,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700,
+            }}>
+              {index + 1}
+            </span>
+          )}
           {title}
         </span>
         {open
@@ -216,12 +218,23 @@ const Accordion = ({ title, index, children, accentColor = PRIMARY }) => {
   )
 }
 
-/* ─── Section card with accent heading ─── */
-const SectionCard = ({ title, children }) => {
+/* ─── Section card with accent heading — now collapsible ─── */
+const SectionCard = ({ title, children, defaultOpen = true }) => {
   const cfg = SECTION_CFG[title] || { color: PRIMARY, icon: '●' }
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      {/* Clickable header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+          background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+          padding: '0 0 12px', marginBottom: open ? 4 : 0,
+          borderBottom: open ? `1px solid ${t.border}` : 'none',
+          transition: 'border-color .15s',
+        }}
+      >
         <span style={{
           width: 30, height: 30, borderRadius: '8px', flexShrink: 0,
           backgroundColor: `${cfg.color}15`,
@@ -229,12 +242,18 @@ const SectionCard = ({ title, children }) => {
         }}>
           {cfg.icon}
         </span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.04em', flex: 1 }}>
           {title}
         </span>
-        <div style={{ flex: 1, height: 1, backgroundColor: t.border }} />
-      </div>
-      {children}
+        {open
+          ? <ChevronUp size={15} color={t.textMuted} style={{ flexShrink: 0 }} />
+          : <ChevronDown size={15} color={t.textMuted} style={{ flexShrink: 0 }} />}
+      </button>
+      {open && (
+        <div style={{ paddingTop: 8 }}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -243,9 +262,30 @@ const SectionCard = ({ title, children }) => {
 
 export default function PatientViewModal({ visible, data, onClose }) {
   const [preview, setPreview] = useState(null)
-  const [mediaPreview, setMediaPreview] = useState(null) // { url, type: 'image'|'video'|'youtube' }
+  const [mediaPreview, setMediaPreview] = useState(null)
   const record = data
   if (!record) return null
+
+  // Debug: log the full record to see all keys available
+  console.log('[PatientViewModal] record keys:', Object.keys(record))
+  console.log('[PatientViewModal] record:', record)
+
+  /* ── Detect all question/answer arrays in the record automatically ── */
+  const KNOWN_SECTIONS = new Set([
+    'patientInfo', 'complaints', 'reports', 'assessment', 'diagnosis',
+    'treatmentPlan', 'exercisePlan', 'followUp', 'homeAdvice',
+    'therapistRecordId', 'bookingId', 'clinicId', 'branchId',
+    'overallStatus', 'createdAt', 'updatedAt',
+  ])
+  const QA_KEYS = ['question', 'questiontext', 'answer', 'response', 'therapyanswer']
+  const isQAArray = (arr) =>
+    Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object' &&
+    Object.keys(arr[0]).some(k => QA_KEYS.includes(k.toLowerCase()))
+
+  // Collect all QA-style arrays from the record (by any field name)
+  const qaArrays = Object.entries(record)
+    .filter(([k, v]) => !KNOWN_SECTIONS.has(k) && isQAArray(v))
+    .map(([k, v]) => ({ key: k, items: v }))
 
   /* ── renderField ── */
   const renderField = (key, val, i) => {
@@ -503,6 +543,62 @@ export default function PatientViewModal({ visible, data, onClose }) {
         )
       }
 
+      // QA-style array? Render as accordions instead of chips
+      const QA_DETECT = ['question', 'questiontext', 'questionname', 'answer', 'response', 'therapyanswer', 'answertext']
+      const isQAItems = val.some(item =>
+        typeof item === 'object' && item !== null &&
+        Object.keys(item).some(k => QA_DETECT.includes(k.toLowerCase()))
+      )
+      if (isQAItems) {
+        const accentColor = SECTION_CFG['Questions'].color
+        return (
+          <CCol md={12} key={i} className="mb-3">
+            <Accordion title={labelify(key)} accentColor={accentColor}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {val.map((item, idx) => {
+                  if (typeof item !== 'object' || item === null) return null
+                  const qText = item?.questionText || item?.question || item?.questionName || item?.title || `Question ${idx + 1}`
+                  const ans = item?.answer || item?.response || item?.therapyAnswer || item?.answerText
+                  const extras = Object.entries(item).filter(([k]) => {
+                    const kl = k.toLowerCase()
+                    return !QA_DETECT.includes(kl) && !['title','questionname','questionkey'].includes(kl) && kl !== 'id'
+                  })
+                  return (
+                    <div key={idx} style={{
+                      backgroundColor: `${accentColor}05`,
+                      border: `1px solid ${accentColor}20`,
+                      borderRadius: t.radiusSm,
+                      padding: '12px 16px',
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: ans ? 6 : 0 }}>
+                        {qText}
+                      </div>
+                      {ans ? (
+                        <div style={{ fontSize: 14, color: accentColor, fontWeight: 700 }}>
+                          <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 600, marginRight: 6, textTransform: 'uppercase' }}>Ans:</span>
+                          {ans}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: t.textMuted, fontStyle: 'italic' }}>No answer recorded</div>
+                      )}
+                      {extras.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${accentColor}15` }}>
+                          {extras.map(([k, v], ei) => (
+                            <span key={ei} style={{ fontSize: 11, backgroundColor: '#fff', border: `1px solid ${t.border}`, borderRadius: 4, padding: '2px 6px', color: t.textMuted }}>
+                              <strong>{labelify(k)}:</strong> {v}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Accordion>
+          </CCol>
+        )
+      }
+
       return (
         <CCol md={12} key={i} className="mb-3">
           <Tile label={labelify(key)}>
@@ -585,6 +681,40 @@ export default function PatientViewModal({ visible, data, onClose }) {
       <SectionCard title={title}>
         <CRow className="g-2">{fields}</CRow>
       </SectionCard>
+    )
+  }
+
+  /* ── Therapy Answers accordion ── */
+  const renderTherapyAnswer = (item, index) => {
+    const accentColor = SECTION_CFG['Questions'].color
+    const questionText = item?.questionText || item?.question || item?.title || `Question ${index + 1}`
+    const answer = item?.answer || item?.response || item?.therapyAnswer
+    const extraFields = Object.entries(item).filter(([k]) => {
+      const kl = k.toLowerCase()
+      return !['questiontext', 'question', 'title', 'answer', 'response', 'therapyanswer', 'id'].includes(kl)
+    })
+    return (
+      <Accordion key={index} title={questionText} index={index} accentColor={accentColor}>
+        {answer && (
+          <div style={{
+            backgroundColor: `${accentColor}08`,
+            border: `1px solid ${accentColor}20`,
+            borderRadius: t.radiusSm,
+            padding: '10px 14px',
+            marginBottom: extraFields.length ? 10 : 0,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+              Answer
+            </div>
+            <div style={{ fontSize: 13, color: t.text, fontWeight: 500, lineHeight: 1.5 }}>{answer}</div>
+          </div>
+        )}
+        {extraFields.length > 0 && (
+          <CRow className="g-2">
+            {extraFields.map(([k, v], i) => renderField(k, v, `therapy-${index}-${i}`))}
+          </CRow>
+        )}
+      </Accordion>
     )
   }
 
@@ -881,17 +1011,102 @@ export default function PatientViewModal({ visible, data, onClose }) {
             )
           })()}
 
-          {/* Questions */}
-          {record?.questions?.length > 0 && (
+          {/* Questions / Therapy Answers — auto-discovered from any array field */}
+          {qaArrays.length > 0 && qaArrays.map(({ key, items }) => (
+            <div key={key} style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
+              <SectionCard title="Questions">
+                <Accordion title={labelify(key)} accentColor={SECTION_CFG['Questions'].color}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {items.map((item, index) => {
+                      const qText = item?.questionText || item?.question || item?.title || item?.questionName || `Question ${index + 1}`
+                      const ans = item?.answer || item?.response || item?.therapyAnswer || item?.answerText
+                      const accentColor = SECTION_CFG['Questions'].color
+                      const extras = Object.entries(item).filter(([k]) => {
+                        const kl = k.toLowerCase()
+                        return !['questiontext', 'question', 'title', 'questionname', 'answer', 'response', 'therapyanswer', 'answertext', 'questionkey'].includes(kl) && kl !== 'id'
+                      })
+                      return (
+                        <div key={index} style={{
+                          backgroundColor: `${accentColor}05`,
+                          border: `1px solid ${accentColor}20`,
+                          borderRadius: t.radiusSm,
+                          padding: '12px 16px',
+                        }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: ans ? 6 : 0 }}>
+                            {qText}
+                          </div>
+                          {ans ? (
+                            <div style={{ fontSize: 14, color: accentColor, fontWeight: 700 }}>
+                              <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 600, marginRight: 6, textTransform: 'uppercase' }}>Ans:</span>
+                              {ans}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 12, color: t.textMuted, fontStyle: 'italic' }}>No answer recorded</div>
+                          )}
+                          {extras.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${accentColor}15` }}>
+                              {extras.map(([k, v], ei) => (
+                                <span key={ei} style={{ fontSize: 11, backgroundColor: '#fff', border: `1px solid ${t.border}`, borderRadius: 4, padding: '2px 6px', color: t.textMuted }}>
+                                  <strong>{labelify(k)}:</strong> {v}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Accordion>
+              </SectionCard>
+            </div>
+          ))}
+
+          {/* Fallback: also check record.questions and record.therapyAnswers explicitly */}
+          {qaArrays.length === 0 && (record?.questions?.length > 0 || record?.therapyAnswers?.length > 0) && (
             <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
               <SectionCard title="Questions">
-                {record.questions.map((item, index) => (
-                  <Accordion key={index} title={item?.questionText || item?.question || `Question ${index + 1}`} index={index} accentColor={SECTION_CFG['Questions'].color}>
-                    <CRow className="g-2">
-                      {Object.entries(item).map(([k, v], i) => renderField(k, v, `${index}-${i}`))}
-                    </CRow>
-                  </Accordion>
-                ))}
+                <Accordion title="Therapy Answers" accentColor={SECTION_CFG['Questions'].color}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {(record?.therapyAnswers || record?.questions || []).map((item, index) => {
+                      const qText = item?.questionText || item?.question || item?.title || `Question ${index + 1}`
+                      const ans = item?.answer || item?.response || item?.therapyAnswer
+                      const accentColor = SECTION_CFG['Questions'].color
+                      const extras = Object.entries(item).filter(([k]) => {
+                        const kl = k.toLowerCase()
+                        return !['questiontext', 'question', 'title', 'answer', 'response', 'therapyanswer', 'questionkey'].includes(kl) && kl !== 'id'
+                      })
+                      return (
+                        <div key={index} style={{
+                          backgroundColor: `${accentColor}05`,
+                          border: `1px solid ${accentColor}20`,
+                          borderRadius: t.radiusSm,
+                          padding: '12px 16px',
+                        }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: t.text, marginBottom: ans ? 6 : 0 }}>
+                            {qText}
+                          </div>
+                          {ans ? (
+                            <div style={{ fontSize: 14, color: accentColor, fontWeight: 700 }}>
+                              <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 600, marginRight: 6, textTransform: 'uppercase' }}>Ans:</span>
+                              {ans}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 12, color: t.textMuted, fontStyle: 'italic' }}>No answer recorded</div>
+                          )}
+                          {extras.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${accentColor}15` }}>
+                              {extras.map(([k, v], ei) => (
+                                <span key={ei} style={{ fontSize: 11, backgroundColor: '#fff', border: `1px solid ${t.border}`, borderRadius: 4, padding: '2px 6px', color: t.textMuted }}>
+                                  <strong>{labelify(k)}:</strong> {v}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Accordion>
               </SectionCard>
             </div>
           )}
