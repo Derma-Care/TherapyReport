@@ -169,14 +169,25 @@ function App() {
           alignItems: 'center', background: '#fff', flexDirection: 'column',
         }}>
           <img src={hospitalLogo} alt="Logo"
-            style={{ width: 72, height: 72, objectFit: 'contain', marginBottom: 12,
-              animation: 'blinkHeart 1s infinite ease-in-out' }}
+            style={{
+              width: 72, height: 72, objectFit: 'contain', marginBottom: 12,
+              animation: 'blinkHeart 1s infinite ease-in-out'
+            }}
           />
           <style>{`@keyframes blinkHeart{0%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}100%{transform:scale(1);opacity:1}}`}</style>
         </div>
       }>
         <Routes>
-          <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
           <Route path="/" element={<ProtectedRoute><DefaultLayout /></ProtectedRoute>}>
             {routes
               .filter(route => route.path !== '/login')

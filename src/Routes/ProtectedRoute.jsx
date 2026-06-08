@@ -1,26 +1,26 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { useHospital } from '../Context/HospitalContext'
-import { LogoLoader } from '../Utils/LogoLoder'
 
+import { LogoLoader } from '../Utils/LogoLoder'
+import { useHospital } from '../Context/HospitalContext'
 
 const ProtectedRoute = ({ children }) => {
-  const { loading, selectedHospital } = useHospital()
+  const { loading } = useHospital()
 
   const hospitalId = localStorage.getItem('hospitalId')
+  const selectedClinic = localStorage.getItem('selectedClinic')
 
-  // ⏳ Show loader while context is loading
   if (loading) {
     return <LogoLoader />
   }
 
-  // ✅ Proper authentication check
   const isAuthenticated =
     !!hospitalId &&
-    selectedHospital &&
-    Object.keys(selectedHospital).length > 0
+    !!selectedClinic
 
-  return isAuthenticated ? children : <Navigate to="/" replace />
+  return isAuthenticated
+    ? children
+    : <Navigate to="/login" replace />
 }
 
 export default ProtectedRoute
