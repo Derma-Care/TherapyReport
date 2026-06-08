@@ -513,7 +513,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
                   <Inp
                     type="number" min="0" max={data?.sets || 0} placeholder="e.g. 3"
                     value={completedSets}
-                    onChange={e => setCompletedSets(e.target.value)}
+                    onChange={e => { const v = Number(e.target.value); if (v <= (data?.sets || 0)) setCompletedSets(e.target.value) }}
                     style={{ border: 'none', borderRadius: 0, flex: 1 }}
                   />
                   <span style={{ padding: '7px 12px', fontSize: '12px', color: t.textMuted, backgroundColor: t.surface, borderLeft: `1px solid ${t.border}`, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>

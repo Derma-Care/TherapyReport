@@ -2,6 +2,7 @@ import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import { ArrowLeft, Phone, User, Calendar, GraduationCap, Briefcase, Clock, Globe, FileText, Star, Activity, Eye, Download } from 'lucide-react'
+import { BASE_URL } from '../../API/BaseUrl'
 
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
@@ -18,6 +19,18 @@ const t = {
   radiusSm: '6px',
   shadow: '0 1px 3px rgba(0,0,0,0.07)',
   shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+}
+
+const resolveMedia = (img) => {
+  if (!img) return null
+  if (img.startsWith("http") || img.startsWith("blob:") || img.startsWith("data:")) return img
+  const isBase64 = img.startsWith("/9j/") || img.startsWith("iVBOR") || img.startsWith("R0lGOD") || img.startsWith("data:image") || img.startsWith("JVBERi0");
+  if (isBase64) {
+    if (img.startsWith("iVBOR")) return `data:image/png;base64,${img}`
+    if (img.startsWith("JVBERi0")) return `data:application/pdf;base64,${img}`
+    return `data:image/jpeg;base64,${img}`
+  }
+  return `${BASE_URL}/viewFile/${img}`
 }
 
 /* ─── Primitives ─── */
@@ -83,98 +96,115 @@ const Tag = ({ label, variant = 'default' }) => {
   )
 }
 
-const DocBtn = ({ label, base64 }) => {
-  let mimeType = 'application/pdf'
-  let ext = 'pdf'
-  if (base64) {
-    if (base64.startsWith('/9j/')) { mimeType = 'image/jpeg'; ext = 'jpg' }
-    else if (base64.startsWith('iVBORw0KGgo')) { mimeType = 'image/png'; ext = 'png' }
-    else if (base64.startsWith('JVBERi0')) { mimeType = 'application/pdf'; ext = 'pdf' }
-  }
+const DocBtn = ({ label, fileUrl }) => {
+  if (!fileUrl) return null;
 
-  const handleAction = (action) => {
+  const handleView = () => {
+    window.open(fileUrl, "_blank");
+  };
+
+  const handleDownload = async () => {
     try {
-      const byteCharacters = atob(base64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      
-      if (action === 'view') {
-        window.open(url, '_blank');
-      } else if (action === 'download') {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${label.replace(/\s+/g, '_')}.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
-    } catch (e) {
-      // Fallback
-      if (action === 'view') {
-        window.open(`data:${mimeType};base64,${base64}`);
-      } else {
-        const a = document.createElement('a');
-        a.href = `data:${mimeType};base64,${base64}`;
-        a.download = `${label.replace(/\s+/g, '_')}.${ext}`;
-        a.click();
-      }
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+
+      const extension = fileUrl.includes(".pdf")
+        ? "pdf"
+        : fileUrl.includes(".png")
+          ? "png"
+          : "jpg";
+
+      a.download = `${label.replace(/\s+/g, "_")}.${extension}`;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      window.open(fileUrl, "_blank");
     }
-  }
+  };
 
   return (
-    <div style={{
-      border: `1px solid ${t.border}`,
-      borderRadius: t.radiusSm,
-      padding: '12px 14px',
-      backgroundColor: '#fff',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px'
-    }}>
-      <div style={{ fontSize: '13px', fontWeight: '700', color: t.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div
+      style={{
+        border: `1px solid ${t.border}`,
+        borderRadius: t.radiusSm,
+        padding: "12px 14px",
+        backgroundColor: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: "700",
+          color: t.text,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
         <FileText size={16} color={PRIMARY} /> {label}
       </div>
-      {base64 ? (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => handleAction('view')}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              padding: '6px 12px', borderRadius: '4px', border: `1px solid ${PRIMARY}`,
-              backgroundColor: '#eff6ff', color: PRIMARY, fontSize: '12px',
-              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', minWidth: '90px'
-            }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = PRIMARY; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#eff6ff'; e.currentTarget.style.color = PRIMARY }}
-          >
-            <Eye size={14} /> View
-          </button>
-          <button
-            onClick={() => handleAction('download')}
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              padding: '6px 12px', borderRadius: '4px', border: `1px solid ${t.border}`,
-              backgroundColor: '#fff', color: t.text, fontSize: '12px',
-              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', minWidth: '90px'
-            }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = t.surface; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}
-          >
-            <Download size={14} /> Download
-          </button>
-        </div>
-      ) : (
-        <div style={{ fontSize: '12px', color: t.textMuted, fontStyle: 'italic', padding: '6px 0', borderTop: `1px solid ${t.surface}` }}>Not uploaded</div>
-      )}
+
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <button
+          onClick={handleView}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            border: `1px solid ${PRIMARY}`,
+            backgroundColor: "#eff6ff",
+            color: PRIMARY,
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+            minWidth: "90px",
+          }}
+        >
+          <Eye size={14} /> View
+        </button>
+
+        <button
+          onClick={handleDownload}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            border: `1px solid ${t.border}`,
+            backgroundColor: "#fff",
+            color: t.text,
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+            minWidth: "90px",
+          }}
+        >
+          <Download size={14} /> Download
+        </button>
+      </div>
     </div>
-  )
-}
+  );
+};
 
 /* ═══════════════════════════════════════════════════════════════════ */
 
@@ -255,11 +285,7 @@ export default function TherapistDetails() {
         {/* Avatar */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <img
-            src={
-              data.documents?.profilePhoto
-                ? `data:image/jpeg;base64,${data.documents.profilePhoto}`
-                : '/assets/images/default-avatar.png'
-            }
+            src={resolveMedia(data.documents?.profilePhoto) || '/assets/images/default-avatar.png'}
             alt={data.fullName}
             style={{
               width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover',
@@ -355,8 +381,15 @@ export default function TherapistDetails() {
       {/* ── Documents ── */}
       <SectionCard icon={FileText} title="Documents">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <DocBtn label="License Certificate" base64={data.documents?.licenseCertificate} />
-          <DocBtn label="Degree Certificate" base64={data.documents?.degreeCertificate} />
+          <DocBtn
+            label="License Certificate"
+            fileUrl={data.documents?.licenseCertificate}
+          />
+
+          <DocBtn
+            label="Degree Certificate"
+            fileUrl={data.documents?.degreeCertificate}
+          />
         </div>
       </SectionCard>
 

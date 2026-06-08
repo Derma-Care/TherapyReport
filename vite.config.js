@@ -10,12 +10,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Therapist App',
         short_name: 'Therapist',
         description: 'Therapy Booking and Management App',
         theme_color: COLORS.primary,
         background_color: '#ffffff',
+        id: '/',
+        scope: '/',
+        orientation: 'portrait',
         display: 'standalone',
         start_url: '/',
         icons: [
@@ -46,10 +50,5 @@ export default defineConfig({
     port: 3000,
     strictPort: true
   },
-  hmr: {
-    host: 'localhost',
-    protocol: 'ws',
-    port: 3001,
-  },
-})
 
+})

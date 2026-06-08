@@ -446,6 +446,13 @@ function formatDateTime(raw) {
     }
 }
 
+const resolveMedia = (img) => {
+    if (!img) return ""
+    if (img.startsWith("http") || img.startsWith("blob:") || img.startsWith("data:")) return img
+    // If it's a key/path, resolve via API
+    return `${BASE_URL}/viewFile/${img}`
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TherapistCertification() {
@@ -871,7 +878,7 @@ export default function TherapistCertification() {
                             (selectedCert.upload || selectedCert.certificateUrl).match(/\.(jpeg|jpg|png|webp|gif)/i) ||
                                 !(selectedCert.upload || selectedCert.certificateUrl).includes(".pdf") ? (
                                 <img
-                                    src={selectedCert.upload || selectedCert.certificateUrl}
+                                    src={resolveMedia(selectedCert.upload || selectedCert.certificateUrl)}
                                     alt="Certificate Preview"
                                     onLoad={() => setPreviewLoading(false)}
                                     onError={() => setPreviewLoading(false)}
@@ -884,7 +891,7 @@ export default function TherapistCertification() {
                                 />
                             ) : (
                                 <iframe
-                                    src={selectedCert.upload || selectedCert.certificateUrl}
+                                    src={resolveMedia(selectedCert.upload || selectedCert.certificateUrl)}
                                     title="PDF Preview"
                                     width="100%"
                                     height="100%"
@@ -899,10 +906,10 @@ export default function TherapistCertification() {
                             </>
                         )}
                     </div>
-                    {(selectedCert?.upload || selectedCert?.certificateUrl) && (
+                    {resolveMedia(selectedCert?.upload || selectedCert?.certificateUrl) && (
                         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                             <a
-                                href={selectedCert.upload || selectedCert.certificateUrl}
+                                href={resolveMedia(selectedCert.upload || selectedCert.certificateUrl)}
                                 download
                                 style={{ textDecoration: "none" }}
                             >

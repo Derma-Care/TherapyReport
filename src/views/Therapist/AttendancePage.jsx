@@ -227,23 +227,45 @@ const AttendanceTracker = () => {
         payload.logoutLocation = address;
       }
 
-      await axios.put(`${BASE_URL}/updateAttendance/${therapistId}`, payload);
-      await fetchDailyData();
-      await fetchMonthlyData();
+      const res = await axios.put(
+        `${BASE_URL}/updateAttendance/${therapistId}`,
+        payload
+      );
+
+      // ✅ only if backend success
+      if (res?.data?.success) {
+        await fetchDailyData();
+        await fetchMonthlyData();
+      
+        return true;
+      }
+
+      return false;
     } catch (err) {
       console.error(err);
+      return false;
     } finally {
       setIsUpdatingStatus(false);
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (loggedIn || loggedOut) return;
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    setLoggedIn(true);
-    setLoginTime(time);
-    setLoginLocation(address);
-    updateTimes("login", time);
+
+    const time = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const success = await updateTimes("login", time);
+
+    // ✅ change UI only after backend success
+    if (success) {
+      setLoggedIn(true);
+      setLoginTime(time);
+      setLoginLocation(address);
+    }
   };
 
   const handleLogout = () => {
@@ -251,14 +273,24 @@ const AttendanceTracker = () => {
     setIsLogoutModalVisible(true);
   };
 
-  const confirmLogout = () => {
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    setLoggedIn(false);
-    setLoggedOut(true);
-    setLogoutTime(time);
-    setLogoutLocation(address);
-    updateTimes("logout", time);
-    setIsLogoutModalVisible(false);
+  const confirmLogout = async () => {
+    const time = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const success = await updateTimes("logout", time);
+
+    // ✅ update UI only after backend success
+    if (success) {
+      setLoggedIn(false);
+      setLoggedOut(true);
+      setLogoutTime(time);
+      setLogoutLocation(address);
+      setIsLogoutModalVisible(false);
+    }
+
   };
 
   const handleAdd = async () => {
