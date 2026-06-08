@@ -13,6 +13,7 @@ import { showCustomToast } from "../../Utils/Toaster";
 import { Camera, Video, Upload } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { uploadFile } from "../../Utils/S3UploadService";
+import { COLORS } from "../../Constant/Themes";
 
 const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
   const [file, setFile] = useState(null);
@@ -113,7 +114,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
-      
+
       // 20 Seconds limit
       const video = document.createElement("video");
       video.preload = "metadata";
@@ -242,7 +243,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         console.warn("MediaRecorder with options failed, using default", e);
         recorder = new MediaRecorder(mediaStream);
       }
-      
+
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -315,7 +316,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
     setIsLoading(true);
     try {
       const fieldName = `${type}${captureMode.charAt(0).toUpperCase() + captureMode.slice(1)}`;
-      
+
       let fileToUpload = file;
       if (file instanceof Blob && !(file instanceof File)) {
         const extension = captureMode === "image" ? "jpg" : "mp4";
@@ -323,7 +324,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       }
 
       const fileKey = await uploadFile(fieldName, fileToUpload);
-      
+
       setIsLoading(false);
       onMediaSaved({
         fileKey,
@@ -351,7 +352,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
         <CModalTitle>Capture {type === "before" ? "Before" : "After"} Media</CModalTitle>
       </CModalHeader>
       <CModalBody className="text-center" style={{ position: "relative" }}>
-        
+
         {isLoading && (
           <div style={{
             position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
@@ -377,15 +378,15 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
 
         {!previewUrl && !isRecording ? (
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", padding: "2rem 0", flexWrap: "wrap" }}>
-            <div 
+            <div
               style={{ padding: "1rem", border: "1.5px solid #0ea5e9", borderRadius: 12, cursor: "pointer", background: "#f0f9ff", width: 110 }}
               onClick={() => triggerFileInput("image")}
             >
               <Camera size={32} color="#0369a1" style={{ marginBottom: 8 }} />
               <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#0369a1" }}>Take Photo</div>
             </div>
-            
-            <div 
+
+            <div
               style={{ padding: "1rem", border: "1.5px solid #8b5cf6", borderRadius: 12, cursor: "pointer", background: "#f5f3ff", width: 110 }}
               onClick={startRecording}
             >
@@ -393,7 +394,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
               <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#6d28d9" }}>Live Record</div>
             </div>
 
-            <div 
+            <div
               style={{ padding: "1rem", border: "1.5px solid #10b981", borderRadius: 12, cursor: "pointer", background: "#ecfdf5", width: 110 }}
               onClick={() => triggerFileInput("upload_media")}
             >
@@ -410,7 +411,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
               muted
               style={{ width: "100%", maxHeight: 300, background: "#000", objectFit: "contain" }}
             />
-            
+
             <div style={{
               position: "absolute", top: 12, left: 12,
               background: "rgba(0,0,0,0.6)", borderRadius: 20,
@@ -444,18 +445,18 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
             {captureMode === "image" ? (
               <img src={previewUrl} alt="Preview" style={{ width: "100%", borderRadius: 8, maxHeight: 300, objectFit: "contain", background: "#000" }} />
             ) : (
-              <video 
+              <video
                 key={previewUrl}
-                src={previewUrl} 
-                controls 
-                playsInline 
-                preload="auto" 
-                style={{ width: "100%", borderRadius: 8, maxHeight: 300, background: "#000" }} 
+                src={previewUrl}
+                controls
+                playsInline
+                preload="auto"
+                style={{ width: "100%", borderRadius: 8, maxHeight: 300, background: "#000" }}
               />
             )}
-            <CButton 
-              color="secondary" 
-              size="sm" 
+            <CButton
+              color="secondary"
+              size="sm"
               style={{ position: "absolute", top: 10, right: 10 }}
               onClick={() => {
                 setPreviewUrl(null);
@@ -470,7 +471,7 @@ const MediaCaptureModal = ({ visible, onClose, type, onMediaSaved }) => {
       </CModalBody>
       <CModalFooter>
         <CButton color="secondary" onClick={onClose} disabled={isLoading || isRecording}>Cancel</CButton>
-        <CButton color="primary" onClick={handleSave} disabled={!file || isLoading || isRecording}>
+        <CButton style={{ backgroundColor: COLORS.primary, color: "#fff" }} onClick={handleSave} disabled={!file || isLoading || isRecording}>
           {isLoading ? "Saving..." : "Save Media"}
         </CButton>
       </CModalFooter>

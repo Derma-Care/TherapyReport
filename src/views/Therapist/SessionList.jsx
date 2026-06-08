@@ -389,6 +389,7 @@ const SessionList = () => {
       patientId: patientDataSource?.patientId, serviceType: patientDataSource?.serviceType,
       sets: ex?.sets, repetitions: ex?.repetitions, disease: patient.disease,
       therapistRecordId: patient.therapistRecordId, voiceRecordUrl: s.voiceRecordUrl || "",
+      exerciseName: ex?.exerciseName,
       activityType: ex?.activityType,
     })
   }
@@ -509,7 +510,7 @@ const SessionList = () => {
                             <button
                               style={S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm")}
                               onClick={() => {
-                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before", exercise: ex })
                                 else setMediaSession({ session: s, type: "before" })
                               }}
                             >
@@ -529,7 +530,7 @@ const SessionList = () => {
                             <button
                               style={S.btn(s.afterMediaUrl ? "success" : "secondary", "sm")}
                               onClick={() => {
-                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                                if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after", exercise: ex })
                                 else setMediaSession({ session: s, type: "after" })
                               }}
                             >
@@ -629,7 +630,7 @@ const SessionList = () => {
                       <button
                         style={{ ...S.btn(s.beforeMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
                         onClick={() => {
-                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before" })
+                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "before", exercise: ex })
                           else setMediaSession({ session: s, type: "before" })
                         }}
                       >
@@ -648,7 +649,7 @@ const SessionList = () => {
                       <button
                         style={{ ...S.btn(s.afterMediaUrl ? "success" : "secondary", "sm"), flex: 1, justifyContent: "center" }}
                         onClick={() => {
-                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after" })
+                          if (!s.consentPdfUrl) setConsentSession({ session: s, type: "after", exercise: ex })
                           else setMediaSession({ session: s, type: "after" })
                         }}
                       >
@@ -942,9 +943,12 @@ const SessionList = () => {
         patientName={patient?.name}
         doctorName={patient?.doctorName || patientDataSource?.doctorName}
         bookingId={patientDataSource?.bookingId}
-        bookingDate={patient?.sessionDate || consentSession?.session?.sessionDate || patientDataSource?.sessionStartDate}
+        bookingDate={consentSession?.session?.date || consentSession?.session?.sessionDate || patient?.sessionDate || patientDataSource?.sessionStartDate}
         bookingTime={patient?.sessionTime || consentSession?.session?.appointmentTime || consentSession?.session?.slotTime || consentSession?.session?.startTime}
         onConsentGranted={handleConsentGranted}
+        longActivityName={consentSession?.exercise ? `${consentSession.exercise.activityType || ''} - ${consentSession.exercise.exerciseName || ''}`.trim().replace(/^- |-$/, '') : ''}
+        sessionId={consentSession?.session?.sessionId}
+        sessionNumber={consentSession?.session?.sessionNo}
       />
 
       <MediaCaptureModal

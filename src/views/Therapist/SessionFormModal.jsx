@@ -627,6 +627,9 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
           bookingDate={data?.date || data?.sessionDate}
           bookingTime={data?.bookingTime || data?.appointmentTime || data?.slotTime || data?.startTime}
           onConsentGranted={handleConsentGranted}
+          longActivityName={`${data?.activityType || ''} - ${data?.exerciseName || data?.activityName || ''}`.trim().replace(/^- |-$/, '')}
+          sessionId={data?.sessionId}
+          sessionNumber={data?.sessionNo}
         />
       )}
       <style>
