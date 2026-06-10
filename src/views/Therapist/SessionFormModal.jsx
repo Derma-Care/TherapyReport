@@ -379,6 +379,12 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
       const afterKey = after ? await uploadFile('afterImage', after) : ''
       const beforeVideoKey = beforeVideo ? await uploadFile('beforeVideo', beforeVideo) : ''
       const afterVideoKey = afterVideo ? await uploadFile('afterVideo', afterVideo) : ''
+      
+      let voiceRecordKey = data.voiceRecordUrl || ''
+      if (data.voiceRecordFile) {
+        voiceRecordKey = await uploadFile('voiceRecord', data.voiceRecordFile)
+      }
+
       const now = new Date()
       const td = JSON.parse(localStorage.getItem('therapistData'))
       const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -398,7 +404,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         completedTime: now.toLocaleTimeString(),
         painBefore, painAfter,
         duration: data.sessionTime,
-        voiceRecord: data.voiceRecordUrl,
+        voiceRecord: voiceRecordKey,
         setsDone: `${completedSets || 0}/${data?.sets || 0}`,
         repetationDone: `${completedRepitations || 0}/${data?.repetitions || 0}`,
         therapistNotes: notes,
@@ -544,6 +550,16 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         <SectionHeading title="Next Session Plan" />
         <Textarea rows={2} placeholder="Describe the plan for the next session…" value={nextPlan}
           onChange={e => setNextPlan(e.target.value)} />
+
+        {/* ── Audio Recording ── */}
+        {data.voiceRecordUrl && (
+          <>
+            <SectionHeading title="Audio Recording" />
+            <div style={{ marginBottom: '16px' }}>
+              <audio controls src={data.voiceRecordUrl} style={{ width: '100%' }} />
+            </div>
+          </>
+        )}
 
         {/* ── Consent Status ── */}
         <SectionHeading title="Media Consent" />

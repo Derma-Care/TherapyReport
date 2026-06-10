@@ -219,36 +219,73 @@ const Accordion = ({ title, index, children, accentColor = PRIMARY }) => {
 }
 
 /* ─── Section card with accent heading — now collapsible ─── */
-const SectionCard = ({ title, children, defaultOpen = true }) => {
+const SectionCard = ({
+  title,
+  children,
+  openSection,
+  setOpenSection,
+}) => {
   const cfg = SECTION_CFG[title] || { color: PRIMARY, icon: '●' }
-  const [open, setOpen] = useState(defaultOpen)
+
+  const isMain = title === "Main Details"
+  const open = isMain || openSection === title
+
+  const handleToggle = () => {
+    if (isMain) return
+
+    setOpenSection(prev => prev === title ? null : title)
+  }
+
   return (
     <div style={{ marginBottom: 16 }}>
-      {/* Clickable header */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-          background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-          padding: '0 0 12px', marginBottom: open ? 4 : 0,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: 'none',
+          border: 'none',
+          cursor: isMain ? 'default' : 'pointer',
+          textAlign: 'left',
+
+          marginBottom: open ? 4 : 0,
           borderBottom: open ? `1px solid ${t.border}` : 'none',
-          transition: 'border-color .15s',
         }}
       >
         <span style={{
-          width: 30, height: 30, borderRadius: '8px', flexShrink: 0,
+          width: 30,
+          height: 30,
+          borderRadius: '8px',
+          flexShrink: 0,
           backgroundColor: `${cfg.color}15`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 15,
         }}>
           {cfg.icon}
         </span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.04em', flex: 1 }}>
+
+        <span style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: cfg.color,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          flex: 1,
+        }}>
           {title}
         </span>
-        {open
-          ? <ChevronUp size={15} color={t.textMuted} style={{ flexShrink: 0 }} />
-          : <ChevronDown size={15} color={t.textMuted} style={{ flexShrink: 0 }} />}
+
+        {!isMain && (
+          open
+            ? <ChevronUp size={15} color={t.textMuted} />
+            : <ChevronDown size={15} color={t.textMuted} />
+        )}
       </button>
+
       {open && (
         <div style={{ paddingTop: 8 }}>
           {children}
@@ -263,9 +300,9 @@ const SectionCard = ({ title, children, defaultOpen = true }) => {
 export default function PatientViewModal({ visible, data, onClose }) {
   const [preview, setPreview] = useState(null)
   const [mediaPreview, setMediaPreview] = useState(null)
+  const [openSection, setOpenSection] = useState(null)
   const record = data
   if (!record) return null
-
   // Debug: log the full record to see all keys available
   console.log('[PatientViewModal] record keys:', Object.keys(record))
   console.log('[PatientViewModal] record:', record)
@@ -561,7 +598,7 @@ export default function PatientViewModal({ visible, data, onClose }) {
                   const ans = item?.answer || item?.response || item?.therapyAnswer || item?.answerText
                   const extras = Object.entries(item).filter(([k]) => {
                     const kl = k.toLowerCase()
-                    return !QA_DETECT.includes(kl) && !['title','questionname','questionkey'].includes(kl) && kl !== 'id'
+                    return !QA_DETECT.includes(kl) && !['title', 'questionname', 'questionkey'].includes(kl) && kl !== 'id'
                   })
                   return (
                     <div key={idx} style={{
@@ -678,7 +715,11 @@ export default function PatientViewModal({ visible, data, onClose }) {
     const fields = Object.entries(obj).map(([k, v], i) => renderField(k, v, i))
     if (!fields.some(Boolean)) return null
     return (
-      <SectionCard title={title}>
+      <SectionCard
+        title={title}
+        openSection={openSection}
+        setOpenSection={setOpenSection}
+      >
         <CRow className="g-2">{fields}</CRow>
       </SectionCard>
     )
@@ -990,7 +1031,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
             if (!fields.some(Boolean)) return null
             return (
               <div key={title} style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-                <SectionCard title={title}>
+                <SectionCard title={title} openSection={openSection}
+                  setOpenSection={setOpenSection}>
                   <CRow className="g-2">{fields}</CRow>
                 </SectionCard>
               </div>
@@ -999,12 +1041,13 @@ export default function PatientViewModal({ visible, data, onClose }) {
 
           {/* Home Exercises */}
           {(record?.exercisePlan?.exercises?.length > 0 || record?.exercisePlan?.homeExercises?.length > 0) && (() => {
-            const exercisesList = record?.exercisePlan?.exercises?.length > 0 
-                ? record.exercisePlan.exercises 
-                : record.exercisePlan.homeExercises;
+            const exercisesList = record?.exercisePlan?.exercises?.length > 0
+              ? record.exercisePlan.exercises
+              : record.exercisePlan.homeExercises;
             return (
               <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-                <SectionCard title="Home Exercise">
+                <SectionCard title="Home Exercise" openSection={openSection}
+                  setOpenSection={setOpenSection}>
                   {exercisesList.map((item, index) => renderExerciseItem(item, index))}
                 </SectionCard>
               </div>
@@ -1014,7 +1057,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
           {/* Questions / Therapy Answers — auto-discovered from any array field */}
           {qaArrays.length > 0 && qaArrays.map(({ key, items }) => (
             <div key={key} style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-              <SectionCard title="Questions">
+              <SectionCard title="Questions" openSection={openSection}
+                setOpenSection={setOpenSection}>
                 <Accordion title={labelify(key)} accentColor={SECTION_CFG['Questions'].color}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {items.map((item, index) => {
@@ -1064,8 +1108,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
           {/* Fallback: also check record.questions and record.therapyAnswers explicitly */}
           {qaArrays.length === 0 && (record?.questions?.length > 0 || record?.therapyAnswers?.length > 0) && (
             <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-              <SectionCard title="Questions">
-                <Accordion title="Therapy Answers" accentColor={SECTION_CFG['Questions'].color}>
+              <SectionCard title="Questions"    >
+                <Accordion title="Therapy Answers" accentColor={SECTION_CFG['Questions'].color} >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {(record?.therapyAnswers || record?.questions || []).map((item, index) => {
                       const qText = item?.questionText || item?.question || item?.title || `Question ${index + 1}`
@@ -1131,7 +1175,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
             if (!fields.some(Boolean)) return null
             return (
               <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-                <SectionCard title="Follow Up">
+                <SectionCard title="Follow Up" openSection={openSection}
+                  setOpenSection={setOpenSection}>
                   <CRow className="g-2">{fields}</CRow>
                 </SectionCard>
               </div>
@@ -1141,7 +1186,8 @@ export default function PatientViewModal({ visible, data, onClose }) {
           {/* Home Advice */}
           {record?.homeAdvice && (
             <div style={{ backgroundColor: '#fff', borderRadius: t.radius, border: `1px solid ${t.border}`, padding: '16px 18px', marginBottom: 12, boxShadow: t.shadow }}>
-              <SectionCard title="Home Advice">
+              <SectionCard title="Home Advice" openSection={openSection}
+                setOpenSection={setOpenSection}>
                 <CRow className="g-2">{renderField('homeAdvice', record.homeAdvice, 0)}</CRow>
               </SectionCard>
             </div>

@@ -13,7 +13,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
 import axios from 'axios'
-import { toast, ToastContainer } from 'react-toastify'
+import { toast } from 'react-toastify'
 import { BASE_URL } from '../../API/BaseUrl'
 import { showCustomToast } from '../../Utils/Toaster'
 import { COLORS } from '../../Constant/Themes'
@@ -102,7 +102,6 @@ const Login = () => {
 
     return (
         <>
-            <ToastContainer />
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 

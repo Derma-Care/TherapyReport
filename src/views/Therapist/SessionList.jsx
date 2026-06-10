@@ -16,6 +16,7 @@ import {
   Play, Mic, Activity, Clock, CheckCircle, Zap, Camera
 } from "lucide-react"
 import { COLORS } from "../../Constant/Themes"
+import { showCustomToast } from "../../Utils/Toaster"
 
 /* ─── THEME ─────────────────────────────────────────────────────────────── */
 const T = {
@@ -243,7 +244,7 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
       rec.ondataavailable = e => e.data.size > 0 && chunksRef.current.push(e.data)
       rec.onstop = () => setAudioUrl(URL.createObjectURL(new Blob(chunksRef.current, { type: "audio/webm" })))
       rec.start(); setStatus("RECORDING")
-    } catch { alert("Microphone access denied.") }
+    } catch { showCustomToast("Microphone access denied.") }
   }
 
   const stop = () => {
@@ -261,15 +262,20 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
     }
     setStatus("STOPPED")
     try {
-      const blob = new Blob(chunksRef.current, { type: "audio/mp3" })
-      const file = new File([blob], "voiceRecord.mp3", { type: "audio/mp3" })
-      const fileKey = await uploadFile("voiceRecord", file)
-      onSave(fileKey)
+      const actualMimeType = recRef.current?.mimeType || "audio/webm"
+      const ext = actualMimeType.includes("mp4") ? "m4a" : "mp3"
+      const fileMimeType = ext === "mp3" ? "audio/mp3" : actualMimeType
+      
+      const blob = new Blob(chunksRef.current, { type: fileMimeType })
+      const file = new File([blob], `voiceRecord.${ext}`, { type: fileMimeType })
+      const blobUrl = URL.createObjectURL(file)
+      onSave(file, blobUrl)
+      showCustomToast("Voice recording saved locally.", "success")
       onClose()
     } catch (e) {
-      console.error("Audio upload failed", e)
+      console.error("Audio generation failed", e)
       setStatus("PREVIEW")
-      alert("Failed to save audio recording.")
+      showCustomToast("Failed to save audio recording locally.")
     }
   }
 
@@ -362,7 +368,10 @@ const SessionList = () => {
 
   const handleUpdate = upd => setTreeData(t => deepUpdateSession(t, upd))
 
-  const handleStartSession = id => setActiveSessions(p => ({ ...p, [id]: new Date() }))
+  const handleStartSession = id => {
+    setActiveSessions(p => ({ ...p, [id]: new Date() }))
+    showCustomToast("Session tracker started.", "info")
+  }
 
   const handleStopAndComplete = s => {
     const startObj = activeSessions[s.sessionId]
@@ -370,6 +379,7 @@ const SessionList = () => {
     const endObj = new Date()
     setActiveSessions(p => { const n = { ...p }; delete n[s.sessionId]; return n })
     handleUpdate({ ...s, startTime: fmt24(startObj), endTime: fmt24(endObj) })
+    showCustomToast("Session tracker stopped. Remember to complete the form.", "success")
   }
 
   const handleManualCompleteFallback = (s, ex) => {
@@ -404,8 +414,8 @@ const SessionList = () => {
       setSelectedSession(res?.data || res || item)
     } catch { setSelectedSession(item) } finally { setLoadingId(null) }
   }
-  const handleVoiceRecordSaved = url => {
-    if (voiceRecordSession && url) handleUpdate({ ...voiceRecordSession, voiceRecordUrl: url })
+  const handleVoiceRecordSaved = (file, blobUrl) => {
+    if (voiceRecordSession && file) handleUpdate({ ...voiceRecordSession, voiceRecordFile: file, voiceRecordUrl: blobUrl })
     setVoiceRecordSession(null)
     cleanupModalArtifacts()
   }
@@ -914,7 +924,7 @@ const SessionList = () => {
           if (!isBase64) {
             return `${BASE_URL}/viewFile/${str}`
           }
-          return ''
+          return str
         }
         const audioSrc = getFileUrl(audioPlaybackSession.voiceRecordUrl || audioPlaybackSession.voiceRecord)
         return (
@@ -1019,7 +1029,7 @@ const SessionList = () => {
           if (!isBase64) {
             return `${BASE_URL}/viewFile/${str}`
           }
-          return ''
+          return str
         }
         const mediaUrl = typeof mediaPreview === "string" ? mediaPreview : mediaPreview.url
         const previewUrl = getFileUrl(mediaUrl)
