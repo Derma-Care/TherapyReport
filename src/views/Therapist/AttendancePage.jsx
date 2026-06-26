@@ -162,7 +162,7 @@ const AttendanceTracker = () => {
       setLoadingDetails(true);
       setShowDetailsModal(true);
       setDetailsData(null);
-      const res = await axios.get(`${BASE_URL}/getDailyReportFormonthly/${clinicId}/${branchId}/${therapistId}/${date}`);
+      const res = await axios.get(`${BASE_URL}/getDaily/${therapistId}/${date}`);
       if (res.data.success) {
         setDetailsData(res.data.data);
       }
@@ -236,7 +236,7 @@ const AttendanceTracker = () => {
       if (res?.data?.success) {
         await fetchDailyData();
         await fetchMonthlyData();
-      
+
         return true;
       }
 
@@ -883,7 +883,7 @@ const AttendanceTracker = () => {
                     {item.description && (
                       <div style={{ marginBottom: 8 }}>
                         <span style={styles.mobileLabel}>Description</span>
-                        <div style={{ fontSize: 12, color: "#374151", marginTop: 2, lineHeight: 1.4 }}>{item.description}</div>
+                        <div style={{ fontSize: 12, color: "#374151", marginTop: 2, lineHeight: 1.4 }}>{item.description || "NA"}</div>
                       </div>
                     )}
                     <div style={styles.mobileCardRow}>
@@ -940,10 +940,10 @@ const AttendanceTracker = () => {
                           </div>
                         </td>
                         <td style={{ ...styles.td, color: "#374151", fontSize: 12 }}>
-                          {item.description || <span style={{ color: "#d1d5db" }}>—</span>}
+                          {item.description || <span style={{ color: "#d1d5db" }}>NA</span>}
                         </td>
                         <td style={styles.td}>
-                          <span style={styles.badgeAmber}>{item.duration}</span>
+                          <span  >{item.duration}</span>
                         </td>
                         <td style={{
                           maxWidth: "180px",
@@ -1414,10 +1414,10 @@ const AttendanceTracker = () => {
                             {session.activity}
                           </td>
                           <td style={{ ...styles.td, fontSize: 12, color: "#374151" }}>
-                            {session.description || <span style={{ color: "#d1d5db" }}>—</span>}
+                            {session.description || <span style={{ color: "#d1d5db" }}>NA</span>}
                           </td>
                           <td style={styles.td}>
-                            <span style={styles.badgeAmber}>{session.duration}</span>
+                            <span>{session.duration}</span>
                           </td>
                           <td style={{ ...styles.td, fontSize: 11, color: "#6b7280", minWidth: 140, wordBreak: "break-word" }}>
                             {session.location || "—"}

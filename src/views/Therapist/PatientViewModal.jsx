@@ -1192,6 +1192,62 @@ export default function PatientViewModal({ visible, data, onClose }) {
               </SectionCard>
             </div>
           )}
+          {record?.recoverySupport?.length > 0 && (
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: t.radius,
+                border: `1px solid ${t.border}`,
+                padding: "16px 18px",
+                marginBottom: 12,
+                boxShadow: t.shadow,
+              }}
+            >
+              <SectionCard
+                title="Recovery Support"
+                openSection={openSection}
+                setOpenSection={setOpenSection}
+              >
+                <CRow className="g-2">
+                  {record.recoverySupport.map((item, index) => (
+                    <CCol md={6} key={item.id || index} className="mb-3">
+                      <div
+                        style={{
+                          border: `1px solid ${t.border}`,
+                          borderRadius: t.radiusSm,
+                          padding: 14,
+                          background: t.surface,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: t.text,
+                            marginBottom: 8,
+                          }}
+                        >
+                          {item.name}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: t.textMuted,
+                            marginBottom: 8,
+                          }}
+                        >
+                          {item.description}
+                        </div>
+
+                        <StatusBadge value={item.category} />
+                      </div>
+                    </CCol>
+                  ))}
+                </CRow>
+              </SectionCard>
+            </div>
+          )}
 
         </CModalBody>
 

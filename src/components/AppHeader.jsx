@@ -190,7 +190,13 @@ const AppHeader = () => {
             {/* Therapist Info */}
             <div style={{ textAlign: 'right', marginRight: 4 }}>
               <div className="welcome-text">Welcome back</div>
-              <div className="therapist-name">{therapistName || '—'}</div>
+              <div className="therapist-name">
+                {therapistName
+                  ? therapistName
+                    .toLowerCase()
+                    .replace(/\b\w/g, (char) => char.toUpperCase())
+                  : "—"}
+              </div>
               {therapistId && <div className="therapist-id">ID: {therapistId}</div>}
             </div>
 
