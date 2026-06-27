@@ -591,7 +591,25 @@ export default function TherapistCertification() {
             setCertifications([])
         }
     }
+    const handleDownload = async (url, fileName = "certificate.pdf") => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
 
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            console.error("Download failed", err);
+        }
+    };
     const filtered = certifications.filter(c => {
         const name = (c.certificateName || c.certificationName || '').toLowerCase()
         const authority = (c.issueAuthority || c.issuingAuthority || '').toLowerCase()
@@ -774,11 +792,13 @@ export default function TherapistCertification() {
                                         <td style={styles.td}>
                                             <button
                                                 style={styles.btnView}
-                                                onClick={() => {
-                                                    setSelectedCert(item)
-                                                    setPreviewLoading(true)
-                                                    setPreviewModal(true)
-                                                }}
+                                                onClick={() =>
+                                                    window.open(
+                                                        resolveMedia(item.upload || item.certificateUrl),
+                                                        "_blank",
+                                                        "noopener,noreferrer"
+                                                    )
+                                                }
                                             >
                                                 View
                                             </button>
@@ -810,14 +830,15 @@ export default function TherapistCertification() {
                                         {item.certificateName || item.certificationName}
                                     </span>
                                     <button
-                                        style={{ ...styles.btnView, flexShrink: 0 }}
-                                        onClick={() => {
-                                            setSelectedCert(item)
-                                            setPreviewLoading(true)
-                                            setPreviewModal(true)
-                                        }}
+                                        style={styles.btnView}
+                                        onClick={() =>
+                                            window.open(
+                                                resolveMedia(item.upload || item.certificateUrl),
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                            )
+                                        }
                                     >
-                                        <CIcon icon={cilFile} size="sm" />
                                         View
                                     </button>
                                 </div>
@@ -913,7 +934,15 @@ export default function TherapistCertification() {
                                 download
                                 style={{ textDecoration: "none" }}
                             >
-                                <button style={styles.btnSubmit}>
+                                <button
+                                    style={styles.btnSubmit}
+                                    onClick={() =>
+                                        window.open(
+                                            resolveMedia(selectedCert.upload || selectedCert.certificateUrl),
+                                            "_blank"
+                                        )
+                                    }
+                                >
                                     <CIcon icon={cilDataTransferDown} size="sm" />
                                     Download
                                 </button>
