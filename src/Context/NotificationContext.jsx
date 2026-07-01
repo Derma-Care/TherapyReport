@@ -34,12 +34,12 @@ export const NotificationProvider = ({ children }) => {
 
   // ── Add notification (from FCM foreground) ───────────────────────────────
   const addNotification = useCallback((payload) => {
-    const { title, body, data } = buildNotifObject(payload)
+    const { title, body, data, type: normalizedType } = buildNotifObject(payload)
     const newNotif = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title,
       body,
-      type: data?.type || 'general',
+      type: normalizedType,
       data,
       timestamp: new Date().toISOString(),
       read: false,
@@ -152,9 +152,13 @@ export const useNotifications = () => {
 function buildNotifObject(payload) {
   const notif = payload?.notification || {}
   const data = payload?.data || {}
+  // Normalize type to lowercase so TYPE_META lookups work regardless of backend casing (BOOKING, Booking, booking)
+  const rawType = data.type || notif.type || 'general'
+  const type = rawType.toLowerCase()
   return {
     title: notif.title || data.title || 'PhysioCare',
     body: notif.body || data.body || 'You have a new notification',
-    data,
+    type,
+    data: { ...data, type, navigatePath: data.navigatePath || data.navigate_path || '' },
   }
 }

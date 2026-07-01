@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   CSpinner,
   CCollapse,
@@ -14,7 +15,7 @@ import LoadingIndicator from '../../Utils/loader'
 import {
   User, Phone, Stethoscope, Activity,
   CheckCircle2, Clock, CalendarDays, ArrowRight,
-  ClipboardList, Users, Zap,
+  ClipboardList, Users, Zap, X
 } from 'lucide-react'
 import { COLORS } from '../../Constant/Themes'
 
@@ -27,16 +28,46 @@ const STATUS_CONFIG = {
 const getStatus = (s) => STATUS_CONFIG[s?.toLowerCase()] || STATUS_CONFIG.default
 
 // ─── Reassign Modal ───────────────────────────────────────
-const ReassignModal = ({ visible, onClose, onAssign, patient }) => {
+const ReassignModal = ({ visible, onClose, onAssign, onWithdraw, patient, clinicId, branchId, originalTherapistId, originalTherapistName, assignedTherapist }) => {
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(false)
 
   // Dummy therapist data
   const dummyTherapists = [
-    { id: 'T001', name: 'Dr. John Doe', service: 'Physiotherapy', isPresent: true },
-    { id: 'T002', name: 'Dr. Jane Smith', service: 'Chiropractic', isPresent: false },
-    { id: 'T003', name: 'Dr. Alice Brown', service: 'Acupuncture', isPresent: true },
-    { id: 'T004', name: 'Dr. Robert Davis', service: 'Sports Therapy', isPresent: false },
+    {
+      "therapistId": "THER-22764B",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": true
+    }, {
+      "therapistId": "THER-22764B",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": true
+    }, {
+      "therapistId": "THER-22764B",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": true
+    },
+    {
+      "therapistId": "THER-19B9D7",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": false
+    },
+    {
+      "therapistId": "THER-FBE952",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": false
+    },
+    {
+      "therapistId": "THER-983070",
+      "therapistName": "Dr.Rakesh",
+      "services": ["home", "clinic"],
+      "isPresent": false
+    }
   ]
 
   if (!visible) return null
@@ -48,7 +79,12 @@ const ReassignModal = ({ visible, onClose, onAssign, patient }) => {
       console.log("Sending reassign to backend:", {
         patientId: patient?.patientId,
         bookingId: patient?.bookingId,
-        newTherapistId: selected.id
+        therapistRecordId: patient?.therapistRecordId,
+        originalTherapistId,
+        originalTherapistName,
+        clinicId,
+        branchId,
+        newTherapistId: selected.therapistId
       })
       // Simulate backend delay
       await new Promise(r => setTimeout(r, 1000))
@@ -61,67 +97,198 @@ const ReassignModal = ({ visible, onClose, onAssign, patient }) => {
     }
   }
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-      <div style={{ background: '#fff', padding: 24, borderRadius: 12, width: 450, maxWidth: '90%', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-        <h3 style={{ marginTop: 0, color: '#0c447c', fontSize: 18, marginBottom: 4 }}>Reassign Therapist</h3>
-        <p style={{ fontSize: 13, color: '#5f5e5a', marginBottom: 20 }}>Select a new therapist for <strong style={{ color: '#0c447c' }}>{patient?.patientName}</strong></p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto', marginBottom: 20 }}>
-          {dummyTherapists.map(t => {
-            // "if isPresent true disable mode and other enable"
-            const isDisabled = t.isPresent === true
+  const handleWithdraw = async () => {
+    setLoading(true)
+    try {
+      console.log("Sending WITHDRAW to backend:", {
+        patientId: patient?.patientId,
+        bookingId: patient?.bookingId,
+        therapistRecordId: patient?.therapistRecordId,
+        originalTherapistId,
+        originalTherapistName,
+        clinicId,
+        branchId,
+        assignedTherapistId: assignedTherapist?.therapistId
+      })
+      // Simulate backend delay
+      await new Promise(r => setTimeout(r, 1000))
+      onWithdraw()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-            return (
-              <div 
-                key={t.id} 
-                onClick={() => {
-                  if (isDisabled) return
-                  setSelected(t)
-                }}
-                style={{
-                  padding: 12, 
-                  border: `1px solid ${selected?.id === t.id ? '#185fa5' : '#d0dce9'}`, 
-                  borderRadius: 8,
-                  background: selected?.id === t.id ? '#e6f1fb' : '#fff',
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  opacity: isDisabled ? 0.6 : 1,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0c447c', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <User size={14} /> {t.name} <span style={{ fontSize: 11, color: '#888780', fontWeight: 'normal' }}>({t.id})</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: '#5f5e5a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Activity size={12} /> {t.service}
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, fontWeight: '600', color: isDisabled ? '#ef4444' : '#1D9E75', background: isDisabled ? '#fef2f2' : '#ecfdf5', padding: '4px 8px', borderRadius: 4 }}>
-                  {isDisabled ? 'Unavailable' : 'Selectable'}
-                </div>
+  if (!visible) return null
+
+  return createPortal(
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: '16px' }}>
+      <div style={{ background: '#fff', padding: 0, borderRadius: 12, width: 450, maxWidth: '100%', maxHeight: '90%', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{
+          backgroundColor: '#1b4f8a', // PRIMARY
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexShrink: 0
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            border: '2px solid rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Users size={20} color="#fff" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '600', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              REASSIGN THERAPIST
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: '2px 0' }}>
+              {patient?.patientName || 'Select Therapist'}
+            </div>
+            {patient?.bookingId && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.04em' }}>
+                #{patient?.bookingId}
               </div>
-            )
-          })}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button className="td-btn td-btn-outline" onClick={onClose} disabled={loading}>Cancel</button>
-          <button className="td-btn td-btn-primary" onClick={handleAssign} disabled={!selected || loading}>
-            {loading ? <CSpinner size="sm" /> : 'Confirm Reassign'}
+            )}
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', color: '#fff', padding: 4, cursor: 'pointer',
+            opacity: 0.8, alignSelf: 'flex-start',
+            transition: 'opacity 0.2s'
+          }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.8}>
+            <X size={20} />
           </button>
         </div>
+
+        {/* Body */}
+        {assignedTherapist ? (
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', background: '#f1f5f9', flex: 1, maxHeight: 420 }}>
+            <div style={{ fontSize: 13, color: '#0c447c', fontWeight: 600, marginBottom: 10 }}>Currently Assigned To:</div>
+            <div style={{
+              padding: 16,
+              border: `1px solid #185fa5`,
+              borderRadius: 8,
+              background: '#e6f1fb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+            }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#0c447c', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <User size={14} /> {assignedTherapist.therapistName}
+                  </div>
+                  <span style={{ fontSize: 11, color: '#888780', fontWeight: 'normal', display: 'block', marginLeft: 20 }}>
+                    ID: {assignedTherapist.therapistId}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: '#5f5e5a', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, textTransform: 'capitalize' }}>
+                  <Activity size={12} /> {assignedTherapist.services?.join(', ')}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, fontWeight: '600', color: '#1D9E75', background: '#ecfdf5', padding: '4px 8px', borderRadius: 4, flexShrink: 0, marginLeft: 10 }}>
+                Assigned
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, fontSize: 12, color: '#5f5e5a', lineHeight: 1.5, background: '#fff', padding: 12, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <strong>Note:</strong> You can withdraw this assignment if needed. The patient will be moved back to the original therapist's queue.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', padding: '20px', background: '#f1f5f9', flex: 1, maxHeight: 420 }}>
+            {dummyTherapists.map((t, index) => {
+              // "if isPresent true disable mode and other enable"
+              const isDisabled = t.isPresent === true
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => {
+                    if (isDisabled) return
+                    setSelected(t)
+                  }}
+                  style={{
+                    padding: 12,
+                    border: `1px solid ${selected?.therapistId === t.therapistId ? '#185fa5' : '#d0dce9'}`,
+                    borderRadius: 8,
+                    background: selected?.therapistId === t.therapistId ? '#e6f1fb' : '#fff',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.6 : 1,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: '#0c447c', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <User size={14} /> {t.therapistName}
+                      </div>
+                      <span style={{ fontSize: 11, color: '#888780', fontWeight: 'normal', display: 'block', marginLeft: 20 }}>
+                        ID: {t.therapistId}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#5f5e5a', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, textTransform: 'capitalize' }}>
+                      <Activity size={12} /> {t.services?.join(', ')}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: '600', color: isDisabled ? '#ef4444' : '#1D9E75', background: isDisabled ? '#fef2f2' : '#ecfdf5', padding: '4px 8px', borderRadius: 4, flexShrink: 0, marginLeft: 10 }}>
+                    {isDisabled ? 'Unavailable' : 'Selectable'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#fff', borderTop: '1px solid #e2e8f0', flexShrink: 0 }}>
+          <div style={{ fontSize: 11, color: '#64748b' }}>
+            Current: <strong style={{ color: '#0f172a' }}>{originalTherapistName || 'None'}</strong>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="td-btn td-btn-outline" onClick={onClose} disabled={loading}>Cancel</button>
+            {assignedTherapist ? (
+              <button className="td-btn td-btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={handleWithdraw} disabled={loading}>
+                {loading ? <CSpinner size="sm" /> : 'Withdraw'}
+              </button>
+            ) : (
+              <button className="td-btn td-btn-primary" onClick={handleAssign} disabled={!selected || loading}>
+                {loading ? <CSpinner size="sm" /> : 'Confirm Reassign'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
-const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) => {
+const PatientRow = ({ p, index, clinicId, branchId, originalTherapistId, originalTherapistName, onViewDetails, navigate }) => {
   const [detailLoading, setDetailLoading] = useState(false)
   const [showReassign, setShowReassign] = useState(false)
+  const [assignedTherapist, setAssignedTherapist] = useState(() => {
+    if (p.assignStatus === "true" || p.assignStatus === true) {
+      return {
+        therapistName: p.assignedTherapist || 'Assigned Therapist',
+        therapistId: p.assignedthrepaistId || 'Unknown ID',
+        services: [] // Not provided by the list API, but UI can gracefully handle
+      }
+    }
+    return null
+  })
 
   const bookingId = p.bookingId
   const patientId = p.patientId
@@ -166,6 +333,11 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             <span><Activity size={11} /> {p.serivceType || 'N/A'}</span>
             <span><Phone size={11} /> {p.mobileNumber || p.patientMobileNumber || 'N/A'}</span>
           </div>
+          {p.reassignedFrom && (
+            <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '3px 8px', borderRadius: 12, fontSize: 10, fontWeight: 700 }}>
+              <ArrowRight size={10} /> Transferred from {p.reassignedFrom}
+            </div>
+          )}
         </div>
       </div>
 
@@ -179,12 +351,12 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             <span className="td-status-dot" style={{ background: status.dot }} />
             {p.overallStatus || 'Pending'}
           </span>
-          <button 
-            className="td-btn td-btn-outline" 
+          <button
+            className={`td-btn ${assignedTherapist ? 'td-btn-primary' : 'td-btn-outline'}`}
             style={{ padding: '4px 10px', fontSize: '11px', height: '26px' }}
             onClick={() => setShowReassign(true)}
           >
-            <Users size={11} /> Reassign
+            <Users size={11} /> {assignedTherapist ? 'Assigned' : 'Reassign'}
           </button>
         </div>
 
@@ -217,14 +389,23 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
         </div>
       </div>
 
-      {/* Reassign Modal */}
-      <ReassignModal 
-        visible={showReassign} 
-        onClose={() => setShowReassign(false)} 
+      <ReassignModal
+        visible={showReassign}
+        onClose={() => setShowReassign(false)}
         patient={p}
+        clinicId={clinicId}
+        branchId={branchId}
+        originalTherapistId={originalTherapistId}
+        originalTherapistName={originalTherapistName}
+        assignedTherapist={assignedTherapist}
         onAssign={(therapist) => {
           console.log('Reassigned to:', therapist)
-          // You can also add a success toast here
+          setAssignedTherapist(therapist)
+          setShowReassign(false)
+        }}
+        onWithdraw={() => {
+          console.log('Withdrawn assignment from:', assignedTherapist)
+          setAssignedTherapist(null)
           setShowReassign(false)
         }}
       />
@@ -382,17 +563,22 @@ const TherapyDashboard = () => {
                     <Users size={13} /> {patientList.length} Patient{patientList.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                {patientList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p, index) => (
-                  <PatientRow
-                    key={`${p.bookingId || 'no-booking'}-${index}-${currentPage}`}
-                    p={p}
-                    index={index}
-                    clinicId={clinicId}
-                    branchId={branchId}
-                    onViewDetails={setSelected}
-                    navigate={navigate}
-                  />
-                ))}
+                {patientList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p, index) => {
+                  const displayPatient = p
+                  return (
+                    <PatientRow
+                      key={`${p.bookingId || 'no-booking'}-${index}-${currentPage}`}
+                      p={displayPatient}
+                      index={index}
+                      clinicId={clinicId}
+                      branchId={branchId}
+                      originalTherapistId={therapistId}
+                      originalTherapistName={routeData?.therapistName}
+                      onViewDetails={setSelected}
+                      navigate={navigate}
+                    />
+                  )
+                })}
                 {patientList.length > itemsPerPage && (
                   <div className="td-pagination">
                     <button

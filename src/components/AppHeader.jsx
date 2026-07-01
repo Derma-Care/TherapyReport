@@ -19,6 +19,7 @@ const PRIMARY_DARK = '#143d6e'
 const TYPE_META = {
   feedback:    { icon: '⭐', label: 'Feedback',    color: '#f59e0b', bg: '#fffbeb' },
   appointment: { icon: '📅', label: 'Appointment', color: '#3b82f6', bg: '#eff6ff' },
+  booking:     { icon: '📋', label: 'Booking',     color: '#10b981', bg: '#ecfdf5' },
   general:     { icon: '🔔', label: 'General',     color: '#6366f1', bg: '#eef2ff' },
 }
 const getMeta = (type) => TYPE_META[type] || TYPE_META.general
@@ -40,10 +41,21 @@ const NotificationPanel = ({ onClose }) => {
 
   const handleNotifClick = (notif) => {
     markOneRead(notif.id)
-    const type = notif.type || notif.data?.type
-    if (type === 'feedback') {
+
+    // 1. Try direct navigatePath from backend payload (e.g. "therapist" or "therapist-feedback")
+    const navigatePath = notif.data?.navigatePath || notif.data?.navigate_path || ''
+    if (navigatePath) {
+      const route = navigatePath.startsWith('/') ? navigatePath : `/${navigatePath}`
+      navigate(route)
+      onClose()
+      return
+    }
+
+    // 2. Fallback: route by type (normalize to lowercase to handle "BOOKING", "FEEDBACK" etc)
+    const type = (notif.type || notif.data?.type || '').toLowerCase()
+    if (type === 'feedback' || type.includes('feedback')) {
       navigate('/therapist-feedback')
-    } else if (type === 'appointment') {
+    } else if (type === 'appointment' || type === 'booking' || type.includes('booking')) {
       navigate('/therapist')
     }
     onClose()
@@ -390,9 +402,10 @@ const AppHeader = () => {
         }
         .notif-item-body {
           font-size:12px;color:#475569;line-height:1.5;
-          display:-webkit-box;-webkit-line-clamp:2;
+          display:-webkit-box;-webkit-line-clamp:5;
           -webkit-box-orient:vertical;overflow:hidden;
           margin-bottom:6px;
+          white-space: pre-line;
         }
         .notif-item-meta { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
         .notif-type-tag {

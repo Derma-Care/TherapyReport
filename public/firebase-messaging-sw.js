@@ -75,11 +75,21 @@ messaging.onBackgroundMessage((payload) => {
   const notificationBody = notif.body || notifData.body || 'You have a new notification'
   const notificationIcon = notif.icon || '/192x192.png'
 
-  // Determine click URL based on notification type
+  // Determine click URL based on notification's navigatePath sent by backend
+  // Backend sends: navigatePath = "therapist" or "therapist-feedback"
+  const navigatePath = notifData.navigatePath || notifData.navigate_path || ''
   const type = notifData.type || ''
   let clickUrl = '/'
-  if (type === 'feedback') clickUrl = '/therapist-feedback'
-  else if (type === 'appointment') clickUrl = '/therapist'
+  if (navigatePath) {
+    // Ensure it starts with a slash
+    clickUrl = navigatePath.startsWith('/') ? navigatePath : `/${navigatePath}`
+  } else if (type === 'feedback') {
+    clickUrl = '/therapist-feedback'
+  } else if (type === 'appointment') {
+    clickUrl = '/therapist'
+  } else {
+    clickUrl = '/therapist'
+  }
 
   const options = {
     body: notificationBody,
