@@ -18,6 +18,7 @@ import { BASE_URL } from '../../API/BaseUrl'
 import { showCustomToast } from '../../Utils/Toaster'
 import { COLORS } from '../../Constant/Themes'
 import { useHospital } from '../../Context/HospitalContext'
+import { getFCMToken } from '../../firebase'
 
 const FEATURES = ['Session management', 'Progress tracking', 'Secure records', 'Multi-branch support']
 
@@ -54,10 +55,9 @@ const Login = () => {
         if (!validateForm()) return
         setIsLoading(true)
         setErrorMessage('')
-
+        const fcmToken = await getFCMToken()
         try {
-            await Notification.requestPermission()
-            const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web' }
+            const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web', fcm: fcmToken }
             const resposnse = await axios.post(`${BASE_URL}/loginUsingRoles`, loginBody, {
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -78,10 +78,16 @@ const Login = () => {
                         therapistName: payload.staffName,
                         branchId: payload.branchId,
                         clinicId: payload.hospitalId,
-                        role: role,
+                        role: payload.role,
                         branchName: payload.branchName
                     }
                     localStorage.setItem("therapistData", JSON.stringify(theraphPayload))
+
+                    // Token is already sent in the login request!
+                    if (fcmToken) {
+                        localStorage.setItem('fcmToken', fcmToken)
+                    }
+
                     navigate("/therapist", { state: theraphPayload })
                 }
             }
@@ -425,6 +431,7 @@ const Login = () => {
                 .form-footer-text { font-size:12px;color:#888780; }
                 .form-footer-text a { color:#185fa5;text-decoration:none;font-weight:500; }
 
+
                 @media (max-width: 900px) {
                     .login-left-panel { display:none; }
                     .login-right-panel { width:100%;border-left:none;box-shadow:none; }
@@ -498,6 +505,7 @@ const Login = () => {
                         <p className="form-subtitle">Sign in to continue to your dashboard</p>
                     </div>
 
+
                     {errorMessage && (
                         <div className="error-alert" style={{ width: '100%' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -560,7 +568,11 @@ const Login = () => {
                             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
                         </div>
 
-                        <button type="submit" className="submit-btn" disabled={isLoading}>
+                        <button
+                            type="submit"
+                            className="submit-btn"
+                            disabled={isLoading}
+                        >
                             {isLoading ? <span className="spin" /> : 'Sign in to your account'}
                         </button>
                     </form>

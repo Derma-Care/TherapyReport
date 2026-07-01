@@ -1,15 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-
-
 import removeConsole from 'vite-plugin-remove-console'
 import { COLORS } from './src/Constant/Themes'
-export default defineConfig({
+
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Therapist App',
@@ -42,7 +42,8 @@ export default defineConfig({
       },
     }),
 
-    removeConsole(),
+    // ── Strip console only in production build ──────────────────────────────
+    ...(command === 'build' ? [removeConsole()] : []),
   ],
 
   // ✅ CORRECT PLACE
@@ -51,4 +52,4 @@ export default defineConfig({
     strictPort: true
   },
 
-})
+}))

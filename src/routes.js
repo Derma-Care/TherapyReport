@@ -23,6 +23,10 @@ const TherapistCertification = React.lazy(() =>
   import('./views/Therapist/TherapistCertification.jsx')
 )
 
+const TherapistFeedback = React.lazy(() =>
+  import('./views/Therapist/TherapistFeedback.jsx')
+)
+
 
 
 // const Login = React.lazy(() =>
@@ -42,6 +46,10 @@ const routes = [
   { path: "/therapist-details", element: TherapistDetails },
   { path: "/therapist/attendance", element: AttendancePage },
   { path: "/therapist-certification", element: TherapistCertification },
+  { path: "/therapist-feedback", element: TherapistFeedback },
+
+
+
 
 
 

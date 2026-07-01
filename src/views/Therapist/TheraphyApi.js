@@ -146,3 +146,14 @@ export const getBookingByBookingId = async (clinicId, branchId, patientId, booki
     return null
   }
 }
+
+
+export const updateTherapistPresence = async (therapistId, data) => {
+  try {
+    const res = await axios.put(`${BASE_URL}/updateTherapistPresence/${therapistId}`, data)
+    return res.data
+  } catch (err) {
+    console.error('updateTherapistPresence Error:', err)
+    throw err
+  }
+}

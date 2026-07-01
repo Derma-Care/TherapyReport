@@ -6,6 +6,7 @@ import store from './store'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
 import HospitalProvider from './Context/HospitalContext'
+import { NotificationProvider } from './Context/NotificationContext'
 
 import '@coreui/coreui/dist/css/coreui.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -45,8 +46,10 @@ createRoot(document.getElementById('root')).render(
   <Provider store={store}>
     <HospitalProvider>
       <BrowserRouter>
-        <ToastContainer />
-        <App />
+        <NotificationProvider>
+          <ToastContainer />
+          <App />
+        </NotificationProvider>
       </BrowserRouter>
     </HospitalProvider>
   </Provider>

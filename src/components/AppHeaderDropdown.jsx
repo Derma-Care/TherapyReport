@@ -9,6 +9,7 @@ import {
   cilAccountLogout,
   cilHospital,
   cilUser,
+  cilStar,
 } from "@coreui/icons"
 import CIcon from "@coreui/icons-react"
 import { useNavigate } from "react-router-dom"
@@ -23,6 +24,7 @@ const AppHeaderDropdown = () => {
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [loading, setLoading] = useState(false)
+
   const [dropdownVisible, setDropdownVisible] =
     useState(false)
 
@@ -48,13 +50,7 @@ const AppHeaderDropdown = () => {
     hospitalLogo !== "undefined" &&
     hospitalLogo.trim() !== ""
 
-const handleProfileClick = async () => {
-  if (loading) return
-
-  try {
-    setLoading(true)
-    setDropdownVisible(true) // keep open
-
+  const getTherapistContext = () => {
     const stored = JSON.parse(
       localStorage.getItem("therapistData") || "{}"
     )
@@ -68,34 +64,48 @@ const handleProfileClick = async () => {
     const therapistId =
       stored?.therapistId || stored?.data?.therapistId
 
-    const res = await getClinicData(
-      clinicId,
-      branchId,
-      therapistId
-    )
+    return { clinicId, branchId, therapistId }
+  }
 
-    const list = res?.data || []
+  const handleProfileClick = async () => {
+    if (loading) return
 
-    const item = Array.isArray(list)
-      ? list.find(
+    try {
+      setLoading(true)
+      setDropdownVisible(true) // keep open
+
+      const { clinicId, branchId, therapistId } =
+        getTherapistContext()
+
+      const res = await getClinicData(
+        clinicId,
+        branchId,
+        therapistId
+      )
+
+      const list = res?.data || []
+
+      const item = Array.isArray(list)
+        ? list.find(
           (x) => x.therapistId === therapistId
         )
-      : list
+        : list
 
-    // close after success
-    setDropdownVisible(false)
+      // close after success
+      setDropdownVisible(false)
 
-    setTimeout(() => {
-      navigate("/therapist-details", {
-        state: item,
-      })
-    }, 200)
-  } catch (err) {
-    console.error("Clinic Fetch Error:", err)
-  } finally {
-    setLoading(false)
+      setTimeout(() => {
+        navigate("/therapist-details", {
+          state: item,
+        })
+      }, 200)
+    } catch (err) {
+      console.error("Clinic Fetch Error:", err)
+    } finally {
+      setLoading(false)
+    }
   }
-}
+
 
   return (
     <>
@@ -106,9 +116,9 @@ const handleProfileClick = async () => {
       >
         <CDropdownToggle
           caret={false}
-          className="py-0 pe-0"  
- 
-  style={{ cursor: "pointer" }}
+          className="py-0 pe-0"
+
+          style={{ cursor: "pointer" }}
         >
           {isValidLogo ? (
             <img
@@ -118,7 +128,7 @@ const handleProfileClick = async () => {
               height={40}
               style={{
                 borderRadius: "50%",
-                objectFit: "contain",   
+                objectFit: "contain",
               }}
             />
           ) : (
@@ -130,7 +140,7 @@ const handleProfileClick = async () => {
                 backgroundColor: "#e9ecef",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center", 
+                justifyContent: "center",
               }}
             >
               <CIcon icon={cilHospital} size="lg" />
@@ -142,41 +152,67 @@ const handleProfileClick = async () => {
           className="pt-0"
           placement="bottom-end"
         >
-   <CDropdownItem
-  onClick={(e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    handleProfileClick()
-  }}
-  disabled={loading}
-   style={{ cursor: "pointer" }}
->
-  {loading ? (
-    <>
-      <span
-        className="spinner-border spinner-border-sm me-2"
-        role="status"
-        aria-hidden="true" 
-      ></span>
-      Loading Profile...
-    </>
-  ) : (
-    <>
-      <CIcon icon={cilUser} className="me-2"   />
-      Profile
-    </>
-  )}
-</CDropdownItem>
+          <CDropdownItem
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleProfileClick()
+            }}
+            disabled={loading}
+            style={{ cursor: "pointer" }}
+          >
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm "
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Loading Profile...
+              </>
+            ) : (
+              <>
+                <CIcon icon={cilUser} className="me-2" />
+                Profile
+              </>
+            )}
+          </CDropdownItem>
+
+          {/* <CDropdownItem
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleFeedbackClick()
+            }}
+            disabled={feedbackLoading}
+            style={{ cursor: "pointer" }}
+          >
+            {feedbackLoading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Loading Feedback...
+              </>
+            ) : (
+              <>
+                <CIcon icon={cilStar} className="me-2" />
+                Ratings &amp; Feedback
+              </>
+            )}
+          </CDropdownItem> */}
 
           <CDropdownItem
             onClick={() =>
               setShowLogoutModal(true)
             }
-             style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer" }}
           >
             <CIcon
               icon={cilAccountLogout}
-              className="me-2" 
+              className="me-2"
             />
             Logout
           </CDropdownItem>

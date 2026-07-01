@@ -26,9 +26,102 @@ const STATUS_CONFIG = {
 }
 const getStatus = (s) => STATUS_CONFIG[s?.toLowerCase()] || STATUS_CONFIG.default
 
-// ─── Patient Card ─────────────────────────────────────────
+// ─── Reassign Modal ───────────────────────────────────────
+const ReassignModal = ({ visible, onClose, onAssign, patient }) => {
+  const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  // Dummy therapist data
+  const dummyTherapists = [
+    { id: 'T001', name: 'Dr. John Doe', service: 'Physiotherapy', isPresent: true },
+    { id: 'T002', name: 'Dr. Jane Smith', service: 'Chiropractic', isPresent: false },
+    { id: 'T003', name: 'Dr. Alice Brown', service: 'Acupuncture', isPresent: true },
+    { id: 'T004', name: 'Dr. Robert Davis', service: 'Sports Therapy', isPresent: false },
+  ]
+
+  if (!visible) return null
+
+  const handleAssign = async () => {
+    if (!selected) return
+    setLoading(true)
+    try {
+      console.log("Sending reassign to backend:", {
+        patientId: patient?.patientId,
+        bookingId: patient?.bookingId,
+        newTherapistId: selected.id
+      })
+      // Simulate backend delay
+      await new Promise(r => setTimeout(r, 1000))
+      onAssign(selected)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+      onClose()
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+      <div style={{ background: '#fff', padding: 24, borderRadius: 12, width: 450, maxWidth: '90%', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+        <h3 style={{ marginTop: 0, color: '#0c447c', fontSize: 18, marginBottom: 4 }}>Reassign Therapist</h3>
+        <p style={{ fontSize: 13, color: '#5f5e5a', marginBottom: 20 }}>Select a new therapist for <strong style={{ color: '#0c447c' }}>{patient?.patientName}</strong></p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto', marginBottom: 20 }}>
+          {dummyTherapists.map(t => {
+            // "if isPresent true disable mode and other enable"
+            const isDisabled = t.isPresent === true
+
+            return (
+              <div 
+                key={t.id} 
+                onClick={() => {
+                  if (isDisabled) return
+                  setSelected(t)
+                }}
+                style={{
+                  padding: 12, 
+                  border: `1px solid ${selected?.id === t.id ? '#185fa5' : '#d0dce9'}`, 
+                  borderRadius: 8,
+                  background: selected?.id === t.id ? '#e6f1fb' : '#fff',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  opacity: isDisabled ? 0.6 : 1,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0c447c', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <User size={14} /> {t.name} <span style={{ fontSize: 11, color: '#888780', fontWeight: 'normal' }}>({t.id})</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#5f5e5a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Activity size={12} /> {t.service}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: '600', color: isDisabled ? '#ef4444' : '#1D9E75', background: isDisabled ? '#fef2f2' : '#ecfdf5', padding: '4px 8px', borderRadius: 4 }}>
+                  {isDisabled ? 'Unavailable' : 'Selectable'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button className="td-btn td-btn-outline" onClick={onClose} disabled={loading}>Cancel</button>
+          <button className="td-btn td-btn-primary" onClick={handleAssign} disabled={!selected || loading}>
+            {loading ? <CSpinner size="sm" /> : 'Confirm Reassign'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) => {
   const [detailLoading, setDetailLoading] = useState(false)
+  const [showReassign, setShowReassign] = useState(false)
 
   const bookingId = p.bookingId
   const patientId = p.patientId
@@ -77,8 +170,8 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
       </div>
 
       <div className="td-patient-bottom">
-        {/* Status badge */}
-        <div className="td-patient-mid">
+        {/* Status badge & Reassign */}
+        <div className="td-patient-mid" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <span
             className="td-status-badge"
             style={{ background: status.bg, color: status.color, borderColor: status.border }}
@@ -86,6 +179,13 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
             <span className="td-status-dot" style={{ background: status.dot }} />
             {p.overallStatus || 'Pending'}
           </span>
+          <button 
+            className="td-btn td-btn-outline" 
+            style={{ padding: '4px 10px', fontSize: '11px', height: '26px' }}
+            onClick={() => setShowReassign(true)}
+          >
+            <Users size={11} /> Reassign
+          </button>
         </div>
 
         {/* Actions */}
@@ -116,6 +216,18 @@ const PatientRow = ({ p, index, clinicId, branchId, onViewDetails, navigate }) =
           </button>
         </div>
       </div>
+
+      {/* Reassign Modal */}
+      <ReassignModal 
+        visible={showReassign} 
+        onClose={() => setShowReassign(false)} 
+        patient={p}
+        onAssign={(therapist) => {
+          console.log('Reassigned to:', therapist)
+          // You can also add a success toast here
+          setShowReassign(false)
+        }}
+      />
     </div>
   )
 }

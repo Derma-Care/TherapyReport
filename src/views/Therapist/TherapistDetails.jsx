@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import capitalizeWords from '../../Utils/capitalizeWords'
-import { ArrowLeft, Phone, User, Calendar, GraduationCap, Briefcase, Clock, Globe, FileText, Star, Activity, Eye, Download } from 'lucide-react'
+import { ArrowLeft, Phone, User, Calendar, GraduationCap, Briefcase, Clock, Globe, FileText, Star, Activity, Eye, Download, Wifi, WifiOff } from 'lucide-react'
 import { BASE_URL } from '../../API/BaseUrl'
+import { updateTherapistPresence } from './TheraphyApi'
 
 /* ─── Design tokens ─── */
 const PRIMARY = '#1B4F8A'
@@ -213,6 +214,36 @@ export default function TherapistDetails() {
   const navigate = useNavigate()
   const data = location.state
 
+  const [isPresent, setIsPresent] = useState(() => data?.isPresent ?? false)
+  const [presenceLoading, setPresenceLoading] = useState(false)
+  const [presenceError, setPresenceError] = useState('')
+
+  const handlePresenceToggle = useCallback(async () => {
+    if (!data) return
+    const therapistId = data.therapistId
+    const clinicId   = data.clinicId   || '0001'
+    const branchId   = data.branchId   || '000101'
+    const newValue   = !isPresent
+    setPresenceLoading(true)
+    setPresenceError('')
+    try {
+      const res = await updateTherapistPresence(therapistId, {
+        clinicId,
+        branchId,
+        isPresent: newValue,
+      })
+      if (res?.success || res?.status === 200) {
+        setIsPresent(newValue)
+      } else {
+        setPresenceError('Update failed. Please try again.')
+      }
+    } catch (_err) {
+      setPresenceError('Network error. Please try again.')
+    } finally {
+      setPresenceLoading(false)
+    }
+  }, [data, isPresent])
+
   if (!data) return (
     <div style={{ textAlign: 'center', padding: '60px', color: t.textMuted, fontSize: '14px' }}>
       No therapist data found.
@@ -222,6 +253,7 @@ export default function TherapistDetails() {
   const formatDay = (d) => d ? d.charAt(0).toUpperCase() + d.slice(1) : ''
 
   return (
+    <>
     <div style={{ backgroundColor: '#f1f5f9', minHeight: '100vh', padding: '20px', color: t.text }}>
 
       {/* ── Top Header Bar ── */}
@@ -232,6 +264,8 @@ export default function TherapistDetails() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '14px',
         marginBottom: '16px',
         boxShadow: t.shadowMd,
       }}>
@@ -252,7 +286,7 @@ export default function TherapistDetails() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{
             fontSize: '11px', fontWeight: '700', padding: '4px 12px',
             borderRadius: '20px', backgroundColor: '#dcfce7', color: t.success,
@@ -260,12 +294,43 @@ export default function TherapistDetails() {
           }}>
             {capitalizeWords(data.role || 'Therapist')}
           </span>
-          {/* <span style={{
-            fontSize: '11px', fontWeight: '600', padding: '4px 12px',
-            borderRadius: '20px', backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff',
-          }}>
-            {data.yearsOfExperience} yrs exp
-          </span> */}
+
+          {/* ── Presence Toggle ── */}
+          <button
+            onClick={handlePresenceToggle}
+            disabled={presenceLoading}
+            title={!isPresent ? 'Click to mark Offline' : 'Click to mark Online'}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '5px 14px',
+              borderRadius: '20px',
+              border: 'none',
+              cursor: presenceLoading ? 'not-allowed' : 'pointer',
+              fontWeight: '700', fontSize: '11px',
+              transition: 'all 0.25s ease',
+              backgroundColor: !isPresent ? '#dcfce7' : 'rgba(255,255,255,0.18)',
+              color: !isPresent ? t.success : 'rgba(255,255,255,0.85)',
+              boxShadow: !isPresent ? '0 0 0 1px #86efac' : '0 0 0 1px rgba(255,255,255,0.3)',
+              opacity: presenceLoading ? 0.7 : 1,
+              minWidth: '90px',
+              justifyContent: 'center',
+            }}
+          >
+            {presenceLoading ? (
+              <span style={{ display: 'inline-block', width: '10px', height: '10px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin-presence 0.7s linear infinite' }} />
+            ) : !isPresent ? (
+              <Wifi size={11} />
+            ) : (
+              <WifiOff size={11} />
+            )}
+            {presenceLoading ? 'Updating…' : !isPresent ? 'Online' : 'Offline'}
+          </button>
+
+          {presenceError && (
+            <span style={{ fontSize: '10px', color: '#fca5a5', maxWidth: '120px', lineHeight: '1.3' }}>
+              {presenceError}
+            </span>
+          )}
         </div>
       </div>
 
@@ -292,11 +357,16 @@ export default function TherapistDetails() {
               border: `3px solid ${PRIMARY}`, boxShadow: t.shadowMd,
             }}
           />
-          <span style={{
-            position: 'absolute', bottom: 0, right: 0,
-            width: '20px', height: '20px', borderRadius: '50%',
-            backgroundColor: t.success, border: '2px solid #fff',
-          }} />
+          <span
+            title={!isPresent ? 'Online' : 'Offline'}
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: '20px', height: '20px', borderRadius: '50%',
+              backgroundColor: !isPresent ? t.success : '#94a3b8',
+              border: '2px solid #fff',
+              transition: 'background-color 0.3s ease',
+            }}
+          />
         </div>
 
         {/* Name & meta */}
@@ -394,5 +464,13 @@ export default function TherapistDetails() {
       </SectionCard>
 
     </div>
+
+    {/* ── Presence toggle spinner keyframes ── */}
+    <style>{`
+      @keyframes spin-presence {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+    </>
   )
 }
