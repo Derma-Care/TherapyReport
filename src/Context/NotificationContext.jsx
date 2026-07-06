@@ -19,14 +19,17 @@ const loadFromStorage = () => {
 const saveToStorage = (notifications) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications))
-  } catch {}
+  } catch { }
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 export const NotificationProvider = ({ children }) => {
+
   const [notifications, setNotifications] = useState(() => loadFromStorage())
   const unsubscribeRef = useRef(null)
-
+  useEffect(() => {
+    console.log("Notifications Updated", notifications);
+  }, [notifications]);
   // Persist whenever list changes
   useEffect(() => {
     saveToStorage(notifications)
@@ -49,26 +52,32 @@ export const NotificationProvider = ({ children }) => {
   }, [])
 
   // ── Mark all as read ─────────────────────────────────────────────────────
+  // const markAllRead = useCallback(() => {
+  //   setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  // }, [])
   const markAllRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }, [])
+    console.log("Read All Clicked");
+    setNotifications(prev =>
+      prev.map(n => ({ ...n, read: true }))
+    );
+  }, []);
 
-  // ── Clear all ────────────────────────────────────────────────────────────
   const clearAll = useCallback(() => {
-    setNotifications([])
-  }, [])
+    console.log("Clear All Clicked");
+    setNotifications([]);
+  }, []);
 
-  // ── Clear single notification ────────────────────────────────────────────
   const clearOne = useCallback((id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }, [])
+    console.log("Clear One", id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
 
-  // ── Mark single as read ──────────────────────────────────────────────────
   const markOneRead = useCallback((id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
-  }, [])
+    console.log("Mark One Read", id);
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  }, []);
 
   // ── Subscribe to foreground FCM messages ─────────────────────────────────
   useEffect(() => {

@@ -57,7 +57,7 @@ const Login = () => {
         setErrorMessage('')
         const fcmToken = await getFCMToken()
         try {
-            const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web', fcm: fcmToken }
+            const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web', deviceId: fcmToken }
             const resposnse = await axios.post(`${BASE_URL}/loginUsingRoles`, loginBody, {
                 headers: { 'Content-Type': 'application/json' },
             })

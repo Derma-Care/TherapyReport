@@ -157,3 +157,34 @@ export const updateTherapistPresence = async (therapistId, data) => {
     throw err
   }
 }
+export const assignTherapist = async (data) => {
+  try {
+    const res = await axios.post(`${BASE_URL}/assignTherapist`, data)
+    return res.data
+  } catch (error) {
+    console.log("assignTherapist error", error)
+    throw error
+  }
+}
+
+export const updateAssignedStatus = async (therapistRecordId, status) => {
+  try {
+    const res = await axios.put(`${BASE_URL}/updateAssignedStatus/${therapistRecordId}`, {
+      assignedStatus: status
+    })
+    return res.data
+  } catch (error) {
+    console.log("updateAssignedStatus error", error)
+    throw error
+  }
+}
+
+export const getTherapistsWithServices = async (clinicId, branchId) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/getTherapistsWithServices/${clinicId}/${branchId}`)
+    return res.data
+  } catch (error) {
+    console.log("getTherapistsWithServices error", error)
+    throw error
+  }
+}

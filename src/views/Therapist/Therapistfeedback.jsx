@@ -103,15 +103,20 @@ const injectStyles = () => {
       transition:background .15s;
     }
     .tf-retry:hover { background:${PRIMARY_DARK}; }
+    @media (max-width: 600px) {
+      .tf-retry-header { padding: 8px 10px !important; border-radius: 8px !important; }
+      .tf-retry-text { display: none; }
+      .tf-header-row { flex-wrap: nowrap !important; }
+    }
   `;
   document.head.appendChild(el);
 };
 
 const STAT_ICONS = [
-  <Users size={14} key="u" />,
-  <Star size={14} key="s" />,
-  <Award size={14} key="a" />,
-  <BarChart2 size={14} key="b" />,
+  <Users size={15} key="u" color="#93c5fd" />, // light blue
+  <Star size={15} key="s" color="#fcd34d" />,  // gold
+  <Award size={15} key="a" color="#86efac" />, // light green
+  <BarChart2 size={15} key="b" color="#c4b5fd" />, // light purple
 ];
 
 export default function TherapistFeedback() {
@@ -190,8 +195,8 @@ export default function TherapistFeedback() {
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -30, left: -20, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
 
-        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div>
+        <div className="tf-header-row" style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {/* badge */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -201,7 +206,7 @@ export default function TherapistFeedback() {
               letterSpacing: ".09em", textTransform: "uppercase", color: "rgba(255,255,255,0.85)",
               marginBottom: 10,
             }}>
-              <MessageSquareQuote size={11} /> Patient Feedback
+              <MessageSquareQuote size={12} color="#fcd34d" /> Patient Feedback
             </div>
             <h1 style={{ margin: 0, fontSize: "clamp(20px,2.8vw,30px)", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
               Ratings &amp; Reviews
@@ -211,8 +216,8 @@ export default function TherapistFeedback() {
             </p>
           </div>
 
-          <button className="tf-retry" onClick={loadData} style={{ marginTop: 0, alignSelf: "flex-start" }}>
-            <RefreshCw size={13} /> Refresh
+          <button className="tf-retry tf-retry-header" onClick={loadData} style={{ marginTop: 0, alignSelf: "flex-start", flexShrink: 0 }}>
+            <RefreshCw size={15} color="#ffffff" /> <span className="tf-retry-text">Refresh</span>
           </button>
         </div>
 

@@ -250,7 +250,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
     setAfterVideo(null)
     setAfterVideoPreview(null)
   }
-
+  console.log(data, "datadatadata")
   // Consent flow state
   const [showConsent, setShowConsent] = useState(false)
   const [pendingFile, setPendingFile] = useState(null)
@@ -379,7 +379,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
       const afterKey = after ? await uploadFile('afterImage', after) : ''
       const beforeVideoKey = beforeVideo ? await uploadFile('beforeVideo', beforeVideo) : ''
       const afterVideoKey = afterVideo ? await uploadFile('afterVideo', afterVideo) : ''
-      
+
       let voiceRecordKey = data.voiceRecordUrl || ''
       if (data.voiceRecordFile) {
         voiceRecordKey = await uploadFile('voiceRecord', data.voiceRecordFile)
@@ -395,7 +395,8 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
         branchId: td?.branchId,
         patientId: data.patientId,
         bookingId: data.bookingId,
-        therapistId: td?.therapistId,
+        therapistId: data.assignedTherapistId || td?.therapistId,
+        therapistName: data.assignedTherapistName || td?.therapistName,
         sessionId: data.sessionId,
         patientName: data.patientName,
         serviceType: data.serviceType,
@@ -439,7 +440,7 @@ export default function SessionFormModal({ visible, data, onClose, onSave }) {
       <CModalHeader style={{ backgroundColor: PRIMARY, padding: '14px 20px', borderBottom: 'none' }}>
         <div>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '500', letterSpacing: '0.05em' }}>THERAPY MANAGEMENT</div>
-          <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff' }}>Complete Session</div>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#fff' }}>S.O.A.P Note</div>
         </div>
       </CModalHeader>
 

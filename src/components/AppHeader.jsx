@@ -17,10 +17,10 @@ const PRIMARY_DARK = '#143d6e'
 
 // ── Notification type helpers ─────────────────────────────────────────────────
 const TYPE_META = {
-  feedback:    { icon: '⭐', label: 'Feedback',    color: '#f59e0b', bg: '#fffbeb' },
+  feedback: { icon: '⭐', label: 'Feedback', color: '#f59e0b', bg: '#fffbeb' },
   appointment: { icon: '📅', label: 'Appointment', color: '#3b82f6', bg: '#eff6ff' },
-  booking:     { icon: '📋', label: 'Booking',     color: '#10b981', bg: '#ecfdf5' },
-  general:     { icon: '🔔', label: 'General',     color: '#6366f1', bg: '#eef2ff' },
+  booking: { icon: '📋', label: 'Booking', color: '#10b981', bg: '#ecfdf5' },
+  general: { icon: '🔔', label: 'General', color: '#6366f1', bg: '#eef2ff' },
 }
 const getMeta = (type) => TYPE_META[type] || TYPE_META.general
 
@@ -34,6 +34,15 @@ const timeAgo = (iso) => {
   return `${Math.floor(h / 24)}d ago`
 }
 
+const getTherapistContext = () => {
+  const stored = JSON.parse(localStorage.getItem('therapistData') || '{}')
+  return {
+    clinicId: stored?.clinicId || stored?.data?.clinicId,
+    branchId: stored?.branchId || stored?.data?.branchId,
+    therapistId: stored?.therapistId || stored?.data?.therapistId,
+  }
+}
+
 // ── Notification Panel Component ──────────────────────────────────────────────
 const NotificationPanel = ({ onClose }) => {
   const navigate = useNavigate()
@@ -42,21 +51,24 @@ const NotificationPanel = ({ onClose }) => {
   const handleNotifClick = (notif) => {
     markOneRead(notif.id)
 
-    // 1. Try direct navigatePath from backend payload (e.g. "therapist" or "therapist-feedback")
-    const navigatePath = notif.data?.navigatePath || notif.data?.navigate_path || ''
-    if (navigatePath) {
-      const route = navigatePath.startsWith('/') ? navigatePath : `/${navigatePath}`
-      navigate(route)
-      onClose()
-      return
+    const type = (notif.type || notif.data?.type || '').toLowerCase()
+    const isFeedback = type === 'feedback' || type.includes('feedback')
+    const isBooking = type === 'appointment' || type === 'booking' || type.includes('booking')
+
+    let route = ''
+    if (isFeedback) {
+      route = '/therapist-feedback'
+    } else if (isBooking) {
+      route = '/therapist'
+    } else {
+      const navigatePath = notif.data?.path || notif.data?.navigate_path || ''
+      if (navigatePath) {
+        route = navigatePath.startsWith('/') ? navigatePath : `/${navigatePath}`
+      }
     }
 
-    // 2. Fallback: route by type (normalize to lowercase to handle "BOOKING", "FEEDBACK" etc)
-    const type = (notif.type || notif.data?.type || '').toLowerCase()
-    if (type === 'feedback' || type.includes('feedback')) {
-      navigate('/therapist-feedback')
-    } else if (type === 'appointment' || type === 'booking' || type.includes('booking')) {
-      navigate('/therapist')
+    if (route) {
+      navigate(route, { state: getTherapistContext() })
     }
     onClose()
   }
@@ -73,12 +85,26 @@ const NotificationPanel = ({ onClose }) => {
         </div>
         <div className="notif-panel-actions">
           {unreadCount > 0 && (
-            <button className="notif-action-btn" onClick={markAllRead} title="Mark all as read">
+            <button
+              className="notif-action-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                markAllRead();
+              }}
+            >
               ✓ Read all
             </button>
           )}
           {notifications.length > 0 && (
-            <button className="notif-action-btn notif-action-danger" onClick={clearAll} title="Clear all">
+            <button
+              className="notif-action-btn notif-action-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                clearAll();
+              }}
+            >
               🗑 Clear all
             </button>
           )}
@@ -117,7 +143,11 @@ const NotificationPanel = ({ onClose }) => {
                 </div>
                 <button
                   className="notif-item-close"
-                  onClick={(e) => { e.stopPropagation(); clearOne(notif.id) }}
+                  onClick={(e) => { 
+                    e.preventDefault();
+                    e.stopPropagation(); 
+                    clearOne(notif.id);
+                  }}
                   title="Remove"
                 >
                   ×
@@ -135,8 +165,10 @@ const NotificationPanel = ({ onClose }) => {
 // ── AppHeader ─────────────────────────────────────────────────────────────────
 const AppHeader = () => {
   const headerRef = useRef()
-  const panelRef = useRef()
-  const bellBtnRef = useRef()
+  const desktopPanelRef = useRef()
+  const mobilePanelRef = useRef()
+  const desktopBellBtnRef = useRef()
+  const mobileBellBtnRef = useRef()
   const [scrolled, setScrolled] = useState(false)
   const [bellHover, setBellHover] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -158,30 +190,29 @@ const AppHeader = () => {
   const therapistId = data?.therapistId
   const clinicName = selectedHospital?.name || clinicData.name || 'Clinic Name'
 
-  const getTherapistContext = () => {
-    const stored = JSON.parse(localStorage.getItem('therapistData') || '{}')
-    return {
-      clinicId: stored?.clinicId || stored?.data?.clinicId,
-      branchId: stored?.branchId || stored?.data?.branchId,
-      therapistId: stored?.therapistId || stored?.data?.therapistId,
-    }
-  }
-
   // Close panel on outside click
   useEffect(() => {
-    if (!panelOpen) return
-    const handler = (e) => {
-      if (
-        panelRef.current && !panelRef.current.contains(e.target) &&
-        bellBtnRef.current && !bellBtnRef.current.contains(e.target)
-      ) {
-        setPanelOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [panelOpen])
+    if (!panelOpen) return;
 
+    const handleOutsideClick = (e) => {
+      if (
+        desktopPanelRef.current?.contains(e.target) ||
+        mobilePanelRef.current?.contains(e.target) ||
+        desktopBellBtnRef.current?.contains(e.target) ||
+        mobileBellBtnRef.current?.contains(e.target)
+      ) {
+        return;
+      }
+
+      setPanelOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [panelOpen]);
   // Close panel on route change
   useEffect(() => { setPanelOpen(false) }, [location.pathname])
 
@@ -210,9 +241,9 @@ const AppHeader = () => {
     }
   }
 
-  const BellButton = ({ style = {} }) => (
+  const BellButton = ({ style = {}, btnRef }) => (
     <button
-      ref={bellBtnRef}
+      ref={btnRef}
       className={`bell-btn ${panelOpen ? 'bell-btn-active' : ''}`}
       style={{ position: 'relative', ...style }}
       onMouseEnter={() => setBellHover(true)}
@@ -495,9 +526,9 @@ const AppHeader = () => {
 
             {/* Bell + Notification Panel */}
             <div style={{ position: 'relative', marginRight: 10 }}>
-              <BellButton />
+              <BellButton btnRef={desktopBellBtnRef} />
               {panelOpen && (
-                <div className="notif-panel-wrapper" ref={panelRef}>
+                <div className="notif-panel-wrapper" ref={desktopPanelRef}>
                   <NotificationPanel onClose={() => setPanelOpen(false)} />
                 </div>
               )}
@@ -540,9 +571,9 @@ const AppHeader = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {/* Bell + panel */}
               <div style={{ position: 'relative' }}>
-                <BellButton style={{ width: 34, height: 34 }} />
+                <BellButton style={{ width: 34, height: 34 }} btnRef={mobileBellBtnRef} />
                 {panelOpen && (
-                  <div className="notif-panel-wrapper" ref={panelRef}>
+                  <div className="notif-panel-wrapper" ref={mobilePanelRef}>
                     <NotificationPanel onClose={() => setPanelOpen(false)} />
                   </div>
                 )}

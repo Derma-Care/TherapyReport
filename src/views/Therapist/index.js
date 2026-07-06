@@ -17,30 +17,33 @@ import { BrowserRouter } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import HospitalProvider from './Context/HospitalContext'
+import { NotificationProvider } from '../../Context/NotificationContext'
 
 function Root() {
 
     return (
         <Provider store={store}>
-            <BrowserRouter>
-                <HospitalProvider>
+            <NotificationProvider>
+                <BrowserRouter>
+                    <HospitalProvider>
 
-                    <ToastContainer
-                        position="top-right"
-                        limit={3}
-                        theme="dark" // base dark theme
-                        toastStyle={{
-                            backgroundColor: 'var(--color-black)',
-                            color: 'white',
-                        }}
-                    />
-                    <App />
+                        <ToastContainer
+                            position="top-right"
+                            limit={3}
+                            theme="dark" // base dark theme
+                            toastStyle={{
+                                backgroundColor: 'var(--color-black)',
+                                color: 'white',
+                            }}
+                        />
+                        <App />
 
 
 
 
-                </HospitalProvider>
-            </BrowserRouter>
+                    </HospitalProvider>
+                </BrowserRouter>
+            </NotificationProvider>
         </Provider>
     )
 }
