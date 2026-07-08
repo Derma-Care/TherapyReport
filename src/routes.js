@@ -24,7 +24,7 @@ const TherapistCertification = React.lazy(() =>
 )
 
 const TherapistFeedback = React.lazy(() =>
-  import('./views/Therapist/TherapistFeedback.jsx')
+  import('./views/Therapist/Therapistfeedback.jsx')
 )
 
 
