@@ -53,7 +53,7 @@ const NotificationPanel = ({ onClose }) => {
 
     const type = (notif.type || notif.data?.type || '').toLowerCase()
     const isFeedback = type === 'feedback' || type.includes('feedback')
-    const isBooking = type === 'appointment' || type === 'booking' || type.includes('booking')
+    const isBooking = type === 'appointment' || type === 'booking' || type.includes('booking') || type === "reassignment" || type === "withdrawn"
 
     let route = ''
     if (isFeedback) {
@@ -69,6 +69,9 @@ const NotificationPanel = ({ onClose }) => {
 
     if (route) {
       navigate(route, { state: getTherapistContext() })
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     }
     onClose()
   }
@@ -143,9 +146,9 @@ const NotificationPanel = ({ onClose }) => {
                 </div>
                 <button
                   className="notif-item-close"
-                  onClick={(e) => { 
+                  onClick={(e) => {
                     e.preventDefault();
-                    e.stopPropagation(); 
+                    e.stopPropagation();
                     clearOne(notif.id);
                   }}
                   title="Remove"

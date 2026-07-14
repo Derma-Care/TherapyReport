@@ -211,9 +211,39 @@ const AttendanceTracker = () => {
       );
   }, []);
 
+  const getAddress = async () => {
+    if (address !== "Fetching...") return address;
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const res = await axios.get(
+                `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`
+              );
+              setAddress(res.data.display_name);
+              resolve(res.data.display_name);
+            } catch {
+              setAddress("Unable to fetch address");
+              resolve("Unable to fetch address");
+            }
+          },
+          () => {
+            setAddress("Location unavailable");
+            resolve("Location unavailable");
+          }
+        );
+      } else {
+        setAddress("Location unavailable");
+        resolve("Location unavailable");
+      }
+    });
+  };
+
   const updateTimes = async (type, timeStr) => {
     try {
       setIsUpdatingStatus(true);
+      const currentAddress = await getAddress();
 
       let payload = {
         completedDate: dateStr,
@@ -221,10 +251,10 @@ const AttendanceTracker = () => {
 
       if (type === "login") {
         payload.loginTime = timeStr;
-        payload.loginLocation = address;
+        payload.loginLocation = currentAddress;
       } else if (type === "logout") {
         payload.logoutTime = timeStr;
-        payload.logoutLocation = address;
+        payload.logoutLocation = currentAddress;
       }
 
       const res = await axios.put(
@@ -237,7 +267,7 @@ const AttendanceTracker = () => {
         await fetchDailyData();
         await fetchMonthlyData();
 
-        return true;
+        return currentAddress;
       }
 
       return false;
@@ -258,13 +288,13 @@ const AttendanceTracker = () => {
       hour12: false,
     });
 
-    const success = await updateTimes("login", time);
+    const resultAddress = await updateTimes("login", time);
 
     // ✅ change UI only after backend success
-    if (success) {
+    if (resultAddress !== false) {
       setLoggedIn(true);
       setLoginTime(time);
-      setLoginLocation(address);
+      setLoginLocation(resultAddress);
     }
   };
 
@@ -280,14 +310,14 @@ const AttendanceTracker = () => {
       hour12: false,
     });
 
-    const success = await updateTimes("logout", time);
+    const resultAddress = await updateTimes("logout", time);
 
     // ✅ update UI only after backend success
-    if (success) {
+    if (resultAddress !== false) {
       setLoggedIn(false);
       setLoggedOut(true);
       setLogoutTime(time);
-      setLogoutLocation(address);
+      setLogoutLocation(resultAddress);
       setIsLogoutModalVisible(false);
     }
 
@@ -321,11 +351,12 @@ const AttendanceTracker = () => {
       durationStr = durationStr.trim();
 
       const loc = await getCurrentLocation();
+      const currentAddress = await getAddress();
       const payload = {
         completedDate: dateStr,
         activity: activityType, description,
         duration: durationStr,
-        location: address
+        location: currentAddress
       };
 
       const res = await axios.post(`${BASE_URL}/attendance/manual-session/${therapistId}`, payload);

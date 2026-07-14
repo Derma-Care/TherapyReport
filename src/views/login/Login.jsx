@@ -8,7 +8,7 @@ import {
     CFormInput,
     CInputGroup,
     CInputGroupText,
-    CSpinner,
+    CSpinner, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
@@ -19,6 +19,8 @@ import { showCustomToast } from '../../Utils/Toaster'
 import { COLORS } from '../../Constant/Themes'
 import { useHospital } from '../../Context/HospitalContext'
 import { getFCMToken } from '../../firebase'
+import ResetPassword from '../Resetpassword'
+import ForgotPassword from '../ForgotPassword'
 
 const FEATURES = ['Session management', 'Progress tracking', 'Secure records', 'Multi-branch support']
 
@@ -33,7 +35,8 @@ const Login = () => {
     const [visiblePills, setVisiblePills] = useState([])
     const { setSelectedHospital, fetchAllData } = useHospital()
     const navigate = useNavigate()
-
+    const [showResetModal, setShowResetModal] = useState(false)
+    const [showForgotModal, setShowForgotModal] = useState(false)
     const validateForm = () => {
         const errors = {}
         if (!userName.trim()) errors.userName = 'Username is required'
@@ -114,10 +117,9 @@ const Login = () => {
                 .therapist-login-root * { box-sizing: border-box; }
 
                 .therapist-login-root {
-               
                     min-height: 100vh;
                     display: flex;
-                    overflow: hidden;
+                    overflow-y: auto;
                     position: relative;
                     background: #f0f6ff;
                 }
@@ -341,7 +343,7 @@ const Login = () => {
                     background: #ffffff;
                     box-shadow: 0 0 0 4px rgba(24,95,165,0.10);
                 }
-                .custom-input-prefix { padding:0 14px;display:flex;align-items:center;background:transparent;border:none;cursor:default; }
+                .custom-input-prefix { padding:0 14px;display:flex;align-items:center;background:transparent;border:none;cursor:default; flex-shrink: 0; }
                 .custom-input-prefix svg { width:16px;height:16px;color:#888780; }
                 .custom-input-field {
                     flex:1;border:none;background:transparent;outline:none;
@@ -349,7 +351,7 @@ const Login = () => {
                    color:#0c447c;
                 }
                 .custom-input-field::placeholder { color:#b5d4f4; }
-                .custom-input-toggle { padding:0 14px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;color:#888780;transition:color 0.2s; }
+                .custom-input-toggle { padding:0 14px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;color:#888780;transition:color 0.2s; flex-shrink: 0; }
                 .custom-input-toggle:hover { color:#185fa5; }
                 .field-error { font-size:12px;color:#ef4444;margin-top:5px;padding-left:2px; }
 
@@ -434,7 +436,7 @@ const Login = () => {
 
                 @media (max-width: 900px) {
                     .login-left-panel { display:none; }
-                    .login-right-panel { width:100%;border-left:none;box-shadow:none; }
+                    .login-right-panel { width:100%; border-left:none; box-shadow:none; padding: 40px 24px; min-height: 100vh; justify-content: center; }
                 }
 
                 .spin {
@@ -481,13 +483,6 @@ const Login = () => {
                     <p className="left-subtext">
                         A seamless workspace for physiotherapists — manage appointments, track progress, and deliver care that transforms lives.
                     </p>
-                    <div className="stats-row">
-                        <div><div className="stat-number">2,400+</div><div className="stat-label">Active therapists</div></div>
-                        <div className="stat-divider" />
-                        <div><div className="stat-number">98%</div><div className="stat-label">Satisfaction rate</div></div>
-                        <div className="stat-divider" />
-                        <div><div className="stat-number">150+</div><div className="stat-label">Clinics onboard</div></div>
-                    </div>
                     <div className="feature-pills">
                         {FEATURES.map((f, i) => (
                             <div key={f} className={`feature-pill${visiblePills.includes(i) ? ' visible' : ''}`}>
@@ -568,6 +563,11 @@ const Login = () => {
                             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
                         </div>
 
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13.5px' }}>
+                            <a href="#" onClick={(e) => { e.preventDefault(); setShowForgotModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</a>
+                            <a href="#" onClick={(e) => { e.preventDefault(); setShowResetModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Reset password?</a>
+                        </div>
+
                         <button
                             type="submit"
                             className="submit-btn"
@@ -583,7 +583,34 @@ const Login = () => {
                         <span className="security-dot" />
                         <span>256-bit encrypted &amp; HIPAA-compliant session</span>
                     </div>
+                    <CModal visible={showResetModal} onClose={() => setShowResetModal(false)} className='custom-modal' backdrop="static">
+                        <CModalHeader>
+                            <CModalTitle>Reset Password</CModalTitle>
+                        </CModalHeader>
+                        <CModalBody>
+                            <ResetPassword onClose={() => setShowResetModal(false)} />
+                        </CModalBody>
+                        {/* <CModalFooter>
+            <CButton color="secondary" onClick={() => setShowResetModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter> */}
+                    </CModal>
 
+                    {/* Forgot Password Modal */}
+                    <CModal visible={showForgotModal} onClose={() => setShowForgotModal(false)} className='custom-modal' backdrop="static">
+                        <CModalHeader>
+                            <CModalTitle>Forgot Password</CModalTitle>
+                        </CModalHeader>
+                        <CModalBody>
+                            <ForgotPassword onClose={() => setShowForgotModal(false)} />
+                        </CModalBody>
+                        {/* <CModalFooter>
+            <CButton color="secondary" onClick={() => setShowForgotModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter> */}
+                    </CModal>
                     <div className="form-footer">
                         <p className="form-footer-text" style={{ marginTop: 32 }}>
                             © {new Date().getFullYear()} Chiselon Technologies ·{' '}

@@ -8,7 +8,7 @@ import {
   CButton,
 } from "@coreui/react";
 import axios from "axios";
-import { wifiUrl } from "../../API/BaseUrl";
+
 import { showCustomToast } from "../../Utils/Toaster";
 import { Camera, Video, Upload } from "lucide-react";
 import imageCompression from "browser-image-compression";

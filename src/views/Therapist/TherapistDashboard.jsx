@@ -392,19 +392,33 @@ const PatientRow = ({ p, index, clinicId, branchId, originalTherapistId, origina
             <span className="td-status-dot" style={{ background: status.dot }} />
             {p.overallStatus || 'Pending'}
           </span>
-          <button
-            className={`td-btn ${assignedTherapist && !transferred ? "td-btn-primary" : "td-btn-outline"
-              }`}
-            style={{ padding: "4px 10px", fontSize: "11px", height: "26px" }}
-            onClick={() => setShowReassign(true)}
-          >
-            <Users
-              size={11}
-              color={assignedTherapist && !transferred ? "#fff" : "currentColor"}
-            />
-            {" "}
-            {assignedTherapist && !transferred ? "Assigned" : "Reassign"}
-          </button>
+          {p.overallStatus?.toLowerCase() === 'completed' ? (
+            assignedTherapist && !transferred ? (
+              <button
+                className="td-btn td-btn-primary"
+                style={{ padding: "4px 10px", fontSize: "11px", height: "26px" }}
+                onClick={() => setShowReassign(true)}
+              >
+                <Users size={11} color="#fff" />
+                {" "}
+                Assigned
+              </button>
+            ) : null
+          ) : (
+            <button
+              className={`td-btn ${assignedTherapist && !transferred ? "td-btn-primary" : "td-btn-outline"
+                }`}
+              style={{ padding: "4px 10px", fontSize: "11px", height: "26px" }}
+              onClick={() => setShowReassign(true)}
+            >
+              <Users
+                size={11}
+                color={assignedTherapist && !transferred ? "#fff" : "currentColor"}
+              />
+              {" "}
+              {assignedTherapist && !transferred ? "Assigned" : "Reassign"}
+            </button>
+          )}
         </div>
 
         {/* Actions */}
