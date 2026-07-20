@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { FaEye, FaEyeSlash, FaMobileAlt, FaEnvelopeOpenText, FaLock } from 'react-icons/fa'
 
 import { COLORS } from '../Constant/Themes'
+import { BASE_URL } from '../API/BaseUrl'
 
+import axios from "axios";
 const STEPS = ['mobile', 'otp', 'password']
 
 const ForgotPassword = ({ onClose }) => {
@@ -26,7 +28,7 @@ const ForgotPassword = ({ onClose }) => {
     const [pwdLoading, setPwdLoading] = useState(false)
     const [showNew, setShowNew] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
-
+    const [role, setRole] = useState("physiotherapist")
     const [apiError, setApiError] = useState('')
     const [successMsg, setSuccessMsg] = useState('')
 
@@ -40,74 +42,193 @@ const ForgotPassword = ({ onClose }) => {
     }
 
     // --- Handlers ---
+    // const handleSendOtp = async (e) => {
+    //     e.preventDefault()
+    //     clearAlerts()
+    //     if (!mobile.trim()) { setMobileError('Mobile number is required'); return }
+    //     if (!/^\d{10}$/.test(mobile.trim())) { setMobileError('Enter a valid 10-digit mobile number'); return }
+    //     setMobileError('')
+    //     setMobileLoading(true)
+
+    //     try {
+    //         await new Promise(resolve => setTimeout(resolve, 1500))
+    //         setOtpInfo('OTP has been sent to your registered mobile number.')
+    //         setStep('otp')
+    //     } catch (err) {
+    //         setApiError(err?.response?.data?.message || 'Failed to send OTP. Please try again.')
+    //     } finally {
+    //         setMobileLoading(false)
+    //     }
+    // }
     const handleSendOtp = async (e) => {
-        e.preventDefault()
-        clearAlerts()
-        if (!mobile.trim()) { setMobileError('Mobile number is required'); return }
-        if (!/^\d{10}$/.test(mobile.trim())) { setMobileError('Enter a valid 10-digit mobile number'); return }
-        setMobileError('')
-        setMobileLoading(true)
+        e.preventDefault();
+        clearAlerts();
+
+        if (!mobile.trim()) {
+            setMobileError("Mobile number is required");
+            return;
+        }
+
+        if (!/^\d{10}$/.test(mobile.trim())) {
+            setMobileError("Enter a valid 10-digit mobile number");
+            return;
+        }
+
+        setMobileError("");
+        setMobileLoading(true);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500))
-            setOtpInfo('OTP has been sent to your registered mobile number.')
-            setStep('otp')
-        } catch (err) {
-            setApiError(err?.response?.data?.message || 'Failed to send OTP. Please try again.')
-        } finally {
-            setMobileLoading(false)
-        }
-    }
+            const response = await axios.get(
+                `${BASE_URL}/forgot-password/${mobile}/${role}`
+            );
 
+            setOtpInfo(
+                response.data?.message ||
+                "OTP has been sent to your registered mobile number."
+            );
+
+            setStep("otp");
+        } catch (err) {
+            setApiError(
+                err.response?.data?.message ||
+                "Failed to send OTP."
+            );
+        } finally {
+            setMobileLoading(false);
+        }
+    };
+
+    // const handleVerifyOtp = async (e) => {
+    //     e.preventDefault()
+    //     clearAlerts()
+    //     if (!otp.trim()) { setOtpError('Please enter the OTP'); return }
+    //     if (!/^\d{4,8}$/.test(otp.trim())) { setOtpError('Enter a valid OTP'); return }
+    //     setOtpError('')
+    //     setOtpLoading(true)
+
+    //     try {
+    //         await new Promise(resolve => setTimeout(resolve, 1200))
+    //         if (otp === '0000') throw new Error('Invalid OTP')
+    //         setStep('password')
+    //     } catch (err) {
+    //         setOtpError(err.message || err?.response?.data?.message || 'Invalid OTP. Please try again.')
+    //     } finally {
+    //         setOtpLoading(false)
+    //     }
+    // }
     const handleVerifyOtp = async (e) => {
-        e.preventDefault()
-        clearAlerts()
-        if (!otp.trim()) { setOtpError('Please enter the OTP'); return }
-        if (!/^\d{4,8}$/.test(otp.trim())) { setOtpError('Enter a valid OTP'); return }
-        setOtpError('')
-        setOtpLoading(true)
+        e.preventDefault();
+        clearAlerts();
+
+        if (!otp.trim()) {
+            setOtpError("Please enter OTP");
+            return;
+        }
+
+        setOtpLoading(true);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1200))
-            if (otp === '0000') throw new Error('Invalid OTP')
-            setStep('password')
-        } catch (err) {
-            setOtpError(err.message || err?.response?.data?.message || 'Invalid OTP. Please try again.')
-        } finally {
-            setOtpLoading(false)
-        }
-    }
+            const response = await axios.get(
+                `${BASE_URL}/verify-otp/${mobile}/${role}/${otp}`
+            );
 
+            if (response.status === 200) {
+                setStep("password");
+            }
+        } catch (err) {
+            setOtpError(
+                err.response?.data?.message ||
+                "Invalid OTP"
+            );
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    // const handleResetPassword = async (e) => {
+    //     e.preventDefault()
+    //     clearAlerts()
+    //     const errs = {}
+    //     if (!newPwd.trim()) {
+    //         errs.newPwd = 'New password is required'
+    //     } else if (!validatePassword(newPwd)) {
+    //         errs.newPwd = 'Password must be 8–20 chars, with 1 uppercase, 1 number, and 1 special char.'
+    //     }
+    //     if (!confirmPwd.trim()) errs.confirmPwd = 'Please confirm the password'
+    //     else if (newPwd !== confirmPwd) errs.confirmPwd = 'Passwords do not match'
+
+    //     setPwdErrors(errs)
+    //     if (Object.keys(errs).length) return
+
+    //     setPwdLoading(true)
+    //     try {
+    //         await new Promise(resolve => setTimeout(resolve, 1500))
+
+    //         setSuccessMsg('✅ Password reset successfully!')
+    //         setTimeout(() => {
+    //             if (onClose) onClose()
+    //         }, 2000)
+    //     } catch (err) {
+    //         setApiError(err?.response?.data?.message || 'Failed to reset password. Please try again.')
+    //     } finally {
+    //         setPwdLoading(false)
+    //     }
+    // }
     const handleResetPassword = async (e) => {
-        e.preventDefault()
-        clearAlerts()
-        const errs = {}
+        e.preventDefault();
+        clearAlerts();
+
+        const errs = {};
+
         if (!newPwd.trim()) {
-            errs.newPwd = 'New password is required'
+            errs.newPwd = "New password is required";
         } else if (!validatePassword(newPwd)) {
-            errs.newPwd = 'Password must be 8–20 chars, with 1 uppercase, 1 number, and 1 special char.'
+            errs.newPwd =
+                "Password must contain uppercase, number and special character.";
         }
-        if (!confirmPwd.trim()) errs.confirmPwd = 'Please confirm the password'
-        else if (newPwd !== confirmPwd) errs.confirmPwd = 'Passwords do not match'
 
-        setPwdErrors(errs)
-        if (Object.keys(errs).length) return
+        if (!confirmPwd.trim()) {
+            errs.confirmPwd = "Confirm password is required";
+        } else if (newPwd !== confirmPwd) {
+            errs.confirmPwd = "Passwords do not match";
+        }
 
-        setPwdLoading(true)
+        setPwdErrors(errs);
+
+        if (Object.keys(errs).length > 0) return;
+
+        setPwdLoading(true);
+
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            const payload = {
+                otp,
+                newPassword: newPwd,
+                confirmPassword: confirmPwd
+            };
 
-            setSuccessMsg('✅ Password reset successfully!')
+            const response = await axios.post(
+                `${BASE_URL}/reset-password/${role}/${mobile}`,
+                payload
+            );
+
+            setSuccessMsg(
+                response.data?.message ||
+                "Password reset successfully."
+            );
+
             setTimeout(() => {
-                if (onClose) onClose()
-            }, 2000)
-        } catch (err) {
-            setApiError(err?.response?.data?.message || 'Failed to reset password. Please try again.')
-        } finally {
-            setPwdLoading(false)
-        }
-    }
+                if (onClose) onClose();
+            }, 1500);
 
+        } catch (err) {
+            setApiError(
+                err.response?.data?.message ||
+                "Password reset failed."
+            );
+        } finally {
+            setPwdLoading(false);
+        }
+    };
     const stepMeta = {
         mobile: { icon: <FaMobileAlt size={22} />, title: 'Forgot Password', sub: 'Enter your registered mobile number' },
         otp: { icon: <FaEnvelopeOpenText size={20} />, title: 'Verify OTP', sub: 'Enter the OTP sent to your device' },

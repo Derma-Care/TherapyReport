@@ -20,7 +20,7 @@ function App() {
   }, [])
 
   const hospitalData = JSON.parse(localStorage.getItem("selectedClinic") || "{}")
-  const hospitalName = hospitalData?.hospitalName || hospitalData?.clinicName || 'Kinetix Wellness'
+  const hospitalName = hospitalData?.name || hospitalData?.clinicName || 'PhysioElite'
   const hospitalLogo = hospitalData?.hospitalLogo
     ? `data:image/webp;base64,${hospitalData.hospitalLogo}`
     : appLogo

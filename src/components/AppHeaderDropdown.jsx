@@ -29,8 +29,11 @@ const AppHeaderDropdown = () => {
     useState(false)
 
   const handleLogout = () => {
-    localStorage.clear()
-    navigate("/login")
+    // localStorage.clear()
+    // navigate("/login")
+    sessionStorage.clear();
+    localStorage.clear(); // or remove specific keys
+    navigate("/login");
   }
 
   const hospitalData = JSON.parse(

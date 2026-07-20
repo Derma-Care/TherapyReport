@@ -24,6 +24,30 @@ import ForgotPassword from '../ForgotPassword'
 
 const FEATURES = ['Session management', 'Progress tracking', 'Secure records', 'Multi-branch support']
 
+// ── WebAuthn helpers ────────────────────────────────────────────
+// Browsers exchange raw bytes (ArrayBuffer) for credentials, but the
+// server needs to send/receive those over JSON — base64url is the
+// standard encoding for that bridge.
+const bufferToBase64url = (buffer) => {
+    const bytes = new Uint8Array(buffer)
+    let str = ''
+    for (let i = 0; i < bytes.byteLength; i++) str += String.fromCharCode(bytes[i])
+    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+const base64urlToBuffer = (base64url) => {
+    const padded = base64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(base64url.length + (4 - (base64url.length % 4)) % 4, '=')
+    const str = atob(padded)
+    const bytes = new Uint8Array(str.length)
+    for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i)
+    return bytes.buffer
+}
+
+const isWebAuthnSupported = () =>
+    typeof window !== 'undefined' &&
+    !!window.PublicKeyCredential &&
+    !!navigator.credentials
+
 const Login = () => {
     const [userName, setUserName] = useState('')
     const [password, setPassword] = useState('')
@@ -37,6 +61,15 @@ const Login = () => {
     const navigate = useNavigate()
     const [showResetModal, setShowResetModal] = useState(false)
     const [showForgotModal, setShowForgotModal] = useState(false)
+
+    // ── Biometric login state ───────────────────────────────────
+    const [biometricAvailable, setBiometricAvailable] = useState(false)
+    const [savedBiometricUser, setSavedBiometricUser] = useState('')
+    const [isBiometricLoading, setIsBiometricLoading] = useState(false)
+    const [showBiometricPrompt, setShowBiometricPrompt] = useState(false)
+    const [isEnablingBiometric, setIsEnablingBiometric] = useState(false)
+    const [pendingLoginUserName, setPendingLoginUserName] = useState('')
+
     const validateForm = () => {
         const errors = {}
         if (!userName.trim()) errors.userName = 'Username is required'
@@ -53,12 +86,62 @@ const Login = () => {
         })
     }, [])
 
+    useEffect(() => {
+        // Check once on mount whether this device previously registered
+        // a fingerprint/biometric credential, so we know whether to show
+        // the quick sign-in button.
+        const checkBiometricAvailability = async () => {
+            if (!isWebAuthnSupported()) return
+            try {
+                const platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                if (!platformAvailable) return
+                const saved = localStorage.getItem('biometricUserName')
+                if (saved) {
+                    setSavedBiometricUser(saved)
+                    setBiometricAvailable(true)
+                }
+            } catch (err) {
+                console.error('Biometric availability check failed:', err)
+            }
+        }
+        checkBiometricAvailability()
+    }, [])
+
+    // Shared "what happens after a successful login" logic — used by both
+    // the password form and the biometric flow so they can't drift apart.
+    const completeLogin = async (payload) => {
+        if (!payload) { showCustomToast('Invalid login response', 'error'); return }
+
+        const HospitalId = payload.hospitalId
+        const hores = await fetchAllData(HospitalId)
+        if (hores.status === 200) {
+            showCustomToast('Login successful!', 'success')
+            localStorage.setItem('selectedClinic', JSON.stringify(hores.data))
+            localStorage.setItem('hospitalId', JSON.stringify(HospitalId))
+            const theraphPayload = {
+                therapistId: payload.staffId,
+                therapistName: payload.staffName,
+                branchId: payload.branchId,
+                clinicId: payload.hospitalId,
+                role: payload.role,
+                branchName: payload.branchName
+            }
+            localStorage.setItem("therapistData", JSON.stringify(theraphPayload))
+
+            const fcmToken = await getFCMToken()
+            if (fcmToken) localStorage.setItem('fcmToken', fcmToken)
+
+            navigate("/therapist", { state: theraphPayload })
+        }
+    }
+
     const handleClinicLogin = async (e) => {
         if (e && e.preventDefault) e.preventDefault()
         if (!validateForm()) return
         setIsLoading(true)
         setErrorMessage('')
         const fcmToken = await getFCMToken()
+        console.log(fcmToken)
         try {
             const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web', deviceId: fcmToken }
             const resposnse = await axios.post(`${BASE_URL}/loginUsingRoles`, loginBody, {
@@ -70,29 +153,23 @@ const Login = () => {
                 const payload = res.data
                 if (!payload) { showCustomToast(res?.message || 'Invalid login response', 'error'); return }
 
-                const HospitalId = payload.hospitalId
-                const hores = await fetchAllData(HospitalId)
-                if (hores.status === 200) {
-                    showCustomToast(res.data?.message || 'Login successful!', 'success')
-                    localStorage.setItem('selectedClinic', JSON.stringify(hores.data))
-                    localStorage.setItem('hospitalId', JSON.stringify(HospitalId))
-                    const theraphPayload = {
-                        therapistId: payload.staffId,
-                        therapistName: payload.staffName,
-                        branchId: payload.branchId,
-                        clinicId: payload.hospitalId,
-                        role: payload.role,
-                        branchName: payload.branchName
+                // First-time-only biometric opt-in: ask right after a
+                // successful password login, but only once per user per
+                // device, and only if the browser can actually do it.
+                const promptAlreadySeen = localStorage.getItem(`biometricPromptSeen_${userName}`)
+                if (isWebAuthnSupported() && !promptAlreadySeen) {
+                    const platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false)
+                    if (platformAvailable) {
+                        setPendingLoginUserName(userName)
+                        localStorage.setItem(`biometricPromptSeen_${userName}`, 'true')
+                        setShowBiometricPrompt(true)
+                        // Defer navigation until the user answers the prompt
+                        window.__pendingLoginPayload = payload
+                        return
                     }
-                    localStorage.setItem("therapistData", JSON.stringify(theraphPayload))
-
-                    // Token is already sent in the login request!
-                    if (fcmToken) {
-                        localStorage.setItem('fcmToken', fcmToken)
-                    }
-
-                    navigate("/therapist", { state: theraphPayload })
                 }
+
+                await completeLogin(payload)
             }
         } catch (err) {
             console.error('Login error:', err)
@@ -109,6 +186,189 @@ const Login = () => {
         }
     }
 
+    // ── Enable biometric login (registration) ───────────────────
+    // Requires backend endpoints:
+    //   POST /biometric/register-options  { userName } -> WebAuthn PublicKeyCredentialCreationOptions
+    //   POST /biometric/register-verify   { userName, credential } -> { status, message }
+    const handleEnableBiometric = async () => {
+        const isBioEnabled = localStorage.getItem("biometricEnabled") === "true";
+
+        if (!isBioEnabled && window.PublicKeyCredential) {
+            const confirmed = window.confirm(
+                "Enable fingerprint login for next time?"
+            );
+
+            if (confirmed) {
+                try {
+                    const challenge = new Uint8Array(32);
+                    crypto.getRandomValues(challenge);
+
+                    const userId = new Uint8Array(16);
+                    crypto.getRandomValues(userId);
+
+                    const cred = await navigator.credentials.create({
+                        publicKey: {
+                            challenge,
+                            rp: {
+                                name: "Kinetix"
+                            },
+                            user: {
+                                id: userId,
+                                name: userName,
+                                displayName: userName
+                            },
+                            pubKeyCredParams: [
+                                {
+                                    type: "public-key",
+                                    alg: -7
+                                }
+                            ],
+                            authenticatorSelection: {
+                                authenticatorAttachment: "platform",
+                                userVerification: "preferred"
+                            },
+                            timeout: 60000
+                        }
+                    });
+
+                    localStorage.setItem(
+                        "bioCredId",
+                        btoa(String.fromCharCode(...new Uint8Array(cred.rawId)))
+                    );
+
+                    localStorage.setItem("savedUserName", userName);
+                    localStorage.setItem("savedPassKey", btoa(password));
+                    localStorage.setItem("biometricEnabled", "true");
+
+                    setBiometricAvailable(true);
+                    setSavedBiometricUser(userName);
+
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+        }
+
+        // await completeLogin(payload);
+        const payload = window.__pendingLoginPayload;
+        window.__pendingLoginPayload = null;
+
+        await completeLogin(payload);
+    }
+
+    const handleSkipBiometric = async () => {
+        setShowBiometricPrompt(false)
+        const payload = window.__pendingLoginPayload
+        window.__pendingLoginPayload = null
+        await completeLogin(payload)
+    }
+    const handleBiometricLogin = async () => {
+        try {
+            const credId = localStorage.getItem("bioCredId");
+
+            if (!credId) {
+                showCustomToast("Fingerprint not configured", "error");
+                return;
+            }
+
+            const challenge = new Uint8Array(32);
+            crypto.getRandomValues(challenge);
+
+            const idBuffer = Uint8Array.from(
+                atob(credId),
+                c => c.charCodeAt(0)
+            );
+
+            await navigator.credentials.get({
+                publicKey: {
+                    challenge,
+                    allowCredentials: [
+                        {
+                            id: idBuffer,
+                            type: "public-key"
+                        }
+                    ],
+                    userVerification: "preferred"
+                }
+            });
+
+            const savedUser = localStorage.getItem("savedUserName");
+            const savedPass = atob(localStorage.getItem("savedPassKey"));
+
+            setUserName(savedUser);
+            setPassword(savedPass);
+
+            await handleClinicLogin();
+
+        } catch (err) {
+            console.error(err);
+            showCustomToast("Fingerprint authentication failed", "error");
+        }
+    };
+    useEffect(() => {
+        const enabled =
+            localStorage.getItem("biometricEnabled") === "true";
+
+        if (enabled) {
+            setBiometricAvailable(true);
+            setSavedBiometricUser(
+                localStorage.getItem("savedUserName")
+            );
+        }
+    }, []);
+    // ── Sign in with biometric (authentication) ──────────────────
+    // Requires backend endpoints:
+    //   POST /biometric/login-options { userName } -> WebAuthn PublicKeyCredentialRequestOptions
+    //   POST /biometric/login-verify  { userName, credential } -> same shape as /loginUsingRoles
+    // const handleBiometricLogin = async () => {
+    //     setIsBiometricLoading(true)
+    //     setErrorMessage('')
+    //     try {
+    //         const optionsRes = await axios.post(`${BASE_URL}/biometric/login-options`, { userName: savedBiometricUser })
+    //         const options = optionsRes.data.data
+
+    //         const publicKey = {
+    //             ...options,
+    //             challenge: base64urlToBuffer(options.challenge),
+    //             allowCredentials: (options.allowCredentials || []).map(c => ({
+    //                 ...c,
+    //                 id: base64urlToBuffer(c.id),
+    //             })),
+    //         }
+
+    //         const assertion = await navigator.credentials.get({ publicKey })
+
+    //         const serializedAssertion = {
+    //             id: assertion.id,
+    //             rawId: bufferToBase64url(assertion.rawId),
+    //             type: assertion.type,
+    //             response: {
+    //                 authenticatorData: bufferToBase64url(assertion.response.authenticatorData),
+    //                 clientDataJSON: bufferToBase64url(assertion.response.clientDataJSON),
+    //                 signature: bufferToBase64url(assertion.response.signature),
+    //                 userHandle: assertion.response.userHandle ? bufferToBase64url(assertion.response.userHandle) : null,
+    //             },
+    //         }
+
+    //         const verifyRes = await axios.post(`${BASE_URL}/biometric/login-verify`, {
+    //             userName: savedBiometricUser,
+    //             credential: serializedAssertion,
+    //         })
+
+    //         const payload = verifyRes.data?.data
+    //         await completeLogin(payload)
+    //     } catch (err) {
+    //         console.error('Biometric login failed:', err)
+    //         if (err?.name === 'NotAllowedError') {
+    //             showCustomToast('Fingerprint sign-in was cancelled', 'info')
+    //         } else {
+    //             setErrorMessage('Fingerprint sign-in failed. Please sign in with your password.')
+    //         }
+    //     } finally {
+    //         setIsBiometricLoading(false)
+    //     }
+    // }
+
     return (
         <>
             <style>{`
@@ -116,10 +376,17 @@ const Login = () => {
 
                 .therapist-login-root * { box-sizing: border-box; }
 
+                html, body {
+                    overflow: hidden;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+
                 .therapist-login-root {
-                    min-height: 100vh;
+                    height: 100vh;
                     display: flex;
-                    overflow-y: auto;
+                    overflow: hidden;
                     position: relative;
                     background: #f0f6ff;
                 }
@@ -201,7 +468,8 @@ const Login = () => {
 
                 .login-right-panel {
                     width: 480px;
-                    min-height: 100vh;
+                    height: 100vh;
+                    overflow-y: auto;
                     background: rgba(255,255,255,0.78);
                     backdrop-filter: blur(18px);
                     -webkit-backdrop-filter: blur(18px);
@@ -412,6 +680,29 @@ const Login = () => {
                 .submit-btn:active:not(:disabled) { transform:translateY(0);box-shadow:0 2px 10px rgba(24,95,165,0.28); }
                 .submit-btn:disabled { opacity:0.7;cursor:not-allowed; }
 
+                /* Biometric quick sign-in button */
+                .biometric-btn {
+                    width: 100%;
+                    padding: 12px;
+                    background: rgba(255,255,255,0.6);
+                    color: #0c447c;
+                    border: 0.5px solid #b5d4f4;
+                    border-radius: 12px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    margin-top: 12px;
+                    transition: background 0.2s, border-color 0.2s;
+                    animation: text-rise 0.5s ease 0.6s both;
+                }
+                .biometric-btn:hover:not(:disabled) { background: #ffffff; border-color: #185fa5; }
+                .biometric-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+                .biometric-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
                 .right-divider { width:100%;border:none;border-top:0.5px solid rgba(24,95,165,0.12);margin:28px 0; }
 
                 /* Security badge — pulsing dot */
@@ -433,10 +724,19 @@ const Login = () => {
                 .form-footer-text { font-size:12px;color:#888780; }
                 .form-footer-text a { color:#185fa5;text-decoration:none;font-weight:500; }
 
+                /* Biometric enrollment modal content */
+                .biometric-modal-icon {
+                    width: 56px; height: 56px; border-radius: 50%;
+                    background: rgba(24,95,165,0.10);
+                    display: flex; align-items: center; justify-content: center;
+                    margin: 0 auto 16px;
+                }
+                .biometric-modal-icon svg { width: 28px; height: 28px; color: #185fa5; }
+                .biometric-modal-text { text-align: center; color: #5f5e5a; font-size: 14px; line-height: 1.6; margin: 0 0 4px; }
 
                 @media (max-width: 900px) {
                     .login-left-panel { display:none; }
-                    .login-right-panel { width:100%; border-left:none; box-shadow:none; padding: 40px 24px; min-height: 100vh; justify-content: center; }
+                    .login-right-panel { width:100%; height:100vh; border-left:none; box-shadow:none; padding: 40px 24px; justify-content: center; }
                 }
 
                 .spin {
@@ -495,9 +795,11 @@ const Login = () => {
                 {/* ── Right form panel ────────────────────────── */}
                 <div className="login-right-panel">
                     <div className="form-header">
-                        <p className="form-welcome">Kinetix Portal</p>
+                        {/* <p className="form-welcome">Kinetix Portal</p> */}
                         <h2 className="form-title">Welcome back</h2>
-                        <p className="form-subtitle">Sign in to continue to your dashboard</p>
+                        <p className="form-subtitle">
+                            {biometricAvailable ? `Sign in as ${savedBiometricUser} or use your password` : 'Sign in to continue to your dashboard'}
+                        </p>
                     </div>
 
 
@@ -508,6 +810,29 @@ const Login = () => {
                             </svg>
                             {errorMessage}
                         </div>
+                    )}
+
+                    {biometricAvailable && (
+                        <button
+                            type="button"
+                            className="biometric-btn"
+                            onClick={handleBiometricLogin}
+                            disabled={isBiometricLoading}
+                        >
+                            {isBiometricLoading ? (
+                                <span className="spin" style={{ borderTopColor: '#185fa5', borderColor: 'rgba(24,95,165,0.25)' }} />
+                            ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                    <path d="M12 11a2 2 0 0 0-2 2c0 3-1 5-1.5 6" />
+                                    <path d="M7 15c.5-1.5.5-2.5.5-4a4.5 4.5 0 0 1 9 0" />
+                                    <path d="M4 12a8 8 0 0 1 15.5-3" />
+                                    <path d="M5.5 16.5A9 9 0 0 1 3 12" />
+                                    <path d="M20 12a8 8 0 0 1-.6 3" />
+                                    <path d="M12 11a2 2 0 0 1 2 2c0 1.5.2 2.5.5 3.5" />
+                                </svg>
+                            )}
+                            {isBiometricLoading ? 'Verifying…' : `Sign in with fingerprint`}
+                        </button>
                     )}
 
                     <form onSubmit={handleClinicLogin} noValidate style={{ width: '100%' }}>
@@ -563,10 +888,10 @@ const Login = () => {
                             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13.5px' }}>
+                        {/* <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13.5px' }}>
                             <a href="#" onClick={(e) => { e.preventDefault(); setShowForgotModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</a>
                             <a href="#" onClick={(e) => { e.preventDefault(); setShowResetModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Reset password?</a>
-                        </div>
+                        </div> */}
 
                         <button
                             type="submit"
@@ -579,10 +904,10 @@ const Login = () => {
 
                     <hr className="right-divider" />
 
-                    <div className="security-badge">
+                    {/* <div className="security-badge">
                         <span className="security-dot" />
                         <span>256-bit encrypted &amp; HIPAA-compliant session</span>
-                    </div>
+                    </div> */}
                     <CModal visible={showResetModal} onClose={() => setShowResetModal(false)} className='custom-modal' backdrop="static">
                         <CModalHeader>
                             <CModalTitle>Reset Password</CModalTitle>
@@ -611,6 +936,44 @@ const Login = () => {
             </CButton>
           </CModalFooter> */}
                     </CModal>
+
+                    {/* First-time biometric opt-in prompt */}
+                    <CModal visible={showBiometricPrompt} onClose={handleSkipBiometric} className='custom-modal' backdrop="static">
+                        <CModalHeader>
+                            <CModalTitle>Enable fingerprint sign-in</CModalTitle>
+                        </CModalHeader>
+                        <CModalBody>
+                            <div className="biometric-modal-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                    <path d="M12 11a2 2 0 0 0-2 2c0 3-1 5-1.5 6" />
+                                    <path d="M7 15c.5-1.5.5-2.5.5-4a4.5 4.5 0 0 1 9 0" />
+                                    <path d="M4 12a8 8 0 0 1 15.5-3" />
+                                    <path d="M5.5 16.5A9 9 0 0 1 3 12" />
+                                    <path d="M20 12a8 8 0 0 1-.6 3" />
+                                    <path d="M12 11a2 2 0 0 1 2 2c0 1.5.2 2.5.5 3.5" />
+                                </svg>
+                            </div>
+                            <p className="biometric-modal-text">
+                                Use your fingerprint or face to sign in faster next time on this device.
+                            </p>
+                            <p className="biometric-modal-text" style={{ fontSize: 12, color: '#888780' }}>
+                                You can turn this off later from your account settings.
+                            </p>
+                        </CModalBody>
+                        <CModalFooter>
+                            <CButton color="secondary" onClick={handleSkipBiometric} disabled={isEnablingBiometric}>
+                                Not now
+                            </CButton>
+                            <CButton
+                                style={{ backgroundColor: COLORS.primary, color: 'white', border: 'none' }}
+                                onClick={handleEnableBiometric}
+                                disabled={isEnablingBiometric}
+                            >
+                                {isEnablingBiometric ? 'Setting up…' : 'Enable'}
+                            </CButton>
+                        </CModalFooter>
+                    </CModal>
+
                     <div className="form-footer">
                         <p className="form-footer-text" style={{ marginTop: 32 }}>
                             © {new Date().getFullYear()} Chiselon Technologies ·{' '}
