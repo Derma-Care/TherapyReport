@@ -51,9 +51,9 @@ const ResetPassword = ({ onClose }) => {
 
         try {
             const response = await axios.put(
-                `${BASE_URL}/updatePassword/${form.username}`,
+                `${BASE_URL}/therapist/update-password/${form.username}`,
                 {
-                    password: currentPassword,
+                    currentPassword: currentPassword,
                     newPassword: newPassword,
                     confirmPassword: confirmPassword,
                 },
@@ -61,6 +61,13 @@ const ResetPassword = ({ onClose }) => {
 
             if (response.data.success) {
                 setMessage('✅ Password updated successfully!')
+
+                // Update biometric saved password if it matches the current user
+                const savedUser = localStorage.getItem('savedUserName');
+                if (savedUser && savedUser.trim().toLowerCase() === form.username.trim().toLowerCase()) {
+                    localStorage.setItem('savedPassKey', btoa(newPassword.trim()));
+                }
+
                 setForm({
                     username: '',
                     currentPassword: '',

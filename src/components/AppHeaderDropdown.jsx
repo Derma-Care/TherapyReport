@@ -29,10 +29,27 @@ const AppHeaderDropdown = () => {
     useState(false)
 
   const handleLogout = () => {
-    // localStorage.clear()
-    // navigate("/login")
     sessionStorage.clear();
-    localStorage.clear(); // or remove specific keys
+
+    // Preserve biometric login credentials
+    const bioEnabled = localStorage.getItem("biometricEnabled");
+    const savedUser = localStorage.getItem("savedUserName");
+    const savedPass = localStorage.getItem("savedPassKey");
+    const bioCredId = localStorage.getItem("bioCredId");
+    
+    // Preserve biometric prompt seen flags
+    const promptKeys = Object.keys(localStorage).filter(k => k.startsWith('biometricPromptSeen_'));
+    const prompts = promptKeys.map(k => ({ key: k, val: localStorage.getItem(k) }));
+
+    localStorage.clear(); 
+
+    // Restore biometric credentials
+    if (bioEnabled) localStorage.setItem("biometricEnabled", bioEnabled);
+    if (savedUser) localStorage.setItem("savedUserName", savedUser);
+    if (savedPass) localStorage.setItem("savedPassKey", savedPass);
+    if (bioCredId) localStorage.setItem("bioCredId", bioCredId);
+    prompts.forEach(p => localStorage.setItem(p.key, p.val));
+
     navigate("/login");
   }
 

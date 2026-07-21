@@ -70,11 +70,11 @@ const Login = () => {
     const [isEnablingBiometric, setIsEnablingBiometric] = useState(false)
     const [pendingLoginUserName, setPendingLoginUserName] = useState('')
 
-    const validateForm = () => {
+    const validateForm = (u = userName, p = password) => {
         const errors = {}
-        if (!userName.trim()) errors.userName = 'Username is required'
-        if (!password.trim()) errors.password = 'Password is required'
-        if (password && password.length < 6) errors.password = 'Password must be at least 6 characters'
+        if (!u.trim()) errors.userName = 'Username is required'
+        if (!p.trim()) errors.password = 'Password is required'
+        if (p && p.length < 6) errors.password = 'Password must be at least 6 characters'
         setFieldErrors(errors)
         return Object.keys(errors).length === 0
     }
@@ -95,8 +95,9 @@ const Login = () => {
             try {
                 const platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
                 if (!platformAvailable) return
-                const saved = localStorage.getItem('biometricUserName')
-                if (saved) {
+                const saved = localStorage.getItem('savedUserName')
+                const isBioEnabled = localStorage.getItem('biometricEnabled') === 'true'
+                if (saved && isBioEnabled) {
                     setSavedBiometricUser(saved)
                     setBiometricAvailable(true)
                 }
@@ -135,15 +136,21 @@ const Login = () => {
         }
     }
 
-    const handleClinicLogin = async (e) => {
+    const handleClinicLogin = async (e, forcedUsername, forcedPassword) => {
         if (e && e.preventDefault) e.preventDefault()
-        if (!validateForm()) return
+        
+        const activeUserName = forcedUsername !== undefined ? forcedUsername : userName
+        const activePassword = forcedPassword !== undefined ? forcedPassword : password
+
+        if (!validateForm(activeUserName, activePassword)) return
         setIsLoading(true)
         setErrorMessage('')
         const fcmToken = await getFCMToken()
         console.log(fcmToken)
         try {
-            const loginBody = { userName, password, role: "physiotherapist", deviceType: 'web', deviceId: fcmToken }
+            const trimmedUserName = activeUserName.trim();
+            const trimmedPassword = activePassword.trim();
+            const loginBody = { userName: trimmedUserName, password: trimmedPassword, role: "physiotherapist", deviceType: 'web', deviceId: fcmToken }
             const resposnse = await axios.post(`${BASE_URL}/loginUsingRoles`, loginBody, {
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -156,12 +163,12 @@ const Login = () => {
                 // First-time-only biometric opt-in: ask right after a
                 // successful password login, but only once per user per
                 // device, and only if the browser can actually do it.
-                const promptAlreadySeen = localStorage.getItem(`biometricPromptSeen_${userName}`)
+                const promptAlreadySeen = localStorage.getItem(`biometricPromptSeen_${trimmedUserName}`)
                 if (isWebAuthnSupported() && !promptAlreadySeen) {
                     const platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false)
                     if (platformAvailable) {
-                        setPendingLoginUserName(userName)
-                        localStorage.setItem(`biometricPromptSeen_${userName}`, 'true')
+                        setPendingLoginUserName(trimmedUserName)
+                        localStorage.setItem(`biometricPromptSeen_${trimmedUserName}`, 'true')
                         setShowBiometricPrompt(true)
                         // Defer navigation until the user answers the prompt
                         window.__pendingLoginPayload = payload
@@ -176,7 +183,16 @@ const Login = () => {
             const backendMessage = err?.response?.data?.message
             if (backendMessage) {
                 if (backendMessage.toLowerCase().includes('username')) setErrorMessage('Invalid username. Please try again.')
-                else if (backendMessage.toLowerCase().includes('password')) setErrorMessage('Invalid password. Please try again.')
+                else if (backendMessage.toLowerCase().includes('password')) {
+                    setErrorMessage('Invalid password. Please try again.')
+                    if (localStorage.getItem('biometricEnabled')) {
+                        localStorage.removeItem('biometricEnabled');
+                        localStorage.removeItem('savedPassKey');
+                        localStorage.removeItem('savedUserName');
+                        localStorage.removeItem('bioCredId');
+                        setBiometricAvailable(false);
+                    }
+                }
                 else setErrorMessage(backendMessage)
             } else {
                 setErrorMessage('An unexpected error occurred. Please try again later.')
@@ -236,8 +252,8 @@ const Login = () => {
                         btoa(String.fromCharCode(...new Uint8Array(cred.rawId)))
                     );
 
-                    localStorage.setItem("savedUserName", userName);
-                    localStorage.setItem("savedPassKey", btoa(password));
+                    localStorage.setItem("savedUserName", userName.trim());
+                    localStorage.setItem("savedPassKey", btoa(password.trim()));
                     localStorage.setItem("biometricEnabled", "true");
 
                     setBiometricAvailable(true);
@@ -298,7 +314,7 @@ const Login = () => {
             setUserName(savedUser);
             setPassword(savedPass);
 
-            await handleClinicLogin();
+            await handleClinicLogin(null, savedUser, savedPass);
 
         } catch (err) {
             console.error(err);
@@ -812,29 +828,6 @@ const Login = () => {
                         </div>
                     )}
 
-                    {biometricAvailable && (
-                        <button
-                            type="button"
-                            className="biometric-btn"
-                            onClick={handleBiometricLogin}
-                            disabled={isBiometricLoading}
-                        >
-                            {isBiometricLoading ? (
-                                <span className="spin" style={{ borderTopColor: '#185fa5', borderColor: 'rgba(24,95,165,0.25)' }} />
-                            ) : (
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                                    <path d="M12 11a2 2 0 0 0-2 2c0 3-1 5-1.5 6" />
-                                    <path d="M7 15c.5-1.5.5-2.5.5-4a4.5 4.5 0 0 1 9 0" />
-                                    <path d="M4 12a8 8 0 0 1 15.5-3" />
-                                    <path d="M5.5 16.5A9 9 0 0 1 3 12" />
-                                    <path d="M20 12a8 8 0 0 1-.6 3" />
-                                    <path d="M12 11a2 2 0 0 1 2 2c0 1.5.2 2.5.5 3.5" />
-                                </svg>
-                            )}
-                            {isBiometricLoading ? 'Verifying…' : `Sign in with fingerprint`}
-                        </button>
-                    )}
-
                     <form onSubmit={handleClinicLogin} noValidate style={{ width: '100%' }}>
                         <div className="custom-input-wrapper">
                             <label className="custom-input-label">Username</label>
@@ -888,10 +881,10 @@ const Login = () => {
                             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
                         </div>
 
-                        {/* <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13.5px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13.5px' }}>
                             <a href="#" onClick={(e) => { e.preventDefault(); setShowForgotModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</a>
                             <a href="#" onClick={(e) => { e.preventDefault(); setShowResetModal(true) }} style={{ color: '#185fa5', textDecoration: 'none', fontWeight: 500 }}>Reset password?</a>
-                        </div> */}
+                        </div>
 
                         <button
                             type="submit"
@@ -900,6 +893,29 @@ const Login = () => {
                         >
                             {isLoading ? <span className="spin" /> : 'Sign in to your account'}
                         </button>
+
+                        {biometricAvailable && (
+                            <button
+                                type="button"
+                                className="biometric-btn"
+                                onClick={handleBiometricLogin}
+                                disabled={isBiometricLoading}
+                            >
+                                {isBiometricLoading ? (
+                                    <span className="spin" style={{ borderTopColor: '#185fa5', borderColor: 'rgba(24,95,165,0.25)' }} />
+                                ) : (
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                        <path d="M12 11a2 2 0 0 0-2 2c0 3-1 5-1.5 6" />
+                                        <path d="M7 15c.5-1.5.5-2.5.5-4a4.5 4.5 0 0 1 9 0" />
+                                        <path d="M4 12a8 8 0 0 1 15.5-3" />
+                                        <path d="M5.5 16.5A9 9 0 0 1 3 12" />
+                                        <path d="M20 12a8 8 0 0 1-.6 3" />
+                                        <path d="M12 11a2 2 0 0 1 2 2c0 1.5.2 2.5.5 3.5" />
+                                    </svg>
+                                )}
+                                {isBiometricLoading ? 'Verifying…' : `Sign in with fingerprint`}
+                            </button>
+                        )}
                     </form>
 
                     <hr className="right-divider" />

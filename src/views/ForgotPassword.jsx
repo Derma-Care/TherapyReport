@@ -215,6 +215,12 @@ const ForgotPassword = ({ onClose }) => {
                 response.data?.message ||
                 "Password reset successfully."
             );
+            
+            // Clear biometric credentials since password changed, forcing re-enrollment
+            localStorage.removeItem('biometricEnabled');
+            localStorage.removeItem('savedPassKey');
+            localStorage.removeItem('savedUserName');
+            localStorage.removeItem('bioCredId');
 
             setTimeout(() => {
                 if (onClose) onClose();
