@@ -103,8 +103,11 @@ const S = {
       pending: { bg: T.warningBg, color: T.warning, border: "#fde68a" },
       today: { bg: T.danger, color: T.white, border: T.danger, padding: "2px 6px", fontSize: "0.55rem" },
       paid: { bg: T.accentBg, color: "#0369a1", border: "#bae6fd" },
+      booked: { bg: "#eef2ff", color: "#4f46e5", border: "#c7d2fe" },
+      reschedule: { bg: "#fff7ed", color: "#ea580c", border: "#fed7aa" },
+      rescheduled: { bg: "#fff7ed", color: "#ea580c", border: "#fed7aa" },
     }
-    const c = map[type] || map.pending
+    const c = map[type?.toLowerCase()] || map[type] || map.pending
     return { background: c.bg, color: c.color, border: `1px solid ${c.border}`, borderRadius: 20, padding: c.padding || "0.2rem 0.65rem", fontSize: c.fontSize || "0.71rem", fontWeight: 800, display: "inline-block", whiteSpace: "nowrap", textTransform: "uppercase" }
   },
 
@@ -265,7 +268,7 @@ const VoiceRecordModal = ({ visible, onClose, onSave }) => {
       const actualMimeType = recRef.current?.mimeType || "audio/webm"
       const ext = actualMimeType.includes("mp4") ? "m4a" : "mp3"
       const fileMimeType = ext === "mp3" ? "audio/mp3" : actualMimeType
-      
+
       const blob = new Blob(chunksRef.current, { type: fileMimeType })
       const file = new File([blob], `voiceRecord.${ext}`, { type: fileMimeType })
       const blobUrl = URL.createObjectURL(file)
@@ -468,7 +471,7 @@ const SessionList = () => {
           <table style={S.table}>
             <thead>
               <tr>
-                {["Session ID", "Date", "Timing / Tracker", "Status", "Actions"].map(h => (
+                {["Session ID", "Date", "Slot", "Timing / Tracker", "Booking Status", "Status", "Actions"].map(h => (
                   <th key={h} style={{ ...S.th, ...(h === "Actions" ? { textAlign: "center" } : {}) }}>{h}</th>
                 ))}
               </tr>
@@ -478,8 +481,10 @@ const SessionList = () => {
                 const activeObj = activeSessions[s.sessionId]
                 const isRunning = !!activeObj
                 const completed = s.status?.toLowerCase() === "completed"
+                const isCardEnabled = s.bookingStatus && s.slot && s.bookingStatus?.toLowerCase() !== "cancelled"
+                const disabledStyles = !isCardEnabled ? { opacity: 0.6, pointerEvents: "none" } : {}
                 return (
-                  <tr key={s.sessionId || i} style={{ background: i % 2 === 0 ? T.white : "#f8fafd" }}>
+                  <tr key={s.sessionId || i} style={{ background: i % 2 === 0 ? T.white : "#f8fafd", ...disabledStyles }}>
                     <td style={S.td}>
                       <span style={{ fontSize: "0.78rem", color: T.navy, fontWeight: 600 }}>{s.sessionId}</span>
                     </td>
@@ -487,6 +492,11 @@ const SessionList = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>{s.date || s.sessionDate}</span>
                         {isDateToday(s.date || s.sessionDate) && <span style={S.badge("today")}>Today</span>}
+                      </div>
+                    </td>
+                    <td style={S.td}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>{s.slot || "NA"}</span>
                       </div>
                     </td>
                     <td style={{ ...S.td, minWidth: 200 }}>
@@ -508,6 +518,11 @@ const SessionList = () => {
                           <button style={{ ...S.btn("danger", "sm"), width: "100%", marginTop: 4 }} onClick={() => handleStopAndComplete(s)}>⏹ Stop & Save</button>
                         </div>
                       )}
+                    </td>
+                    <td style={S.td}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={S.badge(s.bookingStatus)}>{s.bookingStatus || "Pending"}</span>
+                      </div>
                     </td>
                     <td style={S.td}>
                       <span style={S.badge(completed ? "completed" : "pending")}>{s.status || "Pending"}</span>
@@ -585,8 +600,10 @@ const SessionList = () => {
             const activeObj = activeSessions[s.sessionId]
             const isRunning = !!activeObj
             const completed = s.status?.toLowerCase() === "completed"
+            const isCardEnabled = s.bookingStatus && s.slot && s.bookingStatus?.toLowerCase() !== "cancelled"
+            const disabledStyles = !isCardEnabled ? { opacity: 0.6, pointerEvents: "none" } : {}
             return (
-              <div key={s.sessionId || i} style={S.mobileCard}>
+              <div key={s.sessionId || i} style={{ ...S.mobileCard, ...disabledStyles }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontSize: "0.65rem", color: T.muted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Session ID</div>
@@ -598,12 +615,23 @@ const SessionList = () => {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "0.75rem 0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "0.75rem 0", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", color: T.text, fontWeight: 500 }}>
                     <Calendar size={14} style={{ color: T.navy }} />
                     {s.date || s.sessionDate}
                   </div>
                   {isDateToday(s.date || s.sessionDate) && <span style={S.badge("today")}>Today</span>}
+
+                  {s.slot && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", color: T.text, fontWeight: 500 }}>
+                      <Clock size={14} style={{ color: T.navy }} />
+                      {s.slot}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                    <span style={S.badge(s.bookingStatus)}>{s.bookingStatus || "Pending"}</span>
+                  </div>
                 </div>
 
                 {!completed && (
